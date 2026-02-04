@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  
+  --color-brand-primary: #E32222;
+  --color-brand-primary-hover: #cc1f1f;
+  --color-brand-dark: #080808;
+  
+  --animate-fade-in: fadeIn 0.8s ease-out forwards;
+  --animate-slide-up: slideUp 0.8s ease-out forwards;
+}
+
+:root {
+  --background: #0D0D0D;
+  --foreground: #ffffff;
+}
+
+body {
+  background: linear-gradient(to bottom, #0D0D0D, #080808);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Custom Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-field {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.input-field:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 2px rgba(227, 34, 34, 0.2);
+  outline: none;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reset for inputs to ensure dark theme usually */
+input, select, textarea {
+  color-scheme: dark;
+}
+
+/* Dashboard form inputs should have dark text on light backgrounds */
+.bg-white input,
+.bg-white select,
+.bg-white textarea,
+input.border,
+select.border,
+textarea.border {
+  color: #1f2937 !important; /* gray-800 */
+  background-color: white;
+}
+
+input.border::placeholder,
+select.border::placeholder,
+textarea.border::placeholder {
+  color: #9ca3af; /* gray-400 */
+}

@@ -1,0 +1,31 @@
+import api from '@/lib/api';
+import { ApiResponse, Ride, RideFilters } from '@/types';
+
+export const rideService = {
+  async getAll(filters?: RideFilters): Promise<ApiResponse<Ride[]>> {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.vehicleType) params.append('vehicleType', filters.vehicleType);
+    if (filters?.userId) params.append('userId', filters.userId);
+    if (filters?.riderId) params.append('riderId', filters.riderId);
+    
+    const queryString = params.toString();
+    const response = await api.get(`/rides${queryString ? `?${queryString}` : ''}`);
+    return response.data;
+  },
+
+  async getById(id: string): Promise<ApiResponse<Ride>> {
+    const response = await api.get(`/rides/${id}`);
+    return response.data;
+  },
+
+  async getScheduled(): Promise<ApiResponse<Ride[]>> {
+    const response = await api.get('/rides/scheduled');
+    return response.data;
+  },
+
+  async assignRider(rideId: string, riderId: string): Promise<ApiResponse<Ride>> {
+    const response = await api.post(`/rides/${rideId}/assign-rider`, { riderId });
+    return response.data;
+  },
+};
