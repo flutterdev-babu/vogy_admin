@@ -25,7 +25,7 @@ export default function CorporateRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await corporateService.register(formData);
+      const response = await corporateService.register(formData as any);
       if (response.success) {
         toast.success('Registration successful! Please login.');
         router.push('/corporate/login');

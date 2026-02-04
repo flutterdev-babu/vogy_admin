@@ -23,7 +23,7 @@ export default function AgentRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await agentService.register(formData);
+      const response = await agentService.register(formData as any);
       if (response.success) {
         toast.success('Registration successful! Please login.');
         router.push('/agent/login');
