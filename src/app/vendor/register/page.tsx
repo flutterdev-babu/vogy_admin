@@ -42,7 +42,7 @@ export default function VendorRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await vendorService.register(formData);
+      const response = await vendorService.register(formData as any);
       if (response.success) {
         toast.success('Registration successful! Please login.');
         router.push('/vendor/login');

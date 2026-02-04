@@ -21,7 +21,7 @@ export default function PartnerRegisterPage() {
     aadharNumber: '',
     licenseNumber: '',
     dateOfBirth: '',
-    gender: '',
+    gender: '' as any,
     // Banking Details
     bankAccountNumber: '',
     upiId: ''
@@ -36,11 +36,15 @@ export default function PartnerRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
+      const { firstName, lastName, ...rest } = formData;
       const submitData = {
-        ...formData,
-        name: `${formData.firstName} ${formData.lastName}`.trim()
+        ...rest,
+        firstName,
+        lastName,
+        name: `${firstName} ${lastName}`.trim(),
+        gender: formData.gender ? (formData.gender as any) : undefined
       };
-      const response = await partnerService.register(submitData);
+      const response = await partnerService.register(submitData as any);
       if (response.success) {
         toast.success('Registration successful! Please login.');
         router.push('/partner/login');
