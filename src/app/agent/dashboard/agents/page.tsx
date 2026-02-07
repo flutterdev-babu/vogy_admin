@@ -23,6 +23,7 @@ export default function AgentListPage() {
     try {
       const res = await agentService.getAllAgents();
       setAgents(res.data);
+      console.log(res.data);
     } catch (err) {
       console.error('Failed to fetch agents:', err);
     } finally {
@@ -31,7 +32,7 @@ export default function AgentListPage() {
   };
 
   const filteredAgents = agents.filter(a => {
-    const agentId = (a as any).customId || a.id;
+    const agentId = (a as any).customId || '';
     return (
       agentId.toLowerCase().includes(searchFilters.id.toLowerCase()) &&
       a.name.toLowerCase().includes(searchFilters.name.toLowerCase()) &&
@@ -156,7 +157,7 @@ export default function AgentListPage() {
               ) : (
                 paginatedAgents.map((agent, idx) => (
                   <tr key={agent.id} className={`border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-4 py-3 text-sm text-gray-700">{(agent as any).customId || agent.id.slice(-8)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{(agent as any).customId}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{agent.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{agent.phone}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{agent.email || '-'}</td>

@@ -139,11 +139,21 @@ export interface Partner {
   bankAccountNumber?: string;
   upiId?: string;
   rating?: number;
+  totalEarnings?: number;
+  vehicleNumber?: string;
+  vehicleModel?: string;
+  profileImage?: string;
+  rides?: Ride[];
   status: EntityStatus;
   isOnline: boolean;
   currentLat?: number;
   currentLng?: number;
   vehicle?: Vehicle;
+  // Own Vehicle Details (Owner-Driver)
+  hasOwnVehicle: boolean;
+  ownVehicleNumber?: string;
+  ownVehicleModel?: string;
+  ownVehicleTypeId?: string;
   cityCode?: CityCode;
   createdAt: string;
   updatedAt?: string;
@@ -155,6 +165,12 @@ export interface PartnerRegisterRequest {
   email?: string;
   password: string;
   cityCodeId?: string;
+  vendorCustomId?: string;
+  // Own Vehicle Details
+  hasOwnVehicle: boolean;
+  ownVehicleNumber?: string;
+  ownVehicleModel?: string;
+  ownVehicleTypeId?: string;
   // Personal Details
   firstName?: string;
   lastName?: string;
@@ -187,6 +203,7 @@ export interface PartnerLoginResponse {
 
 export interface Agent {
   id: string;
+  customId: string;
   name: string;
   phone: string;
   email?: string;
@@ -236,7 +253,7 @@ export interface SetFarePricingRequest {
 
 export interface Corporate {
   id: string;
-  customId?: string;
+  customId: string;
   companyName: string;
   contactPerson: string;
   phone: string;
@@ -340,8 +357,8 @@ export interface CreateVehicleRequest {
   registrationNumber: string;
   vehicleModel: string;
   vehicleTypeId: string;
-  vendorId: string;
-  partnerId: string;
+  vendorCustomId?: string;
+  partnerCustomId: string;
   cityCodeId: string;
   // New Fields
   color?: string;
@@ -396,7 +413,8 @@ export interface Payment {
   id: string;
   corporate: CorporateSummary;
   amount: number;
-  paymentMode: 'CASH' | 'UPI' | 'CARD' | 'CREDIT';
+  paymentMode: 'CASH' | 'UPI' | 'CARD' | 'ONLINE' | 'CREDIT';
+  paymentStatus: 'PENDING' | 'COMPLETED' | 'FAILED';
   transactionId?: string;
   notes?: string;
   createdAt: string;
@@ -405,7 +423,7 @@ export interface Payment {
 export interface RecordPaymentRequest {
   corporateId: string;
   amount: number;
-  paymentMode: 'CASH' | 'UPI' | 'CARD' | 'CREDIT';
+  paymentMode: 'CASH' | 'UPI' | 'CARD' | 'ONLINE' | 'CREDIT';
   transactionId?: string;
   notes?: string;
 }
@@ -417,7 +435,7 @@ export interface RecordPaymentRequest {
 export interface PricingConfig {
   id: string;
   baseFare: number;
-  riderPercentage: number;
+  partnerPercentage: number;
   appCommission: number;
   isActive: boolean;
   createdAt: string;
@@ -425,7 +443,7 @@ export interface PricingConfig {
 
 export interface UpdatePricingConfigRequest {
   baseFare?: number;
-  riderPercentage: number;
+  partnerPercentage: number;
   appCommission: number;
 }
 
@@ -452,39 +470,18 @@ export interface CreateUserRequest {
   profileImage?: string;
 }
 
-// =====================================
-// Rider/Captain Types
-// =====================================
-
-export interface Rider {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  profileImage?: string;
-  aadharNumber?: string;
-  licenseNumber?: string;
-  licenseImage?: string;
-  vehicleNumber: string;
-  vehicleModel: string;
-  vehicleTypeId?: string;
-  isOnline: boolean;
-  currentLat?: number;
-  currentLng?: number;
-  rating: number;
-  totalEarnings: number;
-  createdAt: string;
-  rides?: RideSummary[];
-}
+// Rider alias for backward compatibility (merged into Partner)
+export type Rider = Partner;
 
 // =====================================
 // Ride Types
 // =====================================
 
-export type RideStatus = 'PENDING' | 'SCHEDULED' | 'ACCEPTED' | 'ARRIVED' | 'STARTED' | 'COMPLETED' | 'CANCELLED';
+export type RideStatus = 'PENDING' | 'INITIATED' | 'SCHEDULED' | 'ACCEPTED' | 'ARRIVED' | 'STARTED' | 'COMPLETED' | 'CANCELLED' | 'FUTURE';
 
 export interface Ride {
   id: string;
+  customId: string;
   status: RideStatus;
   pickupLat: number;
   pickupLng: number;
@@ -496,8 +493,9 @@ export interface Ride {
   baseFare: number;
   perKmPrice: number;
   totalFare: number;
-  riderEarnings: number;
+  partnerEarnings: number;
   commission: number;
+  riderEarnings?: number; // Added for backward compatibility
   userOtp?: string;
   startTime?: string;
   endTime?: string;
@@ -507,7 +505,7 @@ export interface Ride {
   scheduledDateTime?: string;
   bookingNotes?: string;
   user: UserSummary;
-  rider?: RiderSummary;
+  partner?: PartnerSummary;
   vehicleType: VehicleTypeSummary;
   createdAt: string;
 }
@@ -516,7 +514,7 @@ export interface RideSummary {
   id: string;
   status: RideStatus;
   totalFare: number;
-  riderEarnings?: number;
+  partnerEarnings?: number;
   createdAt: string;
 }
 
@@ -527,10 +525,11 @@ export interface UserSummary {
   email: string;
 }
 
-export interface RiderSummary {
+export interface PartnerSummary {
   id: string;
+  customId: string;
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
   profileImage?: string;
   vehicleNumber?: string;
@@ -554,7 +553,7 @@ export interface RideFilters {
   status?: RideStatus;
   vehicleType?: string;
   userId?: string;
-  riderId?: string;
+  partnerId?: string;
   startDate?: string;
   endDate?: string;
 }

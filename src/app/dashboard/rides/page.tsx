@@ -8,7 +8,7 @@ import { Ride, RideStatus, RideFilters } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 
-const STATUS_OPTIONS: RideStatus[] = ['PENDING', 'SCHEDULED', 'ACCEPTED', 'ARRIVED', 'STARTED', 'COMPLETED', 'CANCELLED'];
+const STATUS_OPTIONS: RideStatus[] = ['PENDING', 'INITIATED', 'SCHEDULED', 'ACCEPTED', 'ARRIVED', 'STARTED', 'COMPLETED', 'CANCELLED', 'FUTURE'];
 
 export default function RidesPage() {
   const [rides, setRides] = useState<Ride[]>([]);
@@ -122,15 +122,15 @@ export default function RidesPage() {
               />
             </div>
 
-            {/* Rider ID Filter */}
+            {/* Partner ID Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Rider ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Captain ID</label>
               <input
                 type="text"
-                value={filters.riderId || ''}
-                onChange={(e) => setFilters({ ...filters, riderId: e.target.value || undefined })}
+                value={filters.partnerId || ''}
+                onChange={(e) => setFilters({ ...filters, partnerId: e.target.value || undefined })}
                 className="input"
-                placeholder="Rider ID"
+                placeholder="Captain ID"
               />
             </div>
           </div>
@@ -201,8 +201,8 @@ export default function RidesPage() {
                   <span className="text-xs text-gray-500">
                     {new Date(ride.createdAt).toLocaleDateString()}
                   </span>
-                  {ride.rider && (
-                    <span className="text-xs text-gray-600">Captain: {ride.rider.name}</span>
+                  {ride.partner && (
+                    <span className="text-xs text-gray-600">Captain: {ride.partner.name}</span>
                   )}
                 </div>
               </Link>
@@ -236,10 +236,10 @@ export default function RidesPage() {
                       </div>
                     </td>
                     <td>
-                      {ride.rider ? (
+                      {ride.partner ? (
                         <div>
-                          <p className="font-medium text-gray-800">{ride.rider.name}</p>
-                          <p className="text-xs text-gray-500">{ride.rider.phone}</p>
+                          <p className="font-medium text-gray-800">{ride.partner.name}</p>
+                          <p className="text-xs text-gray-500">{ride.partner.phone}</p>
                         </div>
                       ) : (
                         <span className="text-gray-400">-</span>

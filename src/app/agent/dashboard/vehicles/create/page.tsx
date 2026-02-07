@@ -22,8 +22,8 @@ export default function CreateVehiclePage() {
     registrationNumber: '',
     vehicleModel: '',
     vehicleTypeId: '',
-    vendorId: '',
-    partnerId: '',
+    vendorCustomId: '',
+    partnerCustomId: '',
     cityCodeId: '',
     // New Fields
     color: '',
@@ -48,9 +48,9 @@ export default function CreateVehiclePage() {
     try {
       const [cityRes, typeRes, vendorRes, partnerRes] = await Promise.all([
         agentService.getCityCodes(),
-        agentService.getVehicleTypes(),
-        agentService.getVendors(),
-        agentService.getPartners()
+        agentService.getVehicleTypesLookup(),
+        agentService.getVendorsLookup(),
+        agentService.getPartnersLookup()
       ]);
       setCityCodes(cityRes.data);
       setVehicleTypes(typeRes.data);
@@ -67,7 +67,7 @@ export default function CreateVehiclePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehicleTypeId || !formData.vendorId || !formData.partnerId || !formData.cityCodeId) {
+    if (!formData.vehicleTypeId || !formData.partnerCustomId || !formData.cityCodeId) {
       toast.error('Please fill all required fields');
       return;
     }
@@ -78,8 +78,8 @@ export default function CreateVehiclePage() {
         registrationNumber: formData.registrationNumber,
         vehicleModel: formData.vehicleModel,
         vehicleTypeId: formData.vehicleTypeId,
-        vendorId: formData.vendorId,
-        partnerId: formData.partnerId,
+        vendorCustomId: formData.vendorCustomId || undefined,
+        partnerCustomId: formData.partnerCustomId,
         cityCodeId: formData.cityCodeId,
         color: formData.color || undefined,
         fuelType: formData.fuelType || undefined,
@@ -89,8 +89,8 @@ export default function CreateVehiclePage() {
       });
       toast.success('Vehicle created successfully!');
       setFormData({
-        registrationNumber: '', vehicleModel: '', vehicleTypeId: '', vendorId: '',
-        partnerId: '', cityCodeId: '', color: '', fuelType: '', seatingCapacity: '',
+        registrationNumber: '', vehicleModel: '', vehicleTypeId: '', vendorCustomId: '',
+        partnerCustomId: '', cityCodeId: '', color: '', fuelType: '', seatingCapacity: '',
         rtoTaxExpiryDate: '', speedGovernor: false
       });
     } catch (err: any) {
@@ -193,7 +193,7 @@ export default function CreateVehiclePage() {
                   >
                     <option value="">Select city code</option>
                     {cityCodes.map((cc) => (
-                      <option key={cc.id} value={cc.id}>{cc.code} - {cc.cityName}</option>
+                      <option key={cc.id} value={cc.code}>{cc.code} - {cc.cityName}</option>
                     ))}
                   </select>
                 </div>
@@ -211,14 +211,13 @@ export default function CreateVehiclePage() {
                 <div className="relative">
                   <Building2 size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <select
-                    required
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E32222]/20 focus:border-[#E32222] transition-all appearance-none bg-white"
-                    value={formData.vendorId}
-                    onChange={(e) => updateField('vendorId', e.target.value)}
+                    value={formData.vendorCustomId}
+                    onChange={(e) => updateField('vendorCustomId', e.target.value)}
                   >
-                    <option value="">Select vendor</option>
+                    <option value="">Select vendor (optional)</option>
                     {vendors.map((v) => (
-                      <option key={v.id} value={v.id}>{v.name} - {v.companyName}</option>
+                      <option key={v.id} value={v.customId}>{v.companyName || v.name}</option>
                     ))}
                   </select>
                 </div>
@@ -231,12 +230,12 @@ export default function CreateVehiclePage() {
                   <select
                     required
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E32222]/20 focus:border-[#E32222] transition-all appearance-none bg-white"
-                    value={formData.partnerId}
-                    onChange={(e) => updateField('partnerId', e.target.value)}
+                    value={formData.partnerCustomId}
+                    onChange={(e) => updateField('partnerCustomId', e.target.value)}
                   >
                     <option value="">Select partner</option>
                     {partners.map((p) => (
-                      <option key={p.id || p._id} value={p.id || p._id}>{p.name} - {p.phone}</option>
+                      <option key={p.id || p._id} value={p.customId}>{p.name} - {p.phone}</option>
                     ))}
                   </select>
                 </div>

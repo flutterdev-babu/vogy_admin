@@ -30,6 +30,10 @@ export const corporateApi = createApiInstance(`${API_BASE_URL}/corporate`);
 // Public API instance (for city codes, etc.)
 export const publicApi = createApiInstance(API_BASE_URL);
 
+// Ride & Payment API instances
+export const rideApi = createApiInstance(`${API_BASE_URL}/ride`);
+export const paymentApi = createApiInstance(`${API_BASE_URL}/payment`);
+
 // Token keys for different user types
 export const TOKEN_KEYS = {
   admin: 'admin_token',
@@ -90,6 +94,27 @@ addAuthInterceptor(vendorApi, TOKEN_KEYS.vendor, USER_KEYS.vendor);
 addAuthInterceptor(partnerApi, TOKEN_KEYS.partner, USER_KEYS.partner);
 addAuthInterceptor(agentApi, TOKEN_KEYS.agent, USER_KEYS.agent);
 addAuthInterceptor(corporateApi, TOKEN_KEYS.corporate, USER_KEYS.corporate);
+
+// For shared APIs, try to find any valid token
+const addCommonAuthInterceptor = (api: AxiosInstance) => {
+  api.interceptors.request.use((config) => {
+    if (typeof window !== 'undefined') {
+      const token = 
+        localStorage.getItem(TOKEN_KEYS.agent) || 
+        localStorage.getItem(TOKEN_KEYS.vendor) || 
+        localStorage.getItem(TOKEN_KEYS.partner) || 
+        localStorage.getItem(TOKEN_KEYS.corporate) || 
+        localStorage.getItem(TOKEN_KEYS.admin);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  });
+};
+
+addCommonAuthInterceptor(rideApi);
+addCommonAuthInterceptor(paymentApi);
 
 // Default export for backward compatibility (admin API)
 export default adminApi;

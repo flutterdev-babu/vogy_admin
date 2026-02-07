@@ -188,7 +188,7 @@ export default function VehiclesPage() {
               ) : (
                 paginatedVehicles.map((vehicle, idx) => (
                   <tr key={vehicle.id} className={`border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-4 py-3 text-sm text-gray-700">{vehicle.customId || vehicle.id.slice(-8)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{vehicle.customId}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 font-medium">{vehicle.registrationNumber}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{vehicle.vehicleModel}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{vehicle.vehicleType?.displayName || '-'}</td>

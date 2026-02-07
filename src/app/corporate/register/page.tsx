@@ -25,7 +25,8 @@ export default function CorporateRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await corporateService.register(formData as any);
+      const submitData = { ...formData, phone: `+91${formData.phone}` };
+      const response = await corporateService.register(submitData as any);
       if (response.success) {
         toast.success('Registration successful! Please login.');
         router.push('/corporate/login');
@@ -91,14 +92,20 @@ export default function CorporateRegisterPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-neutral-300 ml-1">Phone *</label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className={inputClass}
-                  placeholder="+91 98765 43210"
-                />
+                <div className="flex">
+                  <span className="inline-flex items-center px-4 bg-white/10 border border-r-0 border-white/10 rounded-l-xl text-neutral-400 text-sm">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                    className="w-full bg-white/5 border border-white/10 rounded-r-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/50 transition-all"
+                    placeholder="9876543210"
+                    maxLength={10}
+                  />
+                </div>
               </div>
             </div>
 

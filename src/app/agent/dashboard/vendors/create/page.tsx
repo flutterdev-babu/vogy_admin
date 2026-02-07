@@ -181,7 +181,7 @@ export default function CreateVendorPage() {
                   >
                     <option value="">Select city code</option>
                     {cityCodes.map((cc) => (
-                      <option key={cc.id} value={cc.id}>{cc.code} - {cc.cityName}</option>
+                      <option key={cc.id} value={cc.code}>{cc.code} - {cc.cityName}</option>
                     ))}
                   </select>
                 </div>

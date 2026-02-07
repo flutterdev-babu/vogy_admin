@@ -114,6 +114,13 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Ride Booking',
+    items: [
+      { href: '/agent/dashboard/rides/create', label: 'Book Manual Ride', icon: Calendar },
+      { href: '/agent/dashboard/rides', label: 'Ride List', icon: FileText },
+    ],
+  },
+  {
     title: 'Users',
     items: [
       { href: '/agent/dashboard/users/create', label: 'Add User', icon: User },

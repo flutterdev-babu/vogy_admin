@@ -1,4 +1,4 @@
-import api from '@/lib/api';
+import { rideApi as api } from '@/lib/api';
 import { ApiResponse, Ride, RideFilters } from '@/types';
 
 export const rideService = {
@@ -7,25 +7,26 @@ export const rideService = {
     if (filters?.status) params.append('status', filters.status);
     if (filters?.vehicleType) params.append('vehicleType', filters.vehicleType);
     if (filters?.userId) params.append('userId', filters.userId);
-    if (filters?.riderId) params.append('riderId', filters.riderId);
+    if (filters?.partnerId) params.append('partnerId', filters.partnerId);
     
+    // Support for status=FUTURE as per guide
     const queryString = params.toString();
-    const response = await api.get(`/rides${queryString ? `?${queryString}` : ''}`);
+    const response = await api.get(`/all-rides${queryString ? `?${queryString}` : ''}`);
     return response.data;
   },
 
   async getById(id: string): Promise<ApiResponse<Ride>> {
-    const response = await api.get(`/rides/${id}`);
+    const response = await api.get(`/${id}`);
     return response.data;
   },
 
   async getScheduled(): Promise<ApiResponse<Ride[]>> {
-    const response = await api.get('/rides/scheduled');
+    const response = await api.get('/scheduled');
     return response.data;
   },
 
-  async assignRider(rideId: string, riderId: string): Promise<ApiResponse<Ride>> {
-    const response = await api.post(`/rides/${rideId}/assign-rider`, { riderId });
+  async assignPartner(rideId: string, partnerId: string): Promise<ApiResponse<Ride>> {
+    const response = await api.post(`/${rideId}/assign`, { partnerId });
     return response.data;
   },
 };
