@@ -19,7 +19,8 @@ export default function CreatePartnerPage() {
     email: '',
     password: '',
     cityCodeId: '',
-    vendorId: '',
+    vendorCustomId: '',
+    hasOwnVehicle: false,
     // Personal Details
     dateOfBirth: '',
     gender: '' as Gender | '',
@@ -45,7 +46,7 @@ export default function CreatePartnerPage() {
     try {
       const [cityRes, vendorRes] = await Promise.all([
         agentService.getCityCodes(),
-        agentService.getVendors()
+        agentService.getVendorsLookup()
       ]);
       setCityCodes(cityRes.data);
       setVendors(vendorRes.data);
@@ -61,12 +62,23 @@ export default function CreatePartnerPage() {
       const submitData = {
         ...formData,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
-        gender: formData.gender || undefined
+        phone: `+91${formData.phone}`,
+        gender: formData.gender || undefined,
+        vendorCustomId: formData.vendorCustomId || undefined,
+        cityCodeId: formData.cityCodeId || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        localAddress: formData.localAddress || undefined,
+        permanentAddress: formData.permanentAddress || undefined,
+        aadharNumber: formData.aadharNumber || undefined,
+        licenseNumber: formData.licenseNumber || undefined,
+        bankAccountNumber: formData.bankAccountNumber || undefined,
+        upiId: formData.upiId || undefined
       };
       await agentService.createPartner(submitData);
       toast.success('Partner created successfully!');
       setFormData({
-        firstName: '', lastName: '', phone: '', email: '', password: '', cityCodeId: '', vendorId: '',
+        firstName: '', lastName: '', phone: '', email: '', password: '', cityCodeId: '', vendorCustomId: '',
+        hasOwnVehicle: false,
         dateOfBirth: '', gender: '', localAddress: '', permanentAddress: '', aadharNumber: '', licenseNumber: '',
         bankAccountNumber: '', upiId: ''
       });
@@ -79,7 +91,7 @@ export default function CreatePartnerPage() {
     }
   };
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -130,15 +142,18 @@ export default function CreatePartnerPage() {
               </div>
               <div>
                 <label className={labelClass}>Phone *</label>
-                <div className="relative">
-                  <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-200 rounded-l-xl text-gray-500 text-sm">
+                    +91
+                  </span>
                   <input
                     type="tel"
                     required
                     value={formData.phone}
-                    onChange={(e) => updateField('phone', e.target.value)}
-                    className={inputClass}
-                    placeholder="+91 98765 43210"
+                    onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-r-xl focus:ring-2 focus:ring-[#E32222]/20 focus:border-[#E32222] transition-all"
+                    placeholder="9876543210"
+                    maxLength={10}
                   />
                 </div>
               </div>
@@ -181,7 +196,7 @@ export default function CreatePartnerPage() {
                   >
                     <option value="">Select city</option>
                     {cityCodes.map(city => (
-                      <option key={city.id} value={city.id}>{city.code} - {city.cityName}</option>
+                      <option key={city.id} value={city.code}>{city.code} - {city.cityName}</option>
                     ))}
                   </select>
                 </div>
@@ -191,13 +206,13 @@ export default function CreatePartnerPage() {
                 <div className="relative">
                   <Car size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <select
-                    value={formData.vendorId}
-                    onChange={(e) => updateField('vendorId', e.target.value)}
+                    value={formData.vendorCustomId}
+                    onChange={(e) => updateField('vendorCustomId', e.target.value)}
                     className={inputClass + " appearance-none"}
                   >
                     <option value="">Select vendor (optional)</option>
                     {vendors.map(vendor => (
-                      <option key={vendor.id} value={vendor.id}>{vendor.companyName} - {vendor.name}</option>
+                      <option key={vendor.id} value={vendor.customId}>{vendor.companyName || vendor.name}</option>
                     ))}
                   </select>
                 </div>

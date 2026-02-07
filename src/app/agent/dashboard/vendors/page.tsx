@@ -32,7 +32,7 @@ export default function VendorsPage() {
   };
 
   const filteredVendors = vendors.filter(v => {
-    const vendorId = v.customId || v.id;
+    const vendorId = v.customId || '';
     return (
       vendorId.toLowerCase().includes(searchFilters.id.toLowerCase()) &&
       v.name.toLowerCase().includes(searchFilters.name.toLowerCase()) &&
@@ -166,7 +166,7 @@ export default function VendorsPage() {
               ) : (
                 paginatedVendors.map((vendor, idx) => (
                   <tr key={vendor.id} className={`border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-4 py-3 text-sm text-gray-700">{vendor.customId || vendor.id.slice(-8)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{vendor.customId}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{vendor.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{vendor.companyName}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{vendor.phone}</td>

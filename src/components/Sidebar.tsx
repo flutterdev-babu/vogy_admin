@@ -61,7 +61,6 @@ const navSections: NavSection[] = [
     title: 'Users & Agents',
     items: [
       { href: '/dashboard/users', label: 'Users', icon: Users },
-      { href: '/dashboard/riders', label: 'Captains', icon: UserCheck },
       { href: '/dashboard/agents', label: 'Agents', icon: Briefcase },
       { href: '/dashboard/corporates', label: 'Corporates', icon: Building2 },
     ],

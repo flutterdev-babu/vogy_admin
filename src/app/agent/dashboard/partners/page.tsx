@@ -179,7 +179,7 @@ export default function PartnersPage() {
               ) : (
                 paginatedPartners.map((partner, idx) => (
                   <tr key={partner.id} className={`border-b hover:bg-gray-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-4 py-3 text-sm text-gray-700">{partner.customId || partner.id.slice(-8)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{partner.customId}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{getDisplayName(partner)}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{partner.phone}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 max-w-[150px] truncate">{partner.localAddress || '-'}</td>

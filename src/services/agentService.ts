@@ -1,4 +1,4 @@
-import { agentApi, adminApi } from '@/lib/api';
+import { agentApi, adminApi, publicApi } from '@/lib/api';
 import { 
   ApiResponse, 
   Agent, 
@@ -53,6 +53,25 @@ export const agentService = {
 
   async getCityCodes(): Promise<ApiResponse<CityCode[]>> {
     const response = await agentApi.get('/city-codes');
+    return response.data;
+  },
+
+  // =====================
+  // Lookup APIs
+  // =====================
+
+  async getVendorsLookup(): Promise<ApiResponse<any[]>> {
+    const response = await agentApi.get('/vendors');
+    return response.data;
+  },
+
+  async getPartnersLookup(): Promise<ApiResponse<any[]>> {
+    const response = await agentApi.get('/partners');
+    return response.data;
+  },
+
+  async getVehicleTypesLookup(): Promise<ApiResponse<any[]>> {
+    const response = await agentApi.get('/vehicle-types');
     return response.data;
   },
 
@@ -161,8 +180,23 @@ export const agentService = {
     return response.data;
   },
 
+  async getRideEstimate(distanceKm: number): Promise<ApiResponse<any>> {
+    const response = await agentApi.get(`/rides/estimate?distanceKm=${distanceKm}`);
+    return response.data;
+  },
+
   async createRide(data: any): Promise<ApiResponse<any>> {
-    const response = await agentApi.post('/rides', data);
+    const response = await agentApi.post('/rides/manual', data);
+    return response.data;
+  },
+
+  async assignPartnerToRide(rideId: string, partnerId: string): Promise<ApiResponse<any>> {
+    const response = await agentApi.post(`/rides/${rideId}/assign`, { partnerId });
+    return response.data;
+  },
+
+  async updateRideStatus(rideId: string, status: string): Promise<ApiResponse<any>> {
+    const response = await agentApi.patch(`/rides/${rideId}/status`, { status });
     return response.data;
   },
 

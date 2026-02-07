@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Calendar, UserPlus, Loader2 } from 'lucide-react';
 import { rideService } from '@/services/rideService';
-import { riderService } from '@/services/riderService';
-import { Ride, Rider } from '@/types';
+import { partnerService } from '@/services/partnerService';
+import { Ride, Partner } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
@@ -12,20 +12,20 @@ import toast from 'react-hot-toast';
 
 export default function ScheduledRidesPage() {
   const [rides, setRides] = useState<Ride[]>([]);
-  const [riders, setRiders] = useState<Rider[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
-  const [selectedRiderId, setSelectedRiderId] = useState('');
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
   const fetchData = async () => {
     try {
-      const [ridesRes, ridersRes] = await Promise.all([
+      const [ridesRes, partnersRes] = await Promise.all([
         rideService.getScheduled(),
-        riderService.getAll(),
+        partnerService.getAll(),
       ]);
       setRides(ridesRes.data || []);
-      setRiders(ridersRes.data || []);
+      setPartners(partnersRes.data || []);
     } catch (error) {
       console.error('Failed to fetch data:', error);
       toast.error('Failed to load scheduled rides');
@@ -38,22 +38,22 @@ export default function ScheduledRidesPage() {
     fetchData();
   }, []);
 
-  const handleAssignRider = async () => {
-    if (!selectedRide || !selectedRiderId) {
-      toast.error('Please select a rider');
+  const handleAssignPartner = async () => {
+    if (!selectedRide || !selectedPartnerId) {
+      toast.error('Please select a captain');
       return;
     }
 
     setIsAssigning(true);
     try {
-      await rideService.assignRider(selectedRide.id, selectedRiderId);
-      toast.success('Rider assigned successfully');
+      await rideService.assignPartner(selectedRide.id, selectedPartnerId);
+      toast.success('Captain assigned successfully');
       setSelectedRide(null);
-      setSelectedRiderId('');
+      setSelectedPartnerId('');
       fetchData();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Failed to assign rider');
+      toast.error(err.response?.data?.message || 'Failed to assign captain');
     } finally {
       setIsAssigning(false);
     }
@@ -63,8 +63,8 @@ export default function ScheduledRidesPage() {
     return <PageLoader />;
   }
 
-  // Filter online riders
-  const onlineRiders = riders.filter(r => r.isOnline);
+  // Filter online partners
+  const onlinePartners = partners.filter(p => p.isOnline);
 
   return (
     <div className="animate-fade-in">
@@ -133,7 +133,7 @@ export default function ScheduledRidesPage() {
                   <td className="font-bold text-green-600">₹{ride.totalFare?.toFixed(2)}</td>
                   <td><StatusBadge status={ride.status} /></td>
                   <td>
-                    {ride.status === 'SCHEDULED' && !ride.rider && (
+                    {ride.status === 'SCHEDULED' && !ride.partner && (
                       <button
                         onClick={() => setSelectedRide(ride)}
                         className="btn-primary py-2 px-3 text-sm flex items-center gap-1"
@@ -142,9 +142,9 @@ export default function ScheduledRidesPage() {
                         Assign
                       </button>
                     )}
-                    {ride.rider && (
+                    {ride.partner && (
                       <span className="text-sm text-gray-500">
-                        Assigned: {ride.rider.name}
+                        Assigned: {ride.partner.name}
                       </span>
                     )}
                   </td>
@@ -155,10 +155,10 @@ export default function ScheduledRidesPage() {
         </div>
       )}
 
-      {/* Assign Rider Modal */}
+      {/* Assign Partner Modal */}
       <Modal
         isOpen={!!selectedRide}
-        onClose={() => { setSelectedRide(null); setSelectedRiderId(''); }}
+        onClose={() => { setSelectedRide(null); setSelectedPartnerId(''); }}
         title="Assign Captain to Ride"
       >
         {selectedRide && (
@@ -175,20 +175,20 @@ export default function ScheduledRidesPage() {
               </p>
             </div>
 
-            {/* Rider Selection */}
+            {/* Partner Selection */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Select Captain ({onlineRiders.length} online)
+                Select Captain ({onlinePartners.length} online)
               </label>
               <select
-                value={selectedRiderId}
-                onChange={(e) => setSelectedRiderId(e.target.value)}
+                value={selectedPartnerId}
+                onChange={(e) => setSelectedPartnerId(e.target.value)}
                 className="input"
               >
                 <option value="">Select a captain...</option>
-                {riders.map((rider) => (
-                  <option key={rider.id} value={rider.id}>
-                    {rider.name} - {rider.vehicleNumber} {rider.isOnline ? '(Online)' : '(Offline)'}
+                {partners.map((partner) => (
+                  <option key={partner.id} value={partner.id}>
+                    {partner.name} - {partner.vehicle?.registrationNumber || 'No Vehicle'} {partner.isOnline ? '(Online)' : '(Offline)'}
                   </option>
                 ))}
               </select>
@@ -197,14 +197,14 @@ export default function ScheduledRidesPage() {
             {/* Actions */}
             <div className="flex gap-3 pt-4">
               <button
-                onClick={() => { setSelectedRide(null); setSelectedRiderId(''); }}
+                onClick={() => { setSelectedRide(null); setSelectedPartnerId(''); }}
                 className="btn-secondary flex-1"
               >
                 Cancel
               </button>
               <button
-                onClick={handleAssignRider}
-                disabled={isAssigning || !selectedRiderId}
+                onClick={handleAssignPartner}
+                disabled={isAssigning || !selectedPartnerId}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 {isAssigning && <Loader2 size={18} className="animate-spin" />}

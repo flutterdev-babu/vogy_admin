@@ -116,7 +116,7 @@ export default function RideDetailPage() {
             </div>
             <div className="flex justify-between py-2 border-t border-gray-100">
               <span className="text-gray-500">Captain Earnings</span>
-              <span className="font-semibold text-green-600">₹{ride.riderEarnings?.toFixed(2)}</span>
+              <span className="font-semibold text-green-600">₹{ride.partnerEarnings?.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-2">
               <span className="text-gray-500">App Commission</span>
@@ -156,24 +156,24 @@ export default function RideDetailPage() {
           )}
         </div>
 
-        {/* Rider Card */}
+        {/* Partner Card */}
         <div className="card p-6">
           <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Car size={18} className="text-indigo-500" />
             Captain
           </h3>
-          {ride.rider ? (
+          {ride.partner ? (
             <div className="space-y-3">
-              <p className="text-lg font-semibold text-gray-800">{ride.rider.name}</p>
+              <p className="text-lg font-semibold text-gray-800">{ride.partner.name}</p>
               <div className="flex items-center gap-2 text-gray-600">
                 <Phone size={16} />
-                <span>{ride.rider.phone}</span>
+                <span>{ride.partner.phone}</span>
               </div>
-              {ride.rider.vehicleNumber && (
+              {ride.partner.vehicleNumber && (
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Vehicle</p>
-                  <p className="font-semibold text-gray-800">{ride.rider.vehicleNumber}</p>
-                  <p className="text-sm text-gray-500">{ride.rider.vehicleModel}</p>
+                  <p className="font-semibold text-gray-800">{ride.partner.vehicleNumber}</p>
+                  <p className="text-sm text-gray-500">{ride.partner.vehicleModel}</p>
                 </div>
               )}
             </div>
