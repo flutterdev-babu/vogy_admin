@@ -24,7 +24,7 @@ export default function VehiclesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     registrationNumber: '', vehicleModel: '', vehicleTypeId: '',
-    vendorId: '', partnerId: '', cityCodeId: '',
+    vendorCustomId: '', partnerCustomId: '', cityCodeId: '',
   });
 
   const fetchData = async () => {
@@ -56,15 +56,22 @@ export default function VehiclesPage() {
   }, [search]);
 
   const handleCreate = async () => {
-    if (!formData.registrationNumber || !formData.vehicleModel || !formData.vehicleTypeId || !formData.vendorId || !formData.cityCodeId) {
+    if (!formData.registrationNumber || !formData.vehicleModel || !formData.vehicleTypeId || !formData.vendorCustomId || !formData.partnerCustomId || !formData.cityCodeId) {
       toast.error('Please fill all required fields'); return;
     }
     setIsCreating(true);
     try {
-      await vehicleService.create(formData);
+      await vehicleService.create({
+        registrationNumber: formData.registrationNumber,
+        vehicleModel: formData.vehicleModel,
+        vehicleTypeId: formData.vehicleTypeId,
+        vendorCustomId: formData.vendorCustomId,
+        partnerCustomId: formData.partnerCustomId,
+        cityCodeId: formData.cityCodeId
+      });
       toast.success('Vehicle created successfully');
       setShowCreateModal(false);
-      setFormData({ registrationNumber: '', vehicleModel: '', vehicleTypeId: '', vendorId: '', partnerId: '', cityCodeId: '' });
+      setFormData({ registrationNumber: '', vehicleModel: '', vehicleTypeId: '', vendorCustomId: '', partnerCustomId: '', cityCodeId: '' });
       fetchData();
     } catch (error) {
       console.error('Failed to create vehicle:', error);
@@ -206,26 +213,26 @@ export default function VehiclesPage() {
                     onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
                     className="input">
                     <option value="">Select city</option>
-                    {cityCodes.map(c => <option key={c.id} value={c.id}>{c.cityName}</option>)}
+                    {cityCodes.map(c => <option key={c.id} value={c.code}>{c.cityName}</option>)}
                   </select>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Vendor *</label>
-                <select value={formData.vendorId}
-                  onChange={(e) => setFormData({...formData, vendorId: e.target.value})}
+                <select value={formData.vendorCustomId}
+                  onChange={(e) => setFormData({...formData, vendorCustomId: e.target.value})}
                   className="input">
                   <option value="">Select vendor</option>
-                  {vendors.map(v => <option key={v.id} value={v.id}>{v.companyName}</option>)}
+                  {vendors.map(v => <option key={v.id} value={v.customId}>{v.companyName}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Partner (Driver)</label>
-                <select value={formData.partnerId}
-                  onChange={(e) => setFormData({...formData, partnerId: e.target.value})}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Partner (Driver) *</label>
+                <select value={formData.partnerCustomId}
+                  onChange={(e) => setFormData({...formData, partnerCustomId: e.target.value})}
                   className="input">
-                  <option value="">Select partner (optional)</option>
-                  {partners.map(p => <option key={p.id} value={p.id}>{p.name} - {p.phone}</option>)}
+                  <option value="">Select partner</option>
+                  {partners.map(p => <option key={p.id} value={p.customId}>{p.name} - {p.phone}</option>)}
                 </select>
               </div>
             </div>

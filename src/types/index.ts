@@ -139,6 +139,11 @@ export interface Partner {
   bankAccountNumber?: string;
   upiId?: string;
   rating?: number;
+  totalEarnings?: number;
+  vehicleNumber?: string;
+  vehicleModel?: string;
+  profileImage?: string;
+  rides?: Ride[];
   status: EntityStatus;
   isOnline: boolean;
   currentLat?: number;
@@ -465,8 +470,8 @@ export interface CreateUserRequest {
   profileImage?: string;
 }
 
-// DEPRECATED: Rider has been merged into Partner
-// export interface Rider { ... }
+// Rider alias for backward compatibility (merged into Partner)
+export type Rider = Partner;
 
 // =====================================
 // Ride Types
@@ -490,6 +495,7 @@ export interface Ride {
   totalFare: number;
   partnerEarnings: number;
   commission: number;
+  riderEarnings?: number; // Added for backward compatibility
   userOtp?: string;
   startTime?: string;
   endTime?: string;

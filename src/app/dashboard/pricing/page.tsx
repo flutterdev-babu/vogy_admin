@@ -24,7 +24,7 @@ export default function PricingPage() {
         if (response.data) {
           setConfig(response.data);
           setBaseFare(response.data.baseFare);
-          setRiderPercentage(response.data.riderPercentage);
+          setRiderPercentage(response.data.partnerPercentage);
           setAppCommission(response.data.appCommission);
         }
       } catch (error) {
@@ -59,7 +59,7 @@ export default function PricingPage() {
     try {
       const response = await pricingService.update({
         baseFare,
-        riderPercentage,
+        partnerPercentage: riderPercentage,
         appCommission,
       });
       setConfig(response.data);
