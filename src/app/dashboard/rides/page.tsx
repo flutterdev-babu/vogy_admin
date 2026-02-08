@@ -2,24 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, Filter, X } from 'lucide-react';
+import { Eye, RefreshCw, ChevronLeft, ChevronRight, Search, RotateCcw } from 'lucide-react';
 import { rideService } from '@/services/rideService';
 import { Ride, RideStatus, RideFilters } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/Badge';
 
-const STATUS_OPTIONS: RideStatus[] = ['PENDING', 'INITIATED', 'SCHEDULED', 'ACCEPTED', 'ARRIVED', 'STARTED', 'COMPLETED', 'CANCELLED', 'FUTURE'];
+const STATUS_TABS: { label: string; value: RideStatus | 'ALL' }[] = [
+  { label: 'Upcoming', value: 'PENDING' },
+  { label: 'Assigned', value: 'ACCEPTED' },
+  { label: 'Started', value: 'STARTED' },
+  { label: 'Arrived', value: 'ARRIVED' },
+  { label: 'Ongoing', value: 'INITIATED' },
+  { label: 'Stopped', value: 'FUTURE' }, // Mapping dummy for Stopped as per mockup
+  { label: 'Completed', value: 'COMPLETED' },
+  { label: 'Cancelled', value: 'CANCELLED' },
+  { label: 'CNR', value: 'ALL' }, // Mapping dummy for CNR
+];
 
 export default function RidesPage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<RideFilters>({});
+  const [activeTab, setActiveTab] = useState<RideStatus | 'ALL'>('PENDING');
+  const [filters, setFilters] = useState({
+    reqId: '',
+    name: '',
+    mobile: '',
+    service: '',
+    payment: '',
+    driver: '',
+    status: '',
+    date: ''
+  });
 
   const fetchRides = async () => {
     setIsLoading(true);
     try {
-      const response = await rideService.getAll(filters);
+      const response = await rideService.getAll(); // Fetching all for local tab filtering in this mockup style
       setRides(response.data || []);
     } catch (error) {
       console.error('Failed to fetch rides:', error);
@@ -32,246 +51,192 @@ export default function RidesPage() {
     fetchRides();
   }, []);
 
-  const applyFilters = () => {
-    fetchRides();
-    setShowFilters(false);
-  };
+  const filteredRides = rides.filter(ride => {
+    const statusMatch = activeTab === 'ALL' || ride.status === activeTab;
+    const reqIdMatch = !filters.reqId || ride.customId?.toLowerCase().includes(filters.reqId.toLowerCase());
+    const nameMatch = !filters.name || ride.user?.name?.toLowerCase().includes(filters.name.toLowerCase());
+    const mobileMatch = !filters.mobile || ride.user?.phone?.includes(filters.mobile);
+    const driverMatch = !filters.driver || ride.partner?.name?.toLowerCase().includes(filters.driver.toLowerCase());
+    
+    return statusMatch && reqIdMatch && nameMatch && mobileMatch && driverMatch;
+  });
 
-  const clearFilters = () => {
-    setFilters({});
-    fetchRides();
-  };
-
-  const hasActiveFilters = Object.values(filters).some(v => v);
-
-  if (isLoading) {
-    return <PageLoader />;
-  }
+  if (isLoading) return <PageLoader />;
 
   return (
-    <div className="animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 lg:mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">All Rides</h1>
-          <p className="text-gray-500 mt-1 text-sm sm:text-base">View and manage all platform rides</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`btn-secondary flex items-center gap-2 flex-1 sm:flex-initial justify-center ${hasActiveFilters ? 'border-orange-500 bg-orange-50' : ''}`}
-          >
-            <Filter size={18} />
-            <span>Filters</span>
-            {hasActiveFilters && (
-              <span className="w-5 h-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center">
-                !
-              </span>
-            )}
-          </button>
+    <div className="space-y-4">
+      {/* Page Title & Refresh */}
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-xl font-bold text-gray-800">Booking List</h1>
+        <button 
+          onClick={fetchRides}
+          className="p-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20"
+        >
+          <RotateCcw size={18} />
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-t-xl border border-gray-200 border-b-0 overflow-x-auto scrollbar-hide">
+        <div className="flex min-w-max p-1">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.label}
+              onClick={() => setActiveTab(tab.value)}
+              className={`px-6 py-3 text-sm font-semibold transition-all relative ${
+                activeTab === tab.value 
+                  ? 'text-[#E32222]' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+              {activeTab === tab.value && (
+                <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#E32222]" />
+              )}
+            </button>
+          ))}
+          <div className="ml-auto flex items-center gap-4 px-6 text-xs font-bold text-gray-500">
+            <span className="text-[#E32222]">1-{filteredRides.length}</span> of {filteredRides.length}
+            <div className="flex gap-1">
+              <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft size={14}/></button>
+              <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight size={14}/></button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="card p-4 sm:p-6 mb-6 animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800">Filter Rides</h3>
-            <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
-              <X size={20} />
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={filters.status || ''}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value as RideStatus || undefined })}
-                className="input"
-              >
-                <option value="">All Statuses</option>
-                {STATUS_OPTIONS.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Vehicle Type Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-              <input
-                type="text"
-                value={filters.vehicleType || ''}
-                onChange={(e) => setFilters({ ...filters, vehicleType: e.target.value || undefined })}
-                className="input"
-                placeholder="e.g., SEDAN"
-              />
-            </div>
-
-            {/* User ID Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
-              <input
-                type="text"
-                value={filters.userId || ''}
-                onChange={(e) => setFilters({ ...filters, userId: e.target.value || undefined })}
-                className="input"
-                placeholder="User ID"
-              />
-            </div>
-
-            {/* Partner ID Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Captain ID</label>
-              <input
-                type="text"
-                value={filters.partnerId || ''}
-                onChange={(e) => setFilters({ ...filters, partnerId: e.target.value || undefined })}
-                className="input"
-                placeholder="Captain ID"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3 mt-4">
-            <button onClick={applyFilters} className="btn-primary">
-              Apply Filters
-            </button>
-            <button onClick={clearFilters} className="btn-secondary">
-              Clear All
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <div className="card p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-500">Total</p>
-          <p className="text-xl sm:text-2xl font-bold text-gray-800">{rides.length}</p>
-        </div>
-        <div className="card p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-500">Completed</p>
-          <p className="text-xl sm:text-2xl font-bold text-green-600">
-            {rides.filter(r => r.status === 'COMPLETED').length}
-          </p>
-        </div>
-        <div className="card p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-500">In Progress</p>
-          <p className="text-xl sm:text-2xl font-bold text-orange-600">
-            {rides.filter(r => ['ACCEPTED', 'ARRIVED', 'STARTED'].includes(r.status)).length}
-          </p>
-        </div>
-        <div className="card p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-500">Cancelled</p>
-          <p className="text-xl sm:text-2xl font-bold text-red-600">
-            {rides.filter(r => r.status === 'CANCELLED').length}
-          </p>
-        </div>
-      </div>
-
-      {/* Content */}
-      {rides.length === 0 ? (
-        <div className="card p-8 sm:p-12 text-center">
-          <p className="text-gray-500">No rides found</p>
-        </div>
-      ) : (
-        <>
-          {/* Mobile Card View */}
-          <div className="lg:hidden space-y-4">
-            {rides.map((ride) => (
-              <Link key={ride.id} href={`/dashboard/rides/${ride.id}`} className="card p-4 block">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <StatusBadge status={ride.status} />
-                      <CategoryBadge category={ride.vehicleType?.category || 'CAR'} />
-                    </div>
-                    <p className="font-semibold text-gray-800 mt-2">{ride.user?.name || 'N/A'}</p>
-                    <p className="text-xs text-gray-500">{ride.user?.phone}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600 text-lg">₹{ride.totalFare?.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">{ride.distanceKm?.toFixed(1)} km</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-500">
-                    {new Date(ride.createdAt).toLocaleDateString()}
-                  </span>
-                  {ride.partner && (
-                    <span className="text-xs text-gray-600">Captain: {ride.partner.name}</span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden lg:block table-container">
-            <table>
-              <thead>
+      {/* Table Container */}
+      <div className="bg-white border border-gray-200 rounded-b-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto border-b border-gray-200">
+          <table className="w-full text-left border-collapse min-w-[1200px]">
+            {/* Header Row */}
+            <thead className="bg-[#E32222] text-white">
+              <tr>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[120px]">Req ID</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Source</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Destination</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[140px]">Date</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Name</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Mobile</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Service</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Payment</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Vehicle</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[80px]">Distance</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Driver</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[100px]">Cost</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            {/* Filter Row */}
+            <tbody className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <td className="px-2 py-2">
+                  <input 
+                    type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-red-200 rounded outline-none focus:border-red-400"
+                    value={filters.reqId} onChange={e => setFilters({...filters, reqId: e.target.value})}
+                  />
+                </td>
+                <td className="px-2 py-2"></td>
+                <td className="px-2 py-2"></td>
+                <td className="px-2 py-2">
+                  <input type="date" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none" />
+                </td>
+                <td className="px-2 py-2">
+                  <input 
+                    type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
+                    value={filters.name} onChange={e => setFilters({...filters, name: e.target.value})}
+                  />
+                </td>
+                <td className="px-2 py-2">
+                  <input 
+                    type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
+                    value={filters.mobile} onChange={e => setFilters({...filters, mobile: e.target.value})}
+                  />
+                </td>
+                <td className="px-2 py-2"><select className="w-full text-[11px] p-1 border border-gray-200 rounded"><option>Select</option></select></td>
+                <td className="px-2 py-2"><select className="w-full text-[11px] p-1 border border-gray-200 rounded"><option>Select</option></select></td>
+                <td className="px-2 py-2"></td>
+                <td className="px-2 py-2"></td>
+                <td className="px-2 py-2">
+                  <input 
+                    type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
+                    value={filters.driver} onChange={e => setFilters({...filters, driver: e.target.value})}
+                  />
+                </td>
+                <td className="px-2 py-2"><select className="w-full text-[11px] p-1 border border-gray-200 rounded"><option>Select</option></select></td>
+                <td className="px-2 py-2"></td>
+              </tr>
+            </tbody>
+            {/* Data Rows */}
+            <tbody className="divide-y divide-gray-100">
+              {filteredRides.length === 0 ? (
                 <tr>
-                  <th>ID</th>
-                  <th>User</th>
-                  <th>Captain</th>
-                  <th>Vehicle</th>
-                  <th>Distance</th>
-                  <th>Fare</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th>Actions</th>
+                  <td colSpan={13} className="px-6 py-12 text-center text-gray-500 italic">No bookings found for this category.</td>
                 </tr>
-              </thead>
-              <tbody>
-                {rides.map((ride) => (
-                  <tr key={ride.id}>
-                    <td className="font-mono text-sm text-gray-600">{ride.id.slice(-8)}</td>
-                    <td>
-                      <div>
-                        <p className="font-medium text-gray-800">{ride.user?.name || 'N/A'}</p>
-                        <p className="text-xs text-gray-500">{ride.user?.phone}</p>
+              ) : (
+                filteredRides.map((ride) => (
+                  <tr key={ride.id} className="hover:bg-red-50/30 transition-colors">
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-gray-800">{ride.customId || 'N/A'}</span>
+                        <span className="text-[9px] text-red-500 font-bold uppercase">Dashboard</span>
                       </div>
                     </td>
-                    <td>
-                      {ride.partner ? (
-                        <div>
-                          <p className="font-medium text-gray-800">{ride.partner.name}</p>
-                          <p className="text-xs text-gray-500">{ride.partner.phone}</p>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
+                    <td className="px-3 py-4 max-w-[150px]">
+                      <span className="text-[10px] text-gray-600 leading-tight block">{ride.pickupAddress || 'N/A'}</span>
                     </td>
-                    <td>
+                    <td className="px-3 py-4 max-w-[150px]">
+                      <span className="text-[10px] text-blue-500 font-medium leading-tight block">{ride.dropAddress || 'N/A'}</span>
+                    </td>
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-gray-700">{new Date(ride.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        <span className="text-[9px] text-gray-500 font-medium">{new Date(ride.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4">
+                      <span className="text-[11px] font-bold text-gray-800">{ride.user?.name || 'N/A'}</span>
+                    </td>
+                    <td className="px-3 py-4">
+                      <span className="text-[10px] font-medium text-gray-600">{ride.user?.phone || 'N/A'}</span>
+                    </td>
+                    <td className="px-3 py-4">
+                      <span className="text-[10px] font-medium text-gray-600">{ride.serviceType || 'One Way'}</span>
+                    </td>
+                    <td className="px-3 py-4">
+                      <span className="text-[10px] font-medium text-gray-600 uppercase">{ride.paymentMode || 'CASH'}</span>
+                    </td>
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-gray-700">{ride.vehicleType?.displayName || 'SEDAN'}</span>
+                        <span className="text-[9px] text-gray-500 font-medium">{ride.vehicleType?.category || '4+1'}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4">
+                      <span className="text-[11px] font-bold text-gray-700">{ride.distanceKm?.toFixed(1) || '0'} km</span>
+                    </td>
+                    <td className="px-3 py-4">
+                      <span className="text-[11px] font-medium text-gray-700">{ride.partner?.name || '-'}</span>
+                    </td>
+                    <td className="px-3 py-4">
                       <div className="flex flex-col gap-1">
-                        <CategoryBadge category={ride.vehicleType?.category || 'CAR'} />
-                        <span className="text-xs text-gray-500">{ride.vehicleType?.displayName}</span>
+                        <span className="text-[11px] font-black text-gray-800">₹{Math.round(ride.totalFare || 0)}</span>
+                        <span className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded-sm text-center uppercase tracking-tighter">Not Paid</span>
                       </div>
                     </td>
-                    <td className="font-medium">{ride.distanceKm?.toFixed(1)} km</td>
-                    <td className="font-bold text-green-600">₹{ride.totalFare?.toFixed(2)}</td>
-                    <td><StatusBadge status={ride.status} /></td>
-                    <td className="text-gray-500 text-sm">
-                      {new Date(ride.createdAt).toLocaleDateString()}
-                    </td>
-                    <td>
-                      <Link
-                        href={`/dashboard/rides/${ride.id}`}
-                        className="p-2 hover:bg-orange-50 rounded-lg text-orange-500 inline-flex"
-                      >
-                        <Eye size={18} />
-                      </Link>
+                    <td className="px-3 py-4">
+                      <div className="flex gap-1">
+                        <span className="px-3 py-1 bg-orange-500 text-white text-[9px] font-bold rounded-md uppercase">Confirmed</span>
+                        <button className="px-2 py-1 bg-red-600 text-white text-[9px] font-bold rounded-md uppercase">No Ref</button>
+                      </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [secretKey, setSecretKey] = useState('');
   const [role, setRole] = useState<'SUBADMIN' | 'SUPERADMIN'>('SUBADMIN');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +20,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !secretKey) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -29,9 +30,14 @@ export default function RegisterPage() {
       return;
     }
 
+    if (secretKey.length !== 10) {
+      toast.error('Secret Key must be 10 digits');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await authService.register(name, email, password, role);
+      await authService.register(name, email, password, role, secretKey);
       toast.success('Registration successful! Please login.');
       router.push('/login');
     } catch (error: unknown) {
@@ -114,7 +120,7 @@ export default function RegisterPage() {
             {/* Role Field */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Role
+                Account Role
               </label>
               <select
                 value={role}
@@ -125,6 +131,25 @@ export default function RegisterPage() {
                 <option value="SUBADMIN">Sub Admin</option>
                 <option value="SUPERADMIN">Super Admin</option>
               </select>
+            </div>
+
+            {/* Secret Key Field */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                10-Digit Secret Key
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value.replace(/\D/g, ''))}
+                  className="input"
+                  placeholder="Enter 10-digit key"
+                  disabled={isLoading}
+                />
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">Required for verification by the system administrator.</p>
             </div>
 
             {/* Submit Button */}

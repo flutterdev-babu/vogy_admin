@@ -11,9 +11,10 @@ export const authService = {
     name: string,
     email: string,
     password: string,
-    role?: 'SUPERADMIN' | 'SUBADMIN'
+    role?: 'SUPERADMIN' | 'SUBADMIN',
+    secretKey?: string
   ): Promise<ApiResponse<Admin>> {
-    const response = await adminApi.post('/auth/register', { name, email, password, role });
+    const response = await adminApi.post('/auth/register', { name, email, password, role, secretKey });
     return response.data;
   },
 };

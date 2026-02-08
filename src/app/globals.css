@@ -12,35 +12,98 @@
 }
 
 :root {
-  --background: #0D0D0D;
-  --foreground: #ffffff;
+  --background: #F3F4F6; /* gray-100 */
+  --foreground: #111827; /* gray-900 */
+  --card-background: #ffffff;
+  --card-border: #E5E7EB; /* gray-200 */
 }
 
 body {
-  background: linear-gradient(to bottom, #0D0D0D, #080808);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   min-height: 100vh;
 }
 
-/* Custom Utilities */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* Custom Utilities & Components */
+@utility glass-panel {
+  background: white;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.input-field {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: white;
+@utility card {
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@utility input-field {
+  background: white;
+  border: 1px solid #D1D5DB;
+  color: #111827;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   transition: all 0.3s ease;
+  &:focus {
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 0 2px rgba(227, 34, 34, 0.1);
+    outline: none;
+  }
 }
 
-.input-field:focus {
-  border-color: var(--color-brand-primary);
-  box-shadow: 0 0 0 2px rgba(227, 34, 34, 0.2);
-  outline: none;
+@utility input {
+  @apply input-field w-full;
+}
+
+/* Buttons */
+@utility btn-primary {
+  @apply px-4 py-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] transition-all font-semibold flex items-center justify-center gap-2;
+  &:disabled {
+    @apply opacity-50;
+  }
+}
+
+@utility btn-secondary {
+  @apply px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-semibold flex items-center justify-center gap-2;
+}
+
+/* Table Enhancements */
+@utility table-container {
+  @apply bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 overflow-x-auto;
+}
+
+/* Base Table Styles - Using standard CSS for tag selectors instead of @apply if possible for stability */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background-color: #F9FAFB; /* gray-50 */
+  color: #4B5563; /* gray-600 */
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+th {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+td {
+  padding: 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #F3F4F6;
+  vertical-align: top;
+}
+
+tr:hover {
+  background-color: rgba(249, 250, 251, 0.5);
 }
 
 /* Keyframes */
@@ -54,24 +117,11 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Reset for inputs to ensure dark theme usually */
+/* Form Styles */
 input, select, textarea {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
-/* Dashboard form inputs should have dark text on light backgrounds */
-.bg-white input,
-.bg-white select,
-.bg-white textarea,
-input.border,
-select.border,
-textarea.border {
-  color: #1f2937 !important; /* gray-800 */
-  background-color: white;
-}
-
-input.border::placeholder,
-select.border::placeholder,
-textarea.border::placeholder {
-  color: #9ca3af; /* gray-400 */
+input::placeholder {
+  @apply text-gray-400;
 }

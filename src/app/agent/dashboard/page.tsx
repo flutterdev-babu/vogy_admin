@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { USER_KEYS } from '@/lib/api';
-import { MapPin, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { MapPin, Clock, Users, TrendingUp, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AgentDashboard() {
@@ -18,48 +18,54 @@ export default function AgentDashboard() {
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-[#E32222] to-purple-800 rounded-3xl p-8 text-white shadow-xl">
-        <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {agent?.name || 'Agent'}! 👋
-        </h1>
-        <p className="text-white/80">
-          Here's what's happening in your city today.
-        </p>
+      <div className="bg-gradient-to-r from-[#E32222] to-purple-800 rounded-3xl p-8 text-white shadow-xl flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">
+            Welcome back, {agent?.name || 'Agent'}! 👋
+          </h1>
+          <p className="text-white/80">
+            You are our Brand Ambassador. Spread the word and earn!
+          </p>
+        </div>
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center">
+          <p className="text-xs uppercase tracking-wider text-white/60 mb-1">Your Referral Code</p>
+          <p className="text-2xl font-mono font-bold">{agent?.agentCode || 'N/A'}</p>
+        </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          title="Active Rides" 
-          value="12" 
-          icon={<MapPin className="text-blue-500" />} 
-          trend="+2 from yesterday"
+          title="Total Referrals" 
+          value="128" 
+          icon={<Users className="text-blue-500" />} 
+          trend="+12 this month"
         />
         <StatCard 
-          title="Completed Today" 
-          value="45" 
-          icon={<CheckCircle className="text-green-500" />} 
-          trend="+15% vs last week"
+          title="Conversion Rate" 
+          value="15.2%" 
+          icon={<TrendingUp className="text-green-500" />} 
+          trend="+2.1% from last month"
         />
         <StatCard 
-          title="Pending Requests" 
-          value="5" 
+          title="Total Earnings" 
+          value="₹12,450" 
+          icon={<DollarSign className="text-yellow-500" />} 
+          trend="Next payment: Feb 15"
+        />
+        <StatCard 
+          title="Pending Rewards" 
+          value="₹1,200" 
           icon={<Clock className="text-orange-500" />} 
-          trend="Urgent attention needed"
-        />
-        <StatCard 
-          title="Issues Reported" 
-          value="0" 
-          icon={<AlertCircle className="text-red-500" />} 
-          trend="All systems normal"
+          trend="Will be cleared soon"
         />
       </div>
 
       {/* Recent Activity Placeholder */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Recent Activity</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-6">Recent Referrals</h2>
         <div className="flex items-center justify-center h-40 text-gray-400">
-          No recent activity to show properly yet.
+          No recent referral activity yet.
         </div>
       </div>
     </div>

@@ -19,7 +19,8 @@ import {
   Truck,
   MapPin,
   CreditCard,
-  ChevronDown
+  ChevronDown,
+  Paperclip
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -54,6 +55,7 @@ const navSections: NavSection[] = [
       { href: '/dashboard/vendors', label: 'Vendors', icon: Car },
       { href: '/dashboard/partners', label: 'Partners', icon: UserCheck },
       { href: '/dashboard/vehicles', label: 'Vehicles', icon: Truck },
+      { href: '/dashboard/attachments', label: 'Attachments', icon: Paperclip },
       { href: '/dashboard/vehicle-types', label: 'Vehicle Types', icon: Car },
     ],
   },
@@ -105,9 +107,9 @@ export default function Sidebar() {
       {/* Mobile toggle button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl bg-white shadow-lg border border-orange-200 hover:bg-orange-50 transition-colors"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl bg-white shadow-lg border border-red-100 hover:bg-red-50 transition-colors"
       >
-        {isMobileOpen ? <X size={24} className="text-orange-500" /> : <Menu size={24} className="text-orange-500" />}
+        {isMobileOpen ? <X size={24} className="text-red-500" /> : <Menu size={24} className="text-red-500" />}
       </button>
 
       {/* Overlay for mobile */}
@@ -120,19 +122,19 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-orange-100 shadow-xl z-40 flex flex-col transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 shadow-sm z-40 flex flex-col transform transition-transform duration-300 lg:translate-x-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-orange-100 flex-shrink-0">
+        <div className="p-6 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <span className="text-white font-bold text-xl">V</span>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/30">
+              <span className="text-white font-bold text-xl tracking-tighter">V</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">ARA</h1>
-              <p className="text-xs text-orange-500 font-medium">Admin Panel</p>
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">VOGY</h1>
+              <p className="text-[10px] text-red-600 font-bold uppercase tracking-wider">Admin Panel</p>
             </div>
           </div>
         </div>
@@ -166,10 +168,10 @@ export default function Sidebar() {
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsMobileOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                             active
-                              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/30'
-                              : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                              ? 'bg-[#E32222] text-white shadow-md shadow-red-500/30'
+                              : 'text-gray-500 hover:bg-red-50 hover:text-red-600'
                           }`}
                         >
                           <Icon size={18} />
@@ -185,12 +187,12 @@ export default function Sidebar() {
         </nav>
 
         {/* Admin info & logout - Fixed at bottom */}
-        <div className="p-4 border-t border-orange-100 flex-shrink-0">
+        <div className="p-4 border-t border-gray-100 flex-shrink-0">
           {admin && (
-            <div className="mb-4 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-100">
-              <p className="font-semibold text-gray-800 truncate">{admin.name}</p>
-              <p className="text-xs text-gray-500 truncate">{admin.email}</p>
-              <span className="inline-block mt-1.5 px-2.5 py-0.5 bg-orange-100 text-orange-600 text-xs font-semibold rounded-full">
+            <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="font-bold text-gray-800 truncate text-sm">{admin.name}</p>
+              <p className="text-[11px] text-gray-500 truncate">{admin.email}</p>
+              <span className="inline-block mt-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full uppercase">
                 {admin.role}
               </span>
             </div>

@@ -38,93 +38,16 @@ interface NavItem {
 
 const navSections: NavSection[] = [
   {
+    title: 'Overview',
     items: [
       { href: '/agent/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/agent/dashboard/profile', label: 'Profile', icon: User },
     ],
   },
   {
-    title: 'Agents',
+    title: 'Referral Program',
     items: [
-      { href: '/agent/dashboard/agents', label: 'All Agents', icon: Briefcase },
-    ],
-  },
-  {
-    title: 'Vendors',
-    items: [
-      { href: '/agent/dashboard/vendors/create', label: 'Add Vendor', icon: Building2 },
-      { href: '/agent/dashboard/vendors', label: 'Vendor List', icon: FileText },
-    ],
-  },
-  {
-    title: 'Partners',
-    items: [
-      { href: '/agent/dashboard/partners', label: 'Partner List', icon: Users },
-    ],
-  },
-  {
-    title: 'Careers',
-    items: [
-      { href: '/agent/dashboard/careers', label: 'Career List', icon: FileText },
-    ],
-  },
-  {
-    title: 'Misc',
-    items: [
-      { href: '/agent/dashboard/driver-location', label: 'Driver Location', icon: MapPin },
-      { href: '/agent/dashboard/city-codes/create', label: 'Add City Code', icon: MapPin },
-      { href: '/agent/dashboard/city-codes', label: 'City Master', icon: MapPin },
-    ],
-  },
-  {
-    title: 'CC Team',
-    items: [
-      { href: '/agent/dashboard/cc/create', label: 'Add CC', icon: Headphones },
-      { href: '/agent/dashboard/cc', label: 'CC Team', icon: Users },
-    ],
-  },
-  {
-    title: 'Price Master',
-    items: [
-      { href: '/agent/dashboard/pricing/create', label: 'Add Price', icon: Tag },
-      { href: '/agent/dashboard/pricing', label: 'Price List', icon: FileText },
-      { href: '/agent/dashboard/b2b-pricing/create', label: 'Add B2B Price', icon: Tag },
-      { href: '/agent/dashboard/b2b-pricing', label: 'B2B Price List', icon: FileText },
-    ],
-  },
-  {
-    title: 'Attachments',
-    items: [
-      { href: '/agent/dashboard/attachments/create', label: 'Add Attachments', icon: Paperclip },
-      { href: '/agent/dashboard/attachments', label: 'Attachment List', icon: FileText },
-    ],
-  },
-  {
-    title: 'Corporate',
-    items: [
-      { href: '/agent/dashboard/corporates/create', label: 'Add Corporate', icon: Briefcase },
-      { href: '/agent/dashboard/corporates', label: 'Corporate List', icon: Building2 },
-    ],
-  },
-  {
-    title: 'Vehicles',
-    items: [
-      { href: '/agent/dashboard/vehicles/create', label: 'Add Vehicles', icon: Car },
-      { href: '/agent/dashboard/vehicles', label: 'Vehicle List', icon: FileText },
-    ],
-  },
-  {
-    title: 'Ride Booking',
-    items: [
-      { href: '/agent/dashboard/rides/create', label: 'Book Manual Ride', icon: Calendar },
-      { href: '/agent/dashboard/rides', label: 'Ride List', icon: FileText },
-    ],
-  },
-  {
-    title: 'Users',
-    items: [
-      { href: '/agent/dashboard/users/create', label: 'Add User', icon: User },
-      { href: '/agent/dashboard/users', label: 'User List', icon: Users },
+      { href: '/agent/dashboard/referrals', label: 'Referral Rewards', icon: DollarSign },
     ],
   },
 ];
