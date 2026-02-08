@@ -207,6 +207,7 @@ export interface Agent {
   name: string;
   phone: string;
   email?: string;
+  agentCode: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -504,6 +505,8 @@ export interface Ride {
   isManualBooking: boolean;
   scheduledDateTime?: string;
   bookingNotes?: string;
+  serviceType?: string;
+  paymentMode?: string;
   user: UserSummary;
   partner?: PartnerSummary;
   vehicleType: VehicleTypeSummary;

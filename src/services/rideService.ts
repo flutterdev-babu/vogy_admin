@@ -29,4 +29,9 @@ export const rideService = {
     const response = await api.post(`/${rideId}/assign`, { partnerId });
     return response.data;
   },
+  
+  async createManualRide(data: any): Promise<ApiResponse<Ride>> {
+    const response = await api.post('/', data);
+    return response.data;
+  },
 };
