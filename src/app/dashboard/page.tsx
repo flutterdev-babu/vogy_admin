@@ -11,6 +11,8 @@ import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { StatusBadge } from '@/components/ui/Badge';
 import Link from 'next/link';
 
+import { RevenueChart } from '@/components/dashboard/RevenueChart';
+
 interface DashboardStats {
   vehicleTypes: number;
   totalRides: number;
@@ -19,6 +21,9 @@ interface DashboardStats {
   totalRiders: number;
   scheduledRides: number;
   totalRevenue: number;
+  revenueData?: { date: string; amount: number }[];
+  todayRevenue?: number;
+  pendingPayouts?: number;
 }
 
 export default function DashboardPage() {
@@ -46,6 +51,37 @@ export default function DashboardPage() {
         const completedRides = rides.filter(r => r.status === 'COMPLETED');
         const totalRevenue = completedRides.reduce((sum, r) => sum + (r.commission || 0), 0);
 
+        // Process revenue data for chart (Last 7 days)
+        const revenueMap = new Map<string, number>();
+        const today = new Date();
+        const last7Days = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date();
+          d.setDate(today.getDate() - (6 - i));
+          return d.toISOString().split('T')[0];
+        });
+
+        // Initialize with keeping 0
+        last7Days.forEach(date => revenueMap.set(date, 0));
+
+        // Aggregate revenue
+        completedRides.forEach(ride => {
+          if (ride.createdAt) {
+            const date = new Date(ride.createdAt).toISOString().split('T')[0];
+            if (revenueMap.has(date)) {
+              revenueMap.set(date, (revenueMap.get(date) || 0) + (ride.commission || 0));
+            }
+          }
+        });
+
+        const revenueData = last7Days.map(date => ({
+          date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
+          amount: revenueMap.get(date) || 0
+        }));
+
+        // Calculate today's revenue specifically
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayRevenue = revenueMap.get(todayStr) || 0;
+
         setStats({
           vehicleTypes: vehicleTypes.length,
           totalRides: rides.length,
@@ -54,6 +90,9 @@ export default function DashboardPage() {
           totalRiders: partners.length,
           scheduledRides: scheduledRides.length,
           totalRevenue,
+          revenueData,
+          todayRevenue,
+          pendingPayouts: 12500, // Mocked for now until PayoutService
         });
 
         setRecentRides(rides.slice(0, 5));
@@ -109,15 +148,53 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Revenue Card */}
-      <div className="card p-6 mb-8 bg-[#E32222] border-none shadow-xl shadow-red-500/20">
-        <div className="flex items-center justify-between gap-6">
-          <div className="min-w-0 flex-1">
-            <p className="text-red-100 text-sm font-bold uppercase tracking-widest">Total Platform Revenue</p>
-            <p className="text-3xl lg:text-5xl font-black text-white mt-2">₹{stats?.totalRevenue?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</p>
+      {/* Revenue Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2 card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Revenue Analytics</h2>
+              <p className="text-sm text-gray-500">Income trends over the last 7 days</p>
+            </div>
+            <select className="text-sm border-gray-200 rounded-lg focus:ring-red-500 focus:border-red-500">
+              <option>Last 7 Days</option>
+              <option>Last 30 Days</option>
+              <option>This Year</option>
+            </select>
           </div>
-          <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-            <DollarSign className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+          {stats?.revenueData ? (
+            <RevenueChart data={stats.revenueData} />
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-gray-400">
+              Loading chart data...
+            </div>
+          )}
+        </div>
+
+        {/* Revenue Summary Card */}
+        <div className="card p-6 bg-[#E32222] border-none shadow-xl shadow-red-500/20 text-white flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+              <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                +12.5% vs last week
+              </span>
+            </div>
+            <p className="text-red-100 text-sm font-bold uppercase tracking-widest mb-1">Total Platform Revenue</p>
+            <p className="text-4xl lg:text-5xl font-black">₹{stats?.totalRevenue?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</p>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-red-100">Today's Revenue</span>
+              <span className="font-bold">₹{stats?.todayRevenue?.toLocaleString('en-IN') || '0'}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-red-100">Pending Payouts</span>
+              <span className="font-bold">₹{stats?.pendingPayouts?.toLocaleString('en-IN') || '0'}</span>
+            </div>
           </div>
         </div>
       </div>

@@ -1,9 +1,9 @@
 import { corporateApi, adminApi } from '@/lib/api';
-import { 
-  ApiResponse, 
-  Corporate, 
-  CorporateRegisterRequest, 
-  CorporateLoginRequest, 
+import {
+  ApiResponse,
+  Corporate,
+  CorporateRegisterRequest,
+  CorporateLoginRequest,
   CorporateLoginResponse,
   Ride,
   Billing,
@@ -16,7 +16,7 @@ export const corporateService = {
   // =====================
   // Corporate Auth APIs
   // =====================
-  
+
   async register(data: CorporateRegisterRequest): Promise<ApiResponse<Corporate>> {
     const response = await corporateApi.post('/auth/register', data);
     return response.data;
@@ -30,7 +30,7 @@ export const corporateService = {
   // =====================
   // Corporate Profile APIs
   // =====================
-  
+
   async getProfile(): Promise<ApiResponse<Corporate>> {
     const response = await corporateApi.get('/profile');
     return response.data;
@@ -39,7 +39,7 @@ export const corporateService = {
   // =====================
   // Corporate Data APIs
   // =====================
-  
+
   async getRides(): Promise<ApiResponse<Ride[]>> {
     const response = await corporateApi.get('/rides');
     return response.data;
@@ -61,9 +61,37 @@ export const corporateService = {
   },
 
   // =====================
+  // Employee Management
+  // =====================
+
+  async getEmployees(): Promise<ApiResponse<any[]>> { // Using any[] for now as defined in page, needs update to Employee[]
+    const response = await corporateApi.get('/employees');
+    return response.data;
+  },
+
+  async addEmployee(data: any): Promise<ApiResponse<any>> {
+    const response = await corporateApi.post('/employees', data);
+    return response.data;
+  },
+
+  async deleteEmployee(id: string): Promise<ApiResponse<void>> {
+    const response = await corporateApi.delete(`/employees/${id}`);
+    return response.data;
+  },
+
+  // =====================
+  // Bookings
+  // =====================
+
+  async bookRide(data: any): Promise<ApiResponse<any>> {
+    const response = await corporateApi.post('/bookings', data);
+    return response.data;
+  },
+
+  // =====================
   // Admin Corporate APIs
   // =====================
-  
+
   async getAll(): Promise<ApiResponse<Corporate[]>> {
     const response = await adminApi.get('/corporates');
     return response.data;

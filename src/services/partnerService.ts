@@ -1,9 +1,9 @@
 import { partnerApi, adminApi } from '@/lib/api';
-import { 
-  ApiResponse, 
-  Partner, 
-  PartnerRegisterRequest, 
-  PartnerLoginRequest, 
+import {
+  ApiResponse,
+  Partner,
+  PartnerRegisterRequest,
+  PartnerLoginRequest,
   PartnerLoginResponse,
   Ride,
   PartnerFilters,
@@ -14,7 +14,7 @@ export const partnerService = {
   // =====================
   // Partner Auth APIs
   // =====================
-  
+
   async register(data: PartnerRegisterRequest): Promise<ApiResponse<Partner>> {
     const response = await partnerApi.post('/auth/register', data);
     return response.data;
@@ -28,7 +28,7 @@ export const partnerService = {
   // =====================
   // Partner Profile APIs
   // =====================
-  
+
   async getProfile(): Promise<ApiResponse<Partner>> {
     const response = await partnerApi.get('/profile');
     return response.data;
@@ -47,7 +47,7 @@ export const partnerService = {
   // =====================
   // Partner Data APIs
   // =====================
-  
+
   async getRides(): Promise<ApiResponse<Ride[]>> {
     const response = await partnerApi.get('/rides');
     return response.data;
@@ -56,13 +56,13 @@ export const partnerService = {
   // =====================
   // Admin Partner APIs
   // =====================
-  
+
   async getAll(filters?: PartnerFilters): Promise<ApiResponse<Partner[]>> {
     const params = new URLSearchParams();
     if (filters?.status) params.append('status', filters.status);
     if (filters?.isOnline !== undefined) params.append('isOnline', String(filters.isOnline));
     if (filters?.search) params.append('search', filters.search);
-    
+
     const response = await adminApi.get(`/partners?${params.toString()}`);
     return response.data;
   },
@@ -74,6 +74,48 @@ export const partnerService = {
 
   async assignVehicle(partnerId: string, vehicleId: string): Promise<ApiResponse<Partner>> {
     const response = await adminApi.post(`/partners/${partnerId}/assign-vehicle`, { vehicleId });
+    return response.data;
+  },
+
+  // =====================
+  // Feedback & Inbox (Partner)
+  // =====================
+
+  async getFeedback(): Promise<ApiResponse<any[]>> {
+    const response = await partnerApi.get('/feedback');
+    return response.data;
+  },
+
+  async getNotifications(): Promise<ApiResponse<any[]>> {
+    const response = await partnerApi.get('/notifications');
+    return response.data;
+  },
+
+  async markNotificationAsRead(id: string): Promise<ApiResponse<void>> {
+    const response = await partnerApi.put(`/notifications/${id}/read`);
+    return response.data;
+  },
+
+  // =====================
+  // Documents & Settings
+  // =====================
+
+  async getDocuments(): Promise<ApiResponse<any[]>> {
+    const response = await partnerApi.get('/documents');
+    return response.data;
+  },
+
+  async uploadDocument(formData: FormData): Promise<ApiResponse<any>> {
+    const response = await partnerApi.post('/documents/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  async updateProfile(data: Partial<Partner>): Promise<ApiResponse<Partner>> {
+    const response = await partnerApi.put('/profile', data);
     return response.data;
   },
 };
