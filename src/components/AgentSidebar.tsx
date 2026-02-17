@@ -22,6 +22,7 @@ import {
   Paperclip,
   Tag
 } from 'lucide-react';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { TOKEN_KEYS, USER_KEYS } from '@/lib/api';
 
@@ -120,8 +121,13 @@ export default function AgentSidebar() {
         {/* Logo */}
         <div className="p-6 border-b border-purple-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#E32222] to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-              <span className="text-white font-bold text-xl">A</span>
+            <div className="relative w-12 h-12">
+              <Image 
+                src="/logo_image.png" 
+                alt="Ara Travels Logo" 
+                fill
+                className="object-contain rounded-xl"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-800">ARA</h1>

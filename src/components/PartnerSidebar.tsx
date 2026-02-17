@@ -12,6 +12,7 @@ import {
   DollarSign,
   User
 } from 'lucide-react';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { TOKEN_KEYS, USER_KEYS } from '@/lib/api';
 
@@ -67,8 +68,13 @@ export default function PartnerSidebar() {
       <aside className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-emerald-100 shadow-xl z-40 flex flex-col transform transition-transform duration-300 lg:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-emerald-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#E32222] to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <span className="text-white font-bold text-xl">P</span>
+            <div className="relative w-12 h-12">
+              <Image 
+                src="/logo_image.png" 
+                alt="Ara Travels Logo" 
+                fill
+                className="object-contain rounded-xl"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-800">ARA</h1>

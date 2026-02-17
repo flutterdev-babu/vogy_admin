@@ -16,10 +16,10 @@ const createApiInstance = (baseURL: string): AxiosInstance => {
 export const adminApi = createApiInstance(`${API_BASE_URL}/admin`);
 
 // Vendor API instance
-export const vendorApi = createApiInstance(`${API_BASE_URL}/vendor`);
+export const vendorApi = createApiInstance(`${API_BASE_URL}/vendors`);
 
 // Partner API instance
-export const partnerApi = createApiInstance(`${API_BASE_URL}/partner`);
+export const partnerApi = createApiInstance(`${API_BASE_URL}/partners`);
 
 // Agent API instance
 export const agentApi = createApiInstance(`${API_BASE_URL}/agent`);

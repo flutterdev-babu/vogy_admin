@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, UserPlus, Loader2, Car, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { vendorService } from '@/services/vendorService';
+import { VendorRegisterRequest } from '@/types';
 
 export default function VendorRegisterPage() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ export default function VendorRegisterPage() {
     password: '',
     address: '',
     cityCode: '',
+    type: 'BUSINESS' as 'INDIVIDUAL' | 'BUSINESS',
     // Contact Details
     gstNumber: '',
     panNumber: '',
@@ -42,7 +44,11 @@ export default function VendorRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const submitData = { ...formData, phone: `+91${formData.phone}` };
+      const submitData: VendorRegisterRequest = {
+        ...formData,
+        phone: `+91${formData.phone}`,
+        cityCodeId: formData.cityCode || undefined,
+      };
       const response = await vendorService.register(submitData as any);
       if (response.success) {
         toast.success('Registration successful! Please login.');
@@ -86,6 +92,18 @@ export default function VendorRegisterPage() {
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-[#E32222] uppercase tracking-wide">Basic Information</h3>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Vendor Type *</label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({...formData, type: e.target.value as any})}
+                  className={inputClass + " appearance-none"}
+                >
+                  <option value="BUSINESS">Business</option>
+                  <option value="INDIVIDUAL">Individual</option>
+                </select>
+              </div>
               
               <div className="space-y-2">
                 <label className="text-sm font-medium text-neutral-300 ml-1">Company Name *</label>

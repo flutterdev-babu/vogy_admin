@@ -178,7 +178,7 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <p className="text-center text-gray-400 text-sm mt-8">
-          © 2026 VOGY. All rights reserved.
+          © 2026 Ara Travels. All rights reserved.
         </p>
       </div>
     </div>

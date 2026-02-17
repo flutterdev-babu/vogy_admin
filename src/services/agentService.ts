@@ -223,4 +223,9 @@ export const agentService = {
     const response = await adminApi.post(`/agents/${agentId}/assign-corporate`, { corporateId });
     return response.data;
   },
+
+  async createAgentByAdmin(data: AgentRegisterRequest): Promise<ApiResponse<Agent>> {
+    const response = await adminApi.post('/agents', data);
+    return response.data;
+  },
 };

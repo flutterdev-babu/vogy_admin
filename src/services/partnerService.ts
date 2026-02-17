@@ -7,7 +7,10 @@ import {
   PartnerLoginResponse,
   Ride,
   PartnerFilters,
-  EntityStatus
+  EntityStatus,
+  PartnerDashboardData,
+  PartnerVehicleData,
+  PartnerEarningsData
 } from '@/types';
 
 export const partnerService = {
@@ -45,6 +48,30 @@ export const partnerService = {
   },
 
   // =====================
+  // Partner Dashboard & Analytics APIs
+  // =====================
+  
+  async getDashboard(): Promise<ApiResponse<PartnerDashboardData>> {
+    const response = await partnerApi.get('/dashboard');
+    return response.data;
+  },
+
+  async getVehicle(): Promise<ApiResponse<PartnerVehicleData>> {
+    const response = await partnerApi.get('/vehicle');
+    return response.data;
+  },
+
+  async getRideById(id: string): Promise<ApiResponse<Ride>> {
+    const response = await partnerApi.get(`/rides/${id}`);
+    return response.data;
+  },
+
+  async getEarnings(): Promise<ApiResponse<PartnerEarningsData>> {
+    const response = await partnerApi.get('/earnings');
+    return response.data;
+  },
+
+  // =====================
   // Partner Data APIs
   // =====================
   
@@ -74,6 +101,11 @@ export const partnerService = {
 
   async assignVehicle(partnerId: string, vehicleId: string): Promise<ApiResponse<Partner>> {
     const response = await adminApi.post(`/partners/${partnerId}/assign-vehicle`, { vehicleId });
+    return response.data;
+  },
+
+  async createPartner(data: PartnerRegisterRequest): Promise<ApiResponse<Partner>> {
+    const response = await adminApi.post('/partners', data);
     return response.data;
   },
 };

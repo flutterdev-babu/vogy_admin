@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, LogIn, Loader2, Car } from 'lucide-react';
+import { TOKEN_KEYS } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -14,6 +15,16 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem(TOKEN_KEYS.admin);
+      if (token) {
+        router.replace('/dashboard');
+      }
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,11 +52,16 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo Card */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-2xl mb-4">
-            <Car size={40} className="text-white" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 border border-red-100 mb-8 self-center lg:self-start">
+            <span className="w-2 h-2 rounded-full bg-[#E32222] animate-pulse" />
+            <span className="text-xs font-bold text-[#E32222] tracking-wide uppercase">Secure Admin Access</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">VOGY Admin</h1>
-          <p className="text-gray-500 mt-2">Sign in to your admin account</p>
+
+          <h1 className="text-4xl lg:text-5xl font-black text-gray-900 leading-tight text-center lg:text-left">
+            Welcome to <br />
+            <span className="text-[#E32222]">ARA TRAVELS</span>
+          </h1>
+          <p className="text-gray-500 mt-4 text-center lg:text-left text-lg">Manage your entire mobility ecosystem from one powerful command center.</p>
         </div>
 
         {/* Login Form */}
@@ -116,7 +132,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-gray-400 text-sm mt-8">
-          © 2026 VOGY. All rights reserved.
+          © 2026 Ara Travels. All rights reserved.
         </p>
       </div>
     </div>

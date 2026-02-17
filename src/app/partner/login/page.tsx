@@ -62,7 +62,7 @@ export default function PartnerLoginPage() {
             <Users size={36} className="text-[#E32222]" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">Partner Login</h1>
-          <p className="text-neutral-400">Sign in to start driving with VOGY</p>
+          <p className="text-neutral-400">Sign in to start driving with Ara Travels</p>
         </div>
 
         {/* Form Card */}
