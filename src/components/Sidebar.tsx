@@ -22,7 +22,8 @@ import {
   ChevronDown,
   Paperclip,
   Bell,
-  FileVideo
+  FileVideo,
+  PlusCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -51,6 +52,7 @@ const navSections: NavSection[] = [
     items: [
       { href: '/dashboard/rides', label: 'All Rides', icon: Route },
       { href: '/dashboard/rides/scheduled', label: 'Scheduled Rides', icon: Calendar },
+      { href: '/dashboard/rides/create', label: 'Manual Booking', icon: PlusCircle },
     ],
   },
   {

@@ -17,11 +17,14 @@ export default function PartnerRegisterPage() {
     phone: '',
     email: '',
     password: '',
+    cityCodeId: '',
+    vendorCustomId: '',
     // Personal Details
     localAddress: '',
     permanentAddress: '',
     aadharNumber: '',
     licenseNumber: '',
+    licenseImage: '',
     dateOfBirth: '',
     gender: '' as any,
     // Banking Details
@@ -34,6 +37,7 @@ export default function PartnerRegisterPage() {
   const [showBankingDetails, setShowBankingDetails] = useState(false);
   const [showVehicleDetails, setShowVehicleDetails] = useState(false);
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
+  const [cityCodes, setCityCodes] = useState<any[]>([]);
   const router = useRouter();
 
   // Own Vehicle fields
@@ -43,13 +47,17 @@ export default function PartnerRegisterPage() {
   const [ownVehicleTypeId, setOwnVehicleTypeId] = useState('');
 
   useState(() => {
-    const loadVehicleTypes = async () => {
+    const loadLookups = async () => {
       try {
-        const res = await agentService.getVehicleTypesLookup();
-        if (res.success) setVehicleTypes(res.data || []);
-      } catch (err) { console.error('Failed to load vehicle types:', err); }
+        const [vtRes, cityRes] = await Promise.all([
+          agentService.getVehicleTypesLookup(),
+          agentService.getCityCodes(),
+        ]);
+        if (vtRes.success) setVehicleTypes(vtRes.data || []);
+        if (cityRes.success) setCityCodes(cityRes.data || []);
+      } catch (err) { console.error('Failed to load lookups:', err); }
     };
-    loadVehicleTypes();
+    loadLookups();
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,14 +72,18 @@ export default function PartnerRegisterPage() {
         phone: `+91${rest.phone}`,
         email: rest.email || undefined,
         password: rest.password,
+        cityCodeId: formData.cityCodeId || undefined,
+        vendorCustomId: formData.vendorCustomId || undefined,
         gender: formData.gender ? (formData.gender as any) : undefined,
         dateOfBirth: formData.dateOfBirth || undefined,
         localAddress: formData.localAddress || undefined,
         permanentAddress: formData.permanentAddress || undefined,
         aadharNumber: formData.aadharNumber || undefined,
         licenseNumber: formData.licenseNumber || undefined,
+        licenseImage: formData.licenseImage || undefined,
         bankAccountNumber: formData.bankAccountNumber || undefined,
         upiId: formData.upiId || undefined,
+        hasLicense: true,
         hasOwnVehicle,
         ownVehicleNumber: hasOwnVehicle ? ownVehicleNumber || undefined : undefined,
         ownVehicleModel: hasOwnVehicle ? ownVehicleModel || undefined : undefined,
@@ -196,6 +208,30 @@ export default function PartnerRegisterPage() {
                   </button>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">City Code</label>
+                  <select
+                    value={formData.cityCodeId}
+                    onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
+                    className={inputClass + " appearance-none"}
+                  >
+                    <option value="">Select City</option>
+                    {cityCodes.map((c: any) => <option key={c.id} value={c.id}>{c.cityName} ({c.code})</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">Vendor Code</label>
+                  <input
+                    type="text"
+                    value={formData.vendorCustomId}
+                    onChange={(e) => setFormData({...formData, vendorCustomId: e.target.value})}
+                    className={inputClass}
+                    placeholder="VDR-BLR-001 (if linked)"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Personal & License Details (Collapsible) */}
@@ -258,6 +294,16 @@ export default function PartnerRegisterPage() {
                         placeholder="KA01 20220001234"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-300 ml-1">License Image URL</label>
+                    <input
+                      type="text"
+                      value={formData.licenseImage}
+                      onChange={(e) => setFormData({...formData, licenseImage: e.target.value})}
+                      className={inputClass}
+                      placeholder="https://... or upload path"
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-300 ml-1">Local Address</label>

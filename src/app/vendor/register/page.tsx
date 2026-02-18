@@ -243,6 +243,16 @@ export default function VendorRegisterPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-neutral-300 ml-1">CC Mobile</label>
+                      <input
+                        type="tel"
+                        value={formData.ccMobile}
+                        onChange={(e) => setFormData({...formData, ccMobile: e.target.value})}
+                        className={inputClass}
+                        placeholder="+91..."
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <label className="text-sm font-medium text-neutral-300 ml-1">Primary Contact</label>
                       <input
                         type="tel"
@@ -252,6 +262,8 @@ export default function VendorRegisterPage() {
                         placeholder="+91..."
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-neutral-300 ml-1">Secondary Contact</label>
                       <input
@@ -262,8 +274,6 @@ export default function VendorRegisterPage() {
                         placeholder="+91..."
                       />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-neutral-300 ml-1">Owner Contact</label>
                       <input
@@ -274,6 +284,8 @@ export default function VendorRegisterPage() {
                         placeholder="+91..."
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-neutral-300 ml-1">Office Landline</label>
                       <input
@@ -282,6 +294,16 @@ export default function VendorRegisterPage() {
                         onChange={(e) => setFormData({...formData, officeLandline: e.target.value})}
                         className={inputClass}
                         placeholder="080-12345678"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-neutral-300 ml-1">Office Address</label>
+                      <input
+                        type="text"
+                        value={formData.officeAddress}
+                        onChange={(e) => setFormData({...formData, officeAddress: e.target.value})}
+                        className={inputClass}
+                        placeholder="Office address"
                       />
                     </div>
                   </div>

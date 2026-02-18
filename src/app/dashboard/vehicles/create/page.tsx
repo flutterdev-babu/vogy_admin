@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Car, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { agentService } from '@/services/agentService';
+import { cityCodeService } from '@/services/cityCodeService';
+import { vehicleTypeService } from '@/services/vehicleTypeService';
+import { vendorService } from '@/services/vendorService';
+import { partnerService } from '@/services/partnerService';
 import { CreateVehicleRequest, FuelType } from '@/types';
 
 export default function AdminCreateVehiclePage() {
@@ -37,10 +40,10 @@ export default function AdminCreateVehiclePage() {
     const loadLookups = async () => {
       try {
         const [cityRes, vtRes, vendorRes, partnerRes] = await Promise.all([
-          agentService.getCityCodes(),
-          agentService.getVehicleTypesLookup(),
-          agentService.getVendorsLookup(),
-          agentService.getPartnersLookup(),
+          cityCodeService.getAll(),
+          vehicleTypeService.getAll(),
+          vendorService.getAll(),
+          partnerService.getAll(),
         ]);
         if (cityRes.success) setCityCodes(cityRes.data || []);
         if (vtRes.success) setVehicleTypes(vtRes.data || []);
@@ -65,11 +68,15 @@ export default function AdminCreateVehiclePage() {
     }
     setIsLoading(true);
     try {
+      const selectedVendor = vendors.find((v: any) => v.customId === formData.vendorCustomId);
+      const selectedPartner = partners.find((p: any) => p.customId === formData.partnerCustomId);
       const submitData: CreateVehicleRequest = {
         registrationNumber: formData.registrationNumber.toUpperCase(),
         vehicleModel: formData.vehicleModel,
         vehicleTypeId: formData.vehicleTypeId,
+        vendorId: selectedVendor?.id || undefined,
         vendorCustomId: formData.vendorCustomId || undefined,
+        partnerId: selectedPartner?.id || undefined,
         partnerCustomId: formData.partnerCustomId || undefined,
         cityCodeId: formData.cityCodeId,
         color: formData.color || undefined,
@@ -78,7 +85,7 @@ export default function AdminCreateVehiclePage() {
         rtoTaxExpiryDate: formData.rtoTaxExpiryDate || undefined,
         speedGovernor: formData.speedGovernor,
       };
-      const response = await agentService.createVehicle(submitData);
+      const response = await vendorService.createVehicle(submitData);
       if (response.success) {
         toast.success('Vehicle created successfully!');
         router.push('/dashboard/vehicles');

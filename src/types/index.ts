@@ -152,6 +152,10 @@ export interface Partner {
   currentLat?: number;
   currentLng?: number;
   vehicle?: Vehicle;
+  // Vendor association
+  vendorId?: string;
+  vendorCustomId?: string;
+  vendor?: Vendor;
   // Own Vehicle Details (Owner-Driver)
   hasOwnVehicle: boolean;
   ownVehicleNumber?: string;
@@ -170,8 +174,10 @@ export interface PartnerRegisterRequest {
   cityCodeId?: string;
   vendorId?: string;
   vendorCustomId?: string;
+  profileImage?: string;
   // Own Vehicle Details
   hasOwnVehicle: boolean;
+  hasLicense: boolean;
   ownVehicleNumber?: string;
   ownVehicleModel?: string;
   ownVehicleTypeId?: string;
@@ -400,6 +406,7 @@ export interface CreateVehicleRequest {
   vehicleTypeId: string;
   vendorId?: string;
   vendorCustomId?: string;
+  partnerId?: string;
   partnerCustomId?: string;
   cityCodeId: string;
   // New Fields
@@ -536,9 +543,10 @@ export interface Ride {
   perKmPrice: number;
   totalFare: number;
   partnerEarnings: number;
+  riderEarnings: number; // For backward compatibility/consistency
   commission: number;
-  riderEarnings?: number; // Added for backward compatibility
   userOtp?: string;
+  otp?: string; // New field as per Admin OTP retrieval
   startTime?: string;
   endTime?: string;
   acceptedAt?: string;
@@ -747,6 +755,30 @@ export interface AdminRecentActivity {
   recentVendors: Array<{ id: string; customId: string; name: string; companyName: string; status: string; createdAt: string }>;
   recentPartners: Array<{ id: string; customId: string; name: string; status: string; createdAt: string }>;
   recentUsers: Array<{ id: string; name: string; phone: string; createdAt: string }>;
+}
+
+// --- Attachment Governance ---
+export type AttachmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+
+export interface Attachment {
+  id: string;
+  vendor: VendorSummary;
+  partner: PartnerSummary;
+  vehicle: {
+    id: string;
+    customId: string;
+    registrationNumber: string;
+    vehicleModel: string;
+    vehicleType: VehicleTypeSummary;
+  };
+  status: AttachmentStatus;
+  createdAt: string;
+  verifiedAt?: string;
+}
+
+export interface VerifyAttachmentRequest {
+  status: 'APPROVED' | 'REJECTED';
+  notes?: string;
 }
 
 // --- User Dashboard ---

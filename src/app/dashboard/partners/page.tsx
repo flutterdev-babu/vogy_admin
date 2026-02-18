@@ -25,6 +25,8 @@ export default function PartnersPage() {
     phone: '',
     email: '',
     city: '',
+    customId: '',
+    vendorSearch: '',
   });
 
   const fetchPartners = async () => {
@@ -65,7 +67,18 @@ export default function PartnersPage() {
     const phoneMatch = !filters.phone || p.phone.includes(filters.phone);
     const emailMatch = !filters.email || (p.email && p.email.toLowerCase().includes(filters.email.toLowerCase()));
     const cityMatch = !filters.city || (p.cityCode?.cityName?.toLowerCase().includes(filters.city.toLowerCase()));
-    return nameMatch && phoneMatch && emailMatch && cityMatch;
+    const customIdMatch = !filters.customId || (p.customId?.toLowerCase().includes(filters.customId.toLowerCase())) || p.id.toLowerCase().includes(filters.customId.toLowerCase());
+    
+    // Vendor match (checking vendor.customId, partner.vendorCustomId, etc)
+    const vendorObj = p.vendor;
+    const vSearch = filters.vendorSearch.toLowerCase();
+    const vendorMatch = !filters.vendorSearch || 
+      (vendorObj?.customId?.toLowerCase().includes(vSearch)) ||
+      (vendorObj?.name?.toLowerCase().includes(vSearch)) ||
+      (vendorObj?.companyName?.toLowerCase().includes(vSearch)) ||
+      (p.vendorCustomId?.toLowerCase().includes(vSearch));
+
+    return nameMatch && phoneMatch && emailMatch && cityMatch && customIdMatch && vendorMatch;
   });
 
   if (isLoading) return <PageLoader />;
@@ -124,23 +137,33 @@ export default function PartnersPage() {
           <option value="true">Online</option>
           <option value="false">Offline</option>
         </select>
+        <div className="flex-1"></div>
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search Partner Code..." 
+            className="text-xs p-2 pl-9 border border-gray-200 rounded-lg bg-white outline-none min-w-[200px]"
+            value={filters.customId}
+            onChange={e => setFilters({...filters, customId: e.target.value})}
+          />
+        </div>
       </div>
 
       {/* Table Container */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1100px]">
+          <table className="w-full text-left border-collapse min-w-[1200px]">
             {/* Header */}
             <thead className="bg-[#E32222] text-white">
               <tr>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[100px]">ID</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[120px]">Partner ID</th>
                 <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Name</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Phone</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Email</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Contact</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Vendor</th>
                 <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">City</th>
                 <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Vehicle</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[80px]">Online</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[100px]">Status</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[80px]">Status</th>
                 <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[140px]">Actions</th>
               </tr>
             </thead>
@@ -149,22 +172,21 @@ export default function PartnersPage() {
               <tr>
                 <td className="px-2 py-2"></td>
                 <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-red-200 rounded outline-none focus:border-red-400"
+                  <input type="text" placeholder="Search Name" className="w-full text-[11px] p-1 border border-red-200 rounded outline-none focus:border-red-400"
                     value={filters.name} onChange={e => setFilters({...filters, name: e.target.value})} />
                 </td>
                 <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
+                  <input type="text" placeholder="Search Phone/Email" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
                     value={filters.phone} onChange={e => setFilters({...filters, phone: e.target.value})} />
                 </td>
                 <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
-                    value={filters.email} onChange={e => setFilters({...filters, email: e.target.value})} />
+                  <input type="text" placeholder="Search Vendor" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
+                    value={filters.vendorSearch} onChange={e => setFilters({...filters, vendorSearch: e.target.value})} />
                 </td>
                 <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
+                  <input type="text" placeholder="Search City" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
                     value={filters.city} onChange={e => setFilters({...filters, city: e.target.value})} />
                 </td>
-                <td className="px-2 py-2"></td>
                 <td className="px-2 py-2"></td>
                 <td className="px-2 py-2"></td>
                 <td className="px-2 py-2"></td>
@@ -174,22 +196,39 @@ export default function PartnersPage() {
             <tbody className="divide-y divide-gray-100">
               {filteredPartners.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500 italic">No partners found.</td>
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500 italic">No partners found.</td>
                 </tr>
               ) : (
                 filteredPartners.map((partner) => (
                   <tr key={partner.id} className="hover:bg-red-50/30 transition-colors">
                     <td className="px-3 py-3">
-                      <span className="text-[11px] font-bold text-emerald-600 font-mono">{partner.customId}</span>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-emerald-600 font-mono">
+                          {partner.customId || `PRT-${partner.id.slice(0, 8).toUpperCase()}`}
+                        </span>
+                        {!partner.customId && <span className="text-[8px] text-gray-400">ID Fallback</span>}
+                      </div>
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-[11px] font-bold text-gray-800">{partner.name}</span>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-[10px] font-medium text-gray-600">{partner.phone}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-medium text-gray-600">{partner.phone}</span>
+                        <span className="text-[9px] text-gray-400 truncate max-w-[150px]">{partner.email || '-'}</span>
+                      </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-[10px] font-medium text-gray-600 truncate block max-w-[160px]">{partner.email || '-'}</span>
+                      {partner.vendor ? (
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-orange-600 font-mono">{partner.vendor.customId}</span>
+                          <span className="text-[9px] text-gray-500 truncate max-w-[120px]">{partner.vendor.companyName || partner.vendor.name}</span>
+                        </div>
+                      ) : partner.vendorCustomId ? (
+                        <span className="text-[10px] font-bold text-orange-600 font-mono">{partner.vendorCustomId}</span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 italic">Independent</span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-[10px] font-medium text-gray-600">{partner.cityCode?.cityName || '-'}</span>
@@ -205,20 +244,20 @@ export default function PartnersPage() {
                       )}
                     </td>
                     <td className="px-3 py-3">
-                      {partner.isOnline ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[9px] font-bold">
-                          <Wifi size={10} /> Online
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${statusColors[partner.status]}`}>
+                          {partner.status}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-[9px] font-bold">
-                          <WifiOff size={10} /> Offline
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase ${statusColors[partner.status]}`}>
-                        {partner.status}
-                      </span>
+                        {partner.isOnline ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full text-[8px] font-bold">
+                            <Wifi size={8} /> Online
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 text-gray-400 rounded-full text-[8px] font-bold">
+                            <WifiOff size={8} /> Offline
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex gap-1">
@@ -227,7 +266,7 @@ export default function PartnersPage() {
                           onChange={(e) => {
                             if (e.target.value) handleStatusChange(partner, e.target.value as EntityStatus);
                           }}
-                          className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer"
+                          className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer w-full"
                         >
                           <option value="">Set Status</option>
                           <option value="APPROVED">Approve</option>

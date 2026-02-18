@@ -390,9 +390,15 @@ export default function LandingPage() {
              
              <div className="relative hidden lg:block">
                 <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-black opacity-50" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-neutral-600 font-medium">App Screenshot Placeholder</span>
+                  <Image 
+                     src="/cab_image.png" 
+                     alt="Ara Travels Cab" 
+                     fill
+                     className="object-cover"
+                     priority
+                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent">
+                    
                   </div>
                 </div>
              </div>
