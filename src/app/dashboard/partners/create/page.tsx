@@ -91,7 +91,7 @@ export default function AdminCreatePartnerPage() {
         firstName: formData.firstName,
         lastName: formData.lastName,
         dateOfBirth: formData.dateOfBirth || undefined,
-        gender: formData.gender ? (formData.gender as any) : undefined,
+        gender: formData.gender as any,
         localAddress: formData.localAddress || undefined,
         permanentAddress: formData.permanentAddress || undefined,
         hasLicense: true, // As per spec, must be true
@@ -106,12 +106,21 @@ export default function AdminCreatePartnerPage() {
         bankAccountNumber: undefined,
         upiId: undefined,
       };
+
+      console.log('Sending Admin Partner Creation Request:', submitData);
       const response = await partnerService.createPartner(submitData);
+      console.log('Admin Partner Creation Response:', response);
+
       if (response.success) {
         toast.success('Partner created successfully!');
         router.push('/dashboard/partners');
       }
     } catch (error: any) {
+      console.error('Admin Partner Creation Error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       toast.error(error.response?.data?.message || 'Failed to create partner');
     } finally {
       setIsLoading(false);

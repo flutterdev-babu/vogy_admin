@@ -74,7 +74,7 @@ export default function PartnerRegisterPage() {
         password: rest.password,
         cityCodeId: formData.cityCodeId || undefined,
         vendorCustomId: formData.vendorCustomId || undefined,
-        gender: formData.gender ? (formData.gender as any) : undefined,
+        gender: formData.gender as any,
         dateOfBirth: formData.dateOfBirth || undefined,
         localAddress: formData.localAddress || undefined,
         permanentAddress: formData.permanentAddress || undefined,
@@ -89,12 +89,21 @@ export default function PartnerRegisterPage() {
         ownVehicleModel: hasOwnVehicle ? ownVehicleModel || undefined : undefined,
         ownVehicleTypeId: hasOwnVehicle ? ownVehicleTypeId || undefined : undefined,
       };
-      const response = await partnerService.register(submitData as any);
+
+      console.log('Sending Partner Registration Request:', submitData);
+      const response = await partnerService.register(submitData);
+      console.log('Partner Registration Response:', response);
+
       if (response.success) {
         toast.success('Registration successful! Please login.');
         router.push('/partner/login');
       }
     } catch (error: any) {
+      console.error('Partner Registration Error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
       setIsLoading(false);
