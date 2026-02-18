@@ -22,8 +22,10 @@ import {
   ChevronDown,
   Paperclip,
   Bell,
-  FileVideo
+  FileVideo,
+  PlusCircle
 } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -50,6 +52,7 @@ const navSections: NavSection[] = [
     items: [
       { href: '/dashboard/rides', label: 'All Rides', icon: Route },
       { href: '/dashboard/rides/scheduled', label: 'Scheduled Rides', icon: Calendar },
+      { href: '/dashboard/rides/create', label: 'Manual Booking', icon: PlusCircle },
     ],
   },
   {
@@ -134,11 +137,16 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="p-6 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/30">
-              <span className="text-white font-bold text-xl tracking-tighter">V</span>
+            <div className="relative w-12 h-12">
+               <Image 
+                src="/logo_image.png" 
+                alt="Ara Travels Logo" 
+                fill
+                className="object-contain rounded-xl"
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">VOGY</h1>
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">ARA</h1>
               <p className="text-[10px] text-red-600 font-bold uppercase tracking-wider">Admin Panel</p>
             </div>
           </div>

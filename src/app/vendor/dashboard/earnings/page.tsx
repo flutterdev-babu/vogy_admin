@@ -1,94 +1,130 @@
 'use client';
 
-import { useState } from 'react';
-import { RevenueChart } from '@/components/dashboard/RevenueChart';
-import { AdvancedTable } from '@/components/ui/AdvancedTable';
-import { DollarSign, CreditCard, Wallet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { vendorService } from '@/services/vendorService';
+import { VendorEarningsData } from '@/types';
+import { DollarSign, ArrowUpRight, ArrowDownRight, TrendingUp, Calendar, Filter } from 'lucide-react';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
 
 export default function VendorEarningsPage() {
-    // Mock data for now
-    const earningsData = [
-        { date: 'Mon', amount: 4500 },
-        { date: 'Tue', amount: 5200 },
-        { date: 'Wed', amount: 3800 },
-        { date: 'Thu', amount: 6100 },
-        { date: 'Fri', amount: 5900 },
-        { date: 'Sat', amount: 7200 },
-        { date: 'Sun', amount: 6800 },
-    ];
+  const [earnings, setEarnings] = useState<VendorEarningsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    const transactions = [
-        { id: 'TRX-9821', date: '2023-10-25', description: 'Weekly Payout', amount: 25000, status: 'Completed', type: 'Payout' },
-        { id: 'TRX-9822', date: '2023-10-24', description: 'Ride #12345 Commission', amount: 450, status: 'Completed', type: 'Earning' },
-        { id: 'TRX-9823', date: '2023-10-24', description: 'Ride #12346 Commission', amount: 320, status: 'Pending', type: 'Earning' },
-    ];
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      try {
+        const response = await vendorService.getEarnings();
+        if (response.success) setEarnings(response.data);
+      } catch (err) {
+        console.error('Failed to fetch earnings:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEarnings();
+  }, []);
 
-    const columns: any[] = [
-        { header: 'Transaction ID', accessor: 'id' },
-        { header: 'Date', accessor: 'date' },
-        { header: 'Description', accessor: 'description' },
-        {
-            header: 'Type', accessor: (item: any) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.type === 'Payout' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                    {item.type}
-                </span>
-            )
-        },
-        { header: 'Amount', accessor: (item: any) => <span className="font-bold">₹{item.amount}</span> },
-        { header: 'Status', accessor: 'status' },
-    ];
+  if (isLoading) return <PageLoader />;
 
-    return (
-        <div className="space-y-8 animate-fade-in">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Earnings & Payouts</h1>
-                    <p className="text-sm text-gray-500">Track your revenue and withdrawal history.</p>
-                </div>
-                <button className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30">
-                    Request Payout
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="card p-6 flex items-center gap-4">
-                    <div className="p-3 bg-green-100 rounded-xl text-green-600">
-                        <DollarSign className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Total Earnings</p>
-                        <h3 className="text-2xl font-black text-gray-900">₹45,200</h3>
-                    </div>
-                </div>
-                <div className="card p-6 flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 rounded-xl text-blue-600">
-                        <Wallet className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Available Balance</p>
-                        <h3 className="text-2xl font-black text-gray-900">₹12,500</h3>
-                    </div>
-                </div>
-                <div className="card p-6 flex items-center gap-4">
-                    <div className="p-3 bg-orange-100 rounded-xl text-orange-600">
-                        <CreditCard className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 font-medium">Pending Payout</p>
-                        <h3 className="text-2xl font-black text-gray-900">₹5,000</h3>
-                    </div>
-                </div>
-            </div>
-
-            <div className="card p-6">
-                <h2 className="text-lg font-bold text-gray-800 mb-6">Weekly Earnings Trend</h2>
-                <RevenueChart data={earningsData} />
-            </div>
-
-            <div className="space-y-4">
-                <h2 className="text-lg font-bold text-gray-800">Transaction History</h2>
-                <AdvancedTable data={transactions} columns={columns} />
-            </div>
+  return (
+    <div className="space-y-8 animate-fade-in">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Earnings Detail</h1>
+          <p className="text-gray-500 mt-1">Detailed breakdown of your fleet revenue.</p>
         </div>
-    );
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+            <Calendar size={16} /> Last 30 Days
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+            <Filter size={16} /> Filter
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <EarningCard 
+          label="Total Revenue" 
+          value={`₹${earnings?.summary.totalRevenue.toLocaleString('en-IN') || '0'}`} 
+          trend="+12%" 
+          isPositive={true}
+          description="Gross fare from all rides"
+        />
+        <EarningCard 
+          label="Your Earnings" 
+          value={`₹${earnings?.summary.vendorEarnings.toLocaleString('en-IN') || '0'}`} 
+          trend="+15%" 
+          isPositive={true}
+          description="Net profit after commission"
+          highlight={true}
+        />
+        <EarningCard 
+          label="Ara Travels Commission" 
+          value={`₹${earnings?.summary.vogyCommission.toLocaleString('en-IN') || '0'}`} 
+          trend="-2%" 
+          isPositive={false}
+          description="Platform service fees"
+        />
+      </div>
+
+      <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-gray-50 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">Recent Breakdowns</h2>
+          <span className="text-sm font-bold text-[#E32222]">Total Transactions: {earnings?.breakdown.length || 0}</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50/50">
+                <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400">Date/Time</th>
+                <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400">Partner / Vehicle</th>
+                <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400 text-right">Gross Fare</th>
+                <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400 text-right">Ara Travels Commission</th>
+                <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400 text-right text-emerald-600">Your Share</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {earnings?.breakdown.map((item, i) => (
+                <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="py-4 px-6">
+                    <p className="text-sm font-bold text-gray-800">{new Date(item.date).toLocaleDateString()}</p>
+                    <p className="text-[10px] text-gray-400 font-mono italic">TRX-ID: {Math.random().toString(36).slice(-8).toUpperCase()}</p>
+                  </td>
+                  <td className="py-4 px-6">
+                     <p className="text-sm font-bold text-gray-800">Partner ID: {item.partnerId.slice(-6)}</p>
+                     <p className="text-xs text-gray-500 font-medium">Vehicle ID: {item.vehicleId.slice(-6)}</p>
+                  </td>
+                  <td className="py-4 px-6 text-right font-medium text-gray-800">₹{item.totalFare}</td>
+                  <td className="py-4 px-6 text-right font-medium text-red-400">₹{item.vogyCommission}</td>
+                  <td className="py-4 px-6 text-right font-bold text-emerald-600">₹{item.vendorEarnings}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EarningCard({ label, value, trend, isPositive, description, highlight }: any) {
+  return (
+    <div className={`p-8 rounded-3xl border ${highlight ? 'bg-[#E32222] border-none shadow-xl shadow-red-500/20 text-white' : 'bg-white border-gray-100 shadow-sm'}`}>
+      <div className="flex justify-between items-start mb-6">
+        <div className={`p-3 rounded-2xl ${highlight ? 'bg-white/10' : 'bg-gray-50'}`}>
+          <DollarSign size={24} className={highlight ? 'text-white' : 'text-[#E32222]'} />
+        </div>
+        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${highlight ? 'bg-white/20 text-white' : isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+          {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+          {trend}
+        </div>
+      </div>
+      <div>
+        <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${highlight ? 'text-red-100' : 'text-gray-400'}`}>{label}</p>
+        <p className="text-3xl font-black mb-2">{value}</p>
+        <p className={`text-[10px] font-medium ${highlight ? 'text-red-100/70' : 'text-gray-400'}`}>{description}</p>
+      </div>
+    </div>
+  );
 }

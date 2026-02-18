@@ -1,156 +1,104 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AdvancedTable } from '@/components/ui/AdvancedTable';
-import { Star, Phone, UserCheck, Plus, Loader2 } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
-import Modal from '@/components/ui/Modal';
-import { toast } from 'react-hot-toast';
+import { VendorAttachment } from '@/types';
+import { Users, Car, Phone, Calendar, UserCheck, ShieldCheck, MoreVertical } from 'lucide-react';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
 
 export default function VendorDriversPage() {
-    const [drivers, setDrivers] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newDriver, setNewDriver] = useState({ name: '', phone: '', email: '' });
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState<VendorAttachment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        loadDrivers();
-    }, []);
-
-    const loadDrivers = async () => {
-        setIsLoading(true);
-        try {
-            const response = await vendorService.getDrivers();
-            if (response.success && response.data) {
-                setDrivers(response.data);
-            }
-        } catch (error) {
-            console.error('Failed to load drivers:', error);
-        } finally {
-            setIsLoading(false);
-        }
+  useEffect(() => {
+    const fetchAttachments = async () => {
+      try {
+        const response = await vendorService.getAttachments();
+        if (response.success) setAttachments(response.data);
+      } catch (err) {
+        console.error('Failed to fetch attachments:', err);
+      } finally {
+        setIsLoading(false);
+      }
     };
+    fetchAttachments();
+  }, []);
 
-    const handleAddDriver = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            const response = await vendorService.addDriver(newDriver);
-            if (response.success) {
-                toast.success('Driver invitation sent');
-                setIsModalOpen(false);
-                setNewDriver({ name: '', phone: '', email: '' });
-                loadDrivers();
-            } else {
-                toast.error(response.message || 'Failed to add driver');
-            }
-        } catch (error) {
-            toast.error('An error occurred');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+  if (isLoading) return <PageLoader />;
 
-    const columns: any[] = [
-        {
-            header: 'Driver Name', accessor: (item: any) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-xs">
-                        {item.name.charAt(0)}
-                    </div>
-                    <span className="font-medium text-gray-900">{item.name}</span>
+  return (
+    <div className="space-y-8 animate-fade-in">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Fleet Drivers</h1>
+        <p className="text-gray-500 mt-1">Manage partner assignments and vehicle attachments.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {attachments.map((item) => (
+          <div key={item.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+            <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#E32222]/10 rounded-xl">
+                  <UserCheck className="text-[#E32222]" size={20} />
                 </div>
-            )
-        },
-        { header: 'Phone', accessor: (item: any) => <div className="flex items-center gap-1 text-gray-600 text-sm"><Phone size={12} />{item.phone}</div> },
-        {
-            header: 'Rating', accessor: (item: any) => (
-                <span className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-xs font-bold w-fit">
-                    {item.rating || 'N/A'} <Star size={10} fill="currentColor" />
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${item.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                  {item.status}
                 </span>
-            )
-        },
-        { header: 'Total Rides', accessor: (item: any) => item.rides || 0 },
-        {
-            header: 'Status', accessor: (item: any) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.status === 'ONLINE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {item.status || 'OFFLINE'}
-                </span>
-            )
-        },
-    ];
+              </div>
+              <button className="p-2 hover:bg-white rounded-xl transition-colors">
+                <MoreVertical size={16} className="text-gray-400" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex gap-4">
+                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center font-black text-gray-400 text-xl overflow-hidden border-2 border-white shadow-sm">
+                  {item.partner.name[0]}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-gray-800 truncate">{item.partner.name}</h3>
+                  <p className="text-xs font-bold text-emerald-600 font-mono">{item.partner.customId}</p>
+                </div>
+              </div>
 
-    return (
-        <div className="animate-fade-in space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Driver Management</h1>
-                    <p className="text-sm text-gray-500">Manage your employed drivers and view their performance.</p>
+                  <div className="flex items-center gap-1.5 text-gray-400 mb-1">
+                    <Car size={12} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Vehicle</span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-800 truncate">{item.vehicle.vehicleModel}</p>
+                  <p className="text-[10px] font-medium text-gray-500 font-mono">{item.vehicle.registrationNumber}</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-500/30"
-                >
-                    <Plus className="w-4 h-4" />
-                    Add Driver
-                </button>
-            </div>
+                <div>
+                  <div className="flex items-center gap-1.5 text-gray-400 mb-1">
+                    <Phone size={12} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Contact</span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-800">{item.partner.phone}</p>
+                </div>
+              </div>
 
-            <div className="card p-6">
-                <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    Driver List
-                    {isLoading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
-                </h2>
-                <AdvancedTable data={drivers} columns={columns} />
+              <div className="flex justify-between items-center pt-4 border-t border-gray-50 italic">
+                <div className="flex items-center gap-1.5 text-gray-400">
+                  <Calendar size={12} />
+                  <span className="text-[10px] font-medium">Assigned: {new Date(item.assignedAt).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-blue-500">
+                  <ShieldCheck size={12} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Verified</span>
+                </div>
+              </div>
             </div>
+          </div>
+        ))}
+      </div>
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Driver">
-                <form onSubmit={handleAddDriver} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Driver Name</label>
-                        <input
-                            required
-                            type="text"
-                            value={newDriver.name}
-                            onChange={(e) => setNewDriver({ ...newDriver, name: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500/20 outline-none"
-                            placeholder="e.g. Ramesh Kumar"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                        <input
-                            required
-                            type="tel"
-                            value={newDriver.phone}
-                            onChange={(e) => setNewDriver({ ...newDriver, phone: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500/20 outline-none"
-                            placeholder="e.g. 9876543210"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input
-                            required
-                            type="email"
-                            value={newDriver.email}
-                            onChange={(e) => setNewDriver({ ...newDriver, email: e.target.value })}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500/20 outline-none"
-                            placeholder="e.g. ramesh@example.com"
-                        />
-                    </div>
-                    <div className="flex justify-end pt-4">
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 disabled:bg-red-400"
-                        >
-                            {isSubmitting ? 'Adding...' : 'Add Driver'}
-                        </button>
-                    </div>
-                </form>
-            </Modal>
+       {attachments.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+          <Users size={48} className="text-gray-300 mb-4" />
+          <p className="text-gray-500 font-medium">No drivers or attachments found in your fleet.</p>
         </div>
-    );
+      )}
+    </div>
+  );
 }

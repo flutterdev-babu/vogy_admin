@@ -80,6 +80,8 @@ export interface VendorRegisterRequest {
   password: string;
   address?: string;
   cityCodeId?: string;
+  type?: 'INDIVIDUAL' | 'BUSINESS';
+  profileImage?: string;
   // Contact Details
   gstNumber?: string;
   panNumber?: string;
@@ -150,6 +152,10 @@ export interface Partner {
   currentLat?: number;
   currentLng?: number;
   vehicle?: Vehicle;
+  // Vendor association
+  vendorId?: string;
+  vendorCustomId?: string;
+  vendor?: Vendor;
   // Own Vehicle Details (Owner-Driver)
   hasOwnVehicle: boolean;
   ownVehicleNumber?: string;
@@ -166,9 +172,12 @@ export interface PartnerRegisterRequest {
   email?: string;
   password: string;
   cityCodeId?: string;
+  vendorId?: string;
   vendorCustomId?: string;
+  profileImage?: string;
   // Own Vehicle Details
   hasOwnVehicle: boolean;
+  hasLicense: boolean;
   ownVehicleNumber?: string;
   ownVehicleModel?: string;
   ownVehicleTypeId?: string;
@@ -395,8 +404,10 @@ export interface CreateVehicleRequest {
   registrationNumber: string;
   vehicleModel: string;
   vehicleTypeId: string;
+  vendorId?: string;
   vendorCustomId?: string;
-  partnerCustomId: string;
+  partnerId?: string;
+  partnerCustomId?: string;
   cityCodeId: string;
   // New Fields
   color?: string;
@@ -532,9 +543,10 @@ export interface Ride {
   perKmPrice: number;
   totalFare: number;
   partnerEarnings: number;
+  riderEarnings: number; // For backward compatibility/consistency
   commission: number;
-  riderEarnings?: number; // Added for backward compatibility
   userOtp?: string;
+  otp?: string; // New field as per Admin OTP retrieval
   startTime?: string;
   endTime?: string;
   acceptedAt?: string;
@@ -613,4 +625,196 @@ export interface VehicleFilters {
   vendorId?: string;
   isActive?: boolean;
   search?: string;
+}
+
+// =====================================
+// Dashboard Response Types
+// =====================================
+
+// --- Vendor Dashboard ---
+export interface VendorDashboardData {
+  vehicles: { total: number; available: number; inUse: number };
+  partners: { total: number; online: number; offline: number };
+  rides: { total: number; completed: number; cancelled: number; active: number; today: number };
+  revenue: { total: number; earnings: number; commission: number; today: number };
+}
+
+export interface VendorAttachment {
+  id: string;
+  vendorId: string;
+  partner: {
+    id: string;
+    customId: string;
+    name: string;
+    phone: string;
+    status: EntityStatus;
+    isOnline: boolean;
+  };
+  vehicle: {
+    id: string;
+    customId: string;
+    registrationNumber: string;
+    vehicleModel: string;
+    isAvailable: boolean;
+    vehicleType: VehicleTypeSummary;
+  };
+  createdAt: string;
+  status: string;
+  assignedAt: string;
+}
+
+export interface VendorEarningsData {
+  summary: {
+    totalRevenue: number;
+    vendorEarnings: number;
+    vogyCommission: number;
+    rideCount: number;
+  };
+  breakdown: Array<{
+    date: string;
+    partnerId: string;
+    vehicleId: string;
+    totalFare: number;
+    vogyCommission: number;
+    vendorEarnings: number;
+  }>;
+}
+
+// --- Partner Dashboard ---
+export interface PartnerDashboardData {
+  status: { isOnline: boolean; rating: number };
+  rides: { total: number; completed: number; cancelled: number; active: number; today: number; completionRate: string };
+  earnings: { total: number; sessionEarnings: number; totalFare: number; todayEarnings: number; todayFare: number };
+  assignedVehicle: {
+    id: string;
+    customId: string;
+    registrationNumber: string;
+    vehicleModel: string;
+    vehicleType: { displayName: string; category: string };
+  } | null;
+}
+
+export interface PartnerVehicleData {
+  hasOwnVehicle: boolean;
+  ownVehicle: Vehicle | null;
+  assignedVehicle: {
+    id: string;
+    registrationNumber: string;
+    vehicleModel: string;
+    vendor: { id: string; customId: string; name: string; companyName: string; phone: string };
+    vehicleType: { displayName: string; category: string; pricePerKm: number };
+  } | null;
+}
+
+export interface PartnerEarningsData {
+  total: number;
+  totalFare: number;
+  sessionEarnings: number;
+  todayEarnings: number;
+  recentRides: Array<{
+    rideId: string;
+    date: string;
+    totalFare: number;
+    commission: number;
+    earning: number;
+  }>;
+  byPaymentMode: Array<{ mode: string; count: number; earnings: number }>;
+  dailyBreakdown: Array<{ date: string; earnings: number; rides: number }>;
+}
+
+// --- Admin Dashboard ---
+export interface AdminDashboardData {
+  entities: { 
+    users: number; vendors: number; partners: number; vehicles: number; 
+    agents: number; corporates: number; onlinePartners: number;
+  };
+  rides: { total: number; completed: number; active: number; today: number };
+  revenue: { total: number; partnerEarnings: number; commission: number; todayRevenue: number; todayCommission: number };
+  todayNewUsers: number;
+}
+
+export interface AdminRevenueAnalytics {
+  byPaymentMode: Array<{ mode: string; count: number; revenue: number; commission: number }>;
+  dailyRevenue: Array<{ date: string; revenue: number; commission: number; rides: number }>;
+}
+
+export interface AdminRideAnalytics {
+  statusDistribution: Array<{ status: string; count: number }>;
+  byVehicleType: Array<{ vehicleTypeId: string; vehicleType: { displayName: string; category: string }; count: number; revenue: number }>;
+  bookingType: { manual: number; app: number };
+}
+
+export interface AdminEntityAnalytics {
+  vendors: Array<{ status: string; count: number }>;
+  partners: Array<{ status: string; count: number }>;
+  corporates: Array<{ status: string; count: number }>;
+}
+
+export interface AdminRecentActivity {
+  recentRides: Array<{ id: string; customId: string; status: RideStatus; totalFare: number; createdAt: string; user: { name: string }; partner: { name: string } }>;
+  recentVendors: Array<{ id: string; customId: string; name: string; companyName: string; status: string; createdAt: string }>;
+  recentPartners: Array<{ id: string; customId: string; name: string; status: string; createdAt: string }>;
+  recentUsers: Array<{ id: string; name: string; phone: string; createdAt: string }>;
+}
+
+// --- Attachment Governance ---
+export type AttachmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+
+export interface Attachment {
+  id: string;
+  vendor: VendorSummary;
+  partner: PartnerSummary;
+  vehicle: {
+    id: string;
+    customId: string;
+    registrationNumber: string;
+    vehicleModel: string;
+    vehicleType: VehicleTypeSummary;
+  };
+  status: AttachmentStatus;
+  createdAt: string;
+  verifiedAt?: string;
+}
+
+export interface VerifyAttachmentRequest {
+  status: 'APPROVED' | 'REJECTED';
+  notes?: string;
+}
+
+// --- User Dashboard ---
+export interface UserRideSummary {
+  totalRides: number;
+  completedRides: number;
+  cancelledRides: number;
+  inProgress: number;
+  totalSpent: number;
+  averageFare: number;
+}
+
+export interface UserActiveRide {
+  id: string;
+  customId: string;
+  status: RideStatus;
+  pickupAddress: string;
+  dropAddress: string;
+  totalFare: number;
+  partner: {
+    id: string;
+    customId: string;
+    name: string;
+    phone: string;
+    profileImage: string;
+    rating: number;
+    currentLat: number;
+    currentLng: number;
+    isOnline: boolean;
+  };
+  vehicle: { registrationNumber: string; vehicleModel: string };
+  vehicleType: { displayName: string; category: string };
+}
+
+export interface UserSpendSummary {
+  byPaymentMode: Array<{ mode: string; count: number; amount: number }>;
+  byVehicleType: Array<{ vehicleTypeId: string; vehicleType: { displayName: string; category: string }; count: number; amount: number }>;
+  dailySpend: Array<{ date: string; spent: number; rides: number }>;
 }

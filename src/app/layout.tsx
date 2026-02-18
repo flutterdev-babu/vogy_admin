@@ -12,8 +12,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "VOGY Admin | Dashboard",
-  description: "Admin panel for VOGY ride-hailing platform",
+  title: "ARA Travels | Dashboard",
+  description: "Admin panel for ARA Travels ride-hailing platform",
 };
 
 export default function RootLayout({

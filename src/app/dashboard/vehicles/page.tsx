@@ -23,8 +23,10 @@ export default function VehiclesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
-    registrationNumber: '', vehicleModel: '', vehicleTypeId: '',
-    vendorCustomId: '', partnerCustomId: '', cityCodeId: '',
+    partnerId: '', registrationNumber: '', vehicleModel: '',
+    color: '', fuelType: '', vehicleTypeId: '',
+    cityCodeId: '', seatingCapacity: '',
+    rtoTaxExpiryDate: '', speedGovernor: '',
   });
 
   const fetchData = async () => {
@@ -56,7 +58,7 @@ export default function VehiclesPage() {
   }, [search]);
 
   const handleCreate = async () => {
-    if (!formData.registrationNumber || !formData.vehicleModel || !formData.vehicleTypeId || !formData.vendorCustomId || !formData.partnerCustomId || !formData.cityCodeId) {
+    if (!formData.registrationNumber || !formData.vehicleModel || !formData.vehicleTypeId || !formData.cityCodeId) {
       toast.error('Please fill all required fields'); return;
     }
     setIsCreating(true);
@@ -65,13 +67,17 @@ export default function VehiclesPage() {
         registrationNumber: formData.registrationNumber,
         vehicleModel: formData.vehicleModel,
         vehicleTypeId: formData.vehicleTypeId,
-        vendorCustomId: formData.vendorCustomId,
-        partnerCustomId: formData.partnerCustomId,
-        cityCodeId: formData.cityCodeId
+        partnerId: formData.partnerId || undefined,
+        cityCodeId: formData.cityCodeId,
+        color: formData.color || undefined,
+        fuelType: formData.fuelType ? (formData.fuelType as any) : undefined,
+        seatingCapacity: formData.seatingCapacity ? parseInt(formData.seatingCapacity) : undefined,
+        rtoTaxExpiryDate: formData.rtoTaxExpiryDate || undefined,
+        speedGovernor: formData.speedGovernor === 'YES',
       });
       toast.success('Vehicle created successfully');
       setShowCreateModal(false);
-      setFormData({ registrationNumber: '', vehicleModel: '', vehicleTypeId: '', vendorCustomId: '', partnerCustomId: '', cityCodeId: '' });
+      setFormData({ partnerId: '', registrationNumber: '', vehicleModel: '', color: '', fuelType: '', vehicleTypeId: '', cityCodeId: '', seatingCapacity: '', rtoTaxExpiryDate: '', speedGovernor: '' });
       fetchData();
     } catch (error) {
       console.error('Failed to create vehicle:', error);
@@ -177,66 +183,106 @@ export default function VehiclesPage() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col animate-fade-in">
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-100">
               <h2 className="text-xl font-bold text-gray-800">Add New Vehicle</h2>
               <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
                 <X size={20} className="text-gray-500" />
               </button>
             </div>
+            <div className="overflow-y-auto flex-1 p-6 pt-4">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Registration Number *</label>
-                <input type="text" value={formData.registrationNumber}
-                  onChange={(e) => setFormData({...formData, registrationNumber: e.target.value})}
-                  className="input" placeholder="KA01AB1234" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Partner ID</label>
+                <input type="text" value={formData.partnerId}
+                  onChange={(e) => setFormData({...formData, partnerId: e.target.value})}
+                  className="input" placeholder="Enter Partner ID" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Model *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reg No. *</label>
+                <input type="text" value={formData.registrationNumber}
+                  onChange={(e) => setFormData({...formData, registrationNumber: e.target.value.toUpperCase()})}
+                  className="input" placeholder="Enter Vehicle Registration Number" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Model Name *</label>
                 <input type="text" value={formData.vehicleModel}
                   onChange={(e) => setFormData({...formData, vehicleModel: e.target.value})}
-                  className="input" placeholder="Swift Dzire" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Type *</label>
-                  <select value={formData.vehicleTypeId}
-                    onChange={(e) => setFormData({...formData, vehicleTypeId: e.target.value})}
-                    className="input">
-                    <option value="">Select type</option>
-                    {vehicleTypes.map(t => <option key={t.id} value={t.id}>{t.displayName}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                  <select value={formData.cityCodeId}
-                    onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
-                    className="input">
-                    <option value="">Select city</option>
-                    {cityCodes.map(c => <option key={c.id} value={c.code}>{c.cityName}</option>)}
-                  </select>
-                </div>
+                  className="input" placeholder="Enter Model Name" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vendor *</label>
-                <select value={formData.vendorCustomId}
-                  onChange={(e) => setFormData({...formData, vendorCustomId: e.target.value})}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                <input type="text" value={formData.color}
+                  onChange={(e) => setFormData({...formData, color: e.target.value})}
+                  className="input" placeholder="Enter Vehicle Color" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
+                <select value={formData.fuelType}
+                  onChange={(e) => setFormData({...formData, fuelType: e.target.value})}
                   className="input">
-                  <option value="">Select vendor</option>
-                  {vendors.map(v => <option key={v.id} value={v.customId}>{v.companyName}</option>)}
+                  <option value="">Select Fuel Type</option>
+                  <option value="PETROL">Petrol</option>
+                  <option value="DIESEL">Diesel</option>
+                  <option value="CNG">CNG</option>
+                  <option value="ELECTRIC">Electric</option>
+                  <option value="HYBRID">Hybrid</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Partner (Driver) *</label>
-                <select value={formData.partnerCustomId}
-                  onChange={(e) => setFormData({...formData, partnerCustomId: e.target.value})}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Group *</label>
+                <select value={formData.vehicleTypeId}
+                  onChange={(e) => setFormData({...formData, vehicleTypeId: e.target.value})}
                   className="input">
-                  <option value="">Select partner</option>
-                  {partners.map(p => <option key={p.id} value={p.customId}>{p.name} - {p.phone}</option>)}
+                  <option value="">Select Vehicle Type</option>
+                  {vehicleTypes.map(t => <option key={t.id} value={t.id}>{t.displayName}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City Code *</label>
+                <select value={formData.cityCodeId}
+                  onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
+                  className="input">
+                  <option value="">Select City Code</option>
+                  {cityCodes.map(c => <option key={c.id} value={c.id}>{c.cityName} ({c.code})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Seating Capacity</label>
+                <select value={formData.seatingCapacity}
+                  onChange={(e) => setFormData({...formData, seatingCapacity: e.target.value})}
+                  className="input">
+                  <option value="">Select Seating Capacity</option>
+                  <option value="2">2</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="10">10</option>
+                  <option value="12">12</option>
+                  <option value="14">14</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">RTO Tax Expiry Date</label>
+                <input type="date" value={formData.rtoTaxExpiryDate}
+                  onChange={(e) => setFormData({...formData, rtoTaxExpiryDate: e.target.value})}
+                  className="input" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Speed Governor</label>
+                <select value={formData.speedGovernor}
+                  onChange={(e) => setFormData({...formData, speedGovernor: e.target.value})}
+                  className="input">
+                  <option value="">Select Speed Governor</option>
+                  <option value="YES">Yes</option>
+                  <option value="NO">No</option>
+                </select>
+              </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-3 p-6 pt-4 border-t border-gray-100">
               <button onClick={() => setShowCreateModal(false)}
                 className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
                 Cancel

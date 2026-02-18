@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { 
   Car, 
   MapPin, 
@@ -18,9 +20,9 @@ import {
   Instagram,
   Facebook,
   Linkedin,
-  Briefcase
+  Briefcase,
+  LayoutDashboard
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { TOKEN_KEYS } from '@/lib/api';
 
 // Helper to get the correct href based on auth state
@@ -50,6 +52,7 @@ export default function LandingPage() {
     vendor: false,
     agent: false,
     corporate: false,
+    admin: false,
   });
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function LandingPage() {
         vendor: !!localStorage.getItem(TOKEN_KEYS.vendor),
         agent: !!localStorage.getItem(TOKEN_KEYS.agent),
         corporate: !!localStorage.getItem(TOKEN_KEYS.corporate),
+        admin: !!localStorage.getItem(TOKEN_KEYS.admin),
       });
     }
   }, []);
@@ -72,11 +76,16 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E32222] to-[#b91c1c] flex items-center justify-center shadow-lg shadow-red-900/20">
-                <span className="font-bold text-white text-xl">V</span>
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12">
+                <Image 
+                  src="/logo_image.png" 
+                  alt="Ara Travels Logo" 
+                  fill
+                  className="object-contain rounded-xl"
+                />
               </div>
-              <span className="text-2xl font-bold tracking-tight">VOGY <span className="text-[#E32222]">CABS</span></span>
+              <span className="text-2xl font-bold tracking-tight">ARA <span className="text-[#E32222]">TRAVELS</span></span>
             </div>
 
             {/* Desktop Menu */}
@@ -129,9 +138,16 @@ export default function LandingPage() {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center gap-4">
-               <Link href="/login" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">
-                Admin Login
-              </Link>
+              {authState.admin ? (
+                <Link href="/dashboard" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white text-sm font-semibold transition-all shadow-lg shadow-red-900/20 hover:shadow-red-900/40">
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+              ) : (
+                <Link href="/login" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">
+                  Admin Login
+                </Link>
+              )}
               <Link 
                 href="/download"
                 className="px-5 py-2.5 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white text-sm font-semibold transition-all shadow-lg shadow-red-900/20 hover:shadow-red-900/40"
@@ -187,7 +203,13 @@ export default function LandingPage() {
                   </div>
                 </div>
                 
-                <Link href="/login" className="block text-base font-medium text-[#E32222] pt-2">Admin Login</Link>
+                {authState.admin ? (
+                  <Link href="/dashboard" className="flex items-center gap-2 text-base font-medium text-[#E32222] pt-2">
+                    <LayoutDashboard size={16} /> Admin Dashboard
+                  </Link>
+                ) : (
+                  <Link href="/login" className="block text-base font-medium text-[#E32222] pt-2">Admin Login</Link>
+                )}
               </div>
             </motion.div>
           )}
@@ -221,7 +243,7 @@ export default function LandingPage() {
               className="text-5xl lg:text-7xl font-bold leading-tight"
             >
               Ride Smarter with <br />
-              <span className="text-[#E32222] drop-shadow-[0_0_30px_rgba(227,34,34,0.3)]">VOGY CABS</span>
+              <span className="text-[#E32222] drop-shadow-[0_0_30px_rgba(227,34,34,0.3)]">ARA TRAVELS</span>
             </motion.h1>
 
             <motion.p 
@@ -368,9 +390,15 @@ export default function LandingPage() {
              
              <div className="relative hidden lg:block">
                 <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-black opacity-50" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-neutral-600 font-medium">App Screenshot Placeholder</span>
+                  <Image 
+                     src="/cab_image.png" 
+                     alt="Ara Travels Cab" 
+                     fill
+                     className="object-cover"
+                     priority
+                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent">
+                    
                   </div>
                 </div>
              </div>
@@ -382,7 +410,7 @@ export default function LandingPage() {
       <footer className="bg-[#050505] border-t border-white/5 pt-20 pb-10 px-4">
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 mb-16">
           <div className="space-y-6">
-            <h3 className="text-2xl font-bold">VOGY <span className="text-[#E32222]">CABS</span></h3>
+            <h3 className="text-2xl font-bold">ARA <span className="text-[#E32222]">TRAVELS</span></h3>
             <p className="text-neutral-500 leading-relaxed text-sm">Redefining mobility in India with safety, comfort, and transparency at the core of our service.</p>
             <div className="flex gap-4">
               <SocialIcon icon={<Instagram size={20} />} />
@@ -413,13 +441,13 @@ export default function LandingPage() {
              <h4 className="font-bold text-lg mb-6 text-white">Contact</h4>
             <ul className="space-y-4 text-neutral-500 text-sm">
               <li className="flex items-center gap-3"><Phone size={18} className="text-[#E32222]" /> +91 98765 43210</li>
-              <li className="flex items-center gap-3"><Mail size={18} className="text-[#E32222]" /> support@vogycabs.in</li>
+              <li className="flex items-center gap-3"><Mail size={18} className="text-[#E32222]" /> support@aratravels.in</li>
             </ul>
           </div>
         </div>
         
         <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 text-center text-neutral-600 text-xs">
-          <p>&copy; 2026 Vogy Cabs. All rights reserved.</p>
+          <p>&copy; 2026 Ara Travels. All rights reserved.</p>
         </div>
       </footer>
 

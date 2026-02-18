@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Eye, RefreshCw, ChevronLeft, ChevronRight, Search, RotateCcw } from 'lucide-react';
+import { Eye, RefreshCw, ChevronLeft, ChevronRight, Search, RotateCcw, Plus } from 'lucide-react';
 import { rideService } from '@/services/rideService';
 import { Ride, RideStatus, RideFilters } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -68,12 +68,22 @@ export default function RidesPage() {
       {/* Page Title & Refresh */}
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-xl font-bold text-gray-800">Booking List</h1>
-        <button 
-          onClick={fetchRides}
-          className="p-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20"
-        >
-          <RotateCcw size={18} />
-        </button>
+        <div className="flex gap-2">
+          <Link 
+            href="/dashboard/rides/create"
+            className="flex items-center gap-2 px-4 py-2 bg-[#E32222] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20 transition-all active:scale-[0.98]"
+          >
+            <Plus size={16} />
+            Add New Booking
+          </Link>
+          <button 
+            onClick={fetchRides}
+            className="p-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+            title="Refresh List"
+          >
+            <RotateCcw size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -225,7 +235,14 @@ export default function RidesPage() {
                       </div>
                     </td>
                     <td className="px-3 py-4">
-                      <div className="flex gap-1">
+                      <div className="flex gap-2">
+                        <Link 
+                          href={`/dashboard/rides/${ride.id}`}
+                          className="p-1.5 bg-gray-100 text-gray-600 rounded-md hover:bg-black hover:text-white transition-all"
+                          title="View Details"
+                        >
+                          <Eye size={14} />
+                        </Link>
                         <span className="px-3 py-1 bg-orange-500 text-white text-[9px] font-bold rounded-md uppercase">Confirmed</span>
                         <button className="px-2 py-1 bg-red-600 text-white text-[9px] font-bold rounded-md uppercase">No Ref</button>
                       </div>

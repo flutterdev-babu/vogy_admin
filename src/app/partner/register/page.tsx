@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, UserPlus, Loader2, Users, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Loader2, Users, ArrowLeft, ChevronDown, ChevronUp, Car } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { partnerService } from '@/services/partnerService';
+import { agentService } from '@/services/agentService';
+import { PartnerRegisterRequest } from '@/types';
 
 export default function PartnerRegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,11 +17,14 @@ export default function PartnerRegisterPage() {
     phone: '',
     email: '',
     password: '',
+    cityCodeId: '',
+    vendorCustomId: '',
     // Personal Details
     localAddress: '',
     permanentAddress: '',
     aadharNumber: '',
     licenseNumber: '',
+    licenseImage: '',
     dateOfBirth: '',
     gender: '' as any,
     // Banking Details
@@ -30,20 +35,59 @@ export default function PartnerRegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPersonalDetails, setShowPersonalDetails] = useState(false);
   const [showBankingDetails, setShowBankingDetails] = useState(false);
+  const [showVehicleDetails, setShowVehicleDetails] = useState(false);
+  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
+  const [cityCodes, setCityCodes] = useState<any[]>([]);
   const router = useRouter();
+
+  // Own Vehicle fields
+  const [hasOwnVehicle, setHasOwnVehicle] = useState(false);
+  const [ownVehicleNumber, setOwnVehicleNumber] = useState('');
+  const [ownVehicleModel, setOwnVehicleModel] = useState('');
+  const [ownVehicleTypeId, setOwnVehicleTypeId] = useState('');
+
+  useState(() => {
+    const loadLookups = async () => {
+      try {
+        const [vtRes, cityRes] = await Promise.all([
+          agentService.getVehicleTypesLookup(),
+          agentService.getCityCodes(),
+        ]);
+        if (vtRes.success) setVehicleTypes(vtRes.data || []);
+        if (cityRes.success) setCityCodes(cityRes.data || []);
+      } catch (err) { console.error('Failed to load lookups:', err); }
+    };
+    loadLookups();
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       const { firstName, lastName, ...rest } = formData;
-      const submitData = {
-        ...rest,
+      const submitData: PartnerRegisterRequest = {
         firstName,
         lastName,
         name: `${firstName} ${lastName}`.trim(),
         phone: `+91${rest.phone}`,
-        gender: formData.gender ? (formData.gender as any) : undefined
+        email: rest.email || undefined,
+        password: rest.password,
+        cityCodeId: formData.cityCodeId || undefined,
+        vendorCustomId: formData.vendorCustomId || undefined,
+        gender: formData.gender ? (formData.gender as any) : undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        localAddress: formData.localAddress || undefined,
+        permanentAddress: formData.permanentAddress || undefined,
+        aadharNumber: formData.aadharNumber || undefined,
+        licenseNumber: formData.licenseNumber || undefined,
+        licenseImage: formData.licenseImage || undefined,
+        bankAccountNumber: formData.bankAccountNumber || undefined,
+        upiId: formData.upiId || undefined,
+        hasLicense: true,
+        hasOwnVehicle,
+        ownVehicleNumber: hasOwnVehicle ? ownVehicleNumber || undefined : undefined,
+        ownVehicleModel: hasOwnVehicle ? ownVehicleModel || undefined : undefined,
+        ownVehicleTypeId: hasOwnVehicle ? ownVehicleTypeId || undefined : undefined,
       };
       const response = await partnerService.register(submitData as any);
       if (response.success) {
@@ -164,6 +208,30 @@ export default function PartnerRegisterPage() {
                   </button>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">City Code</label>
+                  <select
+                    value={formData.cityCodeId}
+                    onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
+                    className={inputClass + " appearance-none"}
+                  >
+                    <option value="">Select City</option>
+                    {cityCodes.map((c: any) => <option key={c.id} value={c.id}>{c.cityName} ({c.code})</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-300 ml-1">Vendor Code</label>
+                  <input
+                    type="text"
+                    value={formData.vendorCustomId}
+                    onChange={(e) => setFormData({...formData, vendorCustomId: e.target.value})}
+                    className={inputClass}
+                    placeholder="VDR-BLR-001 (if linked)"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Personal & License Details (Collapsible) */}
@@ -228,6 +296,16 @@ export default function PartnerRegisterPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-300 ml-1">License Image URL</label>
+                    <input
+                      type="text"
+                      value={formData.licenseImage}
+                      onChange={(e) => setFormData({...formData, licenseImage: e.target.value})}
+                      className={inputClass}
+                      placeholder="https://... or upload path"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-300 ml-1">Local Address</label>
                     <textarea
                       value={formData.localAddress}
@@ -247,6 +325,56 @@ export default function PartnerRegisterPage() {
                       placeholder="Permanent address..."
                     />
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Own Vehicle Details (Collapsible) */}
+            <div className="border border-white/10 rounded-2xl overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowVehicleDetails(!showVehicleDetails)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <span className="font-medium text-neutral-300 flex items-center gap-2"><Car size={16} className="text-emerald-400" /> Own Vehicle Details</span>
+                {showVehicleDetails ? <ChevronUp size={20} className="text-neutral-400" /> : <ChevronDown size={20} className="text-neutral-400" />}
+              </button>
+              
+              {showVehicleDetails && (
+                <div className="p-4 space-y-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={hasOwnVehicle}
+                      onChange={e => setHasOwnVehicle(e.target.checked)}
+                      className="w-4 h-4 accent-[#E32222] rounded" />
+                    <span className="text-sm font-medium text-neutral-300">I have my own vehicle</span>
+                  </label>
+                  {hasOwnVehicle && (
+                    <div className="space-y-4 pt-2 border-t border-white/10">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-neutral-300 ml-1">Vehicle Number</label>
+                          <input type="text" value={ownVehicleNumber}
+                            onChange={e => setOwnVehicleNumber(e.target.value.toUpperCase())}
+                            className={inputClass} placeholder="KA01AB1234" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-neutral-300 ml-1">Vehicle Model</label>
+                          <input type="text" value={ownVehicleModel}
+                            onChange={e => setOwnVehicleModel(e.target.value)}
+                            className={inputClass} placeholder="Maruti Dzire" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-neutral-300 ml-1">Vehicle Type</label>
+                        <select value={ownVehicleTypeId}
+                          onChange={e => setOwnVehicleTypeId(e.target.value)}
+                          className={inputClass + " appearance-none"}>
+                          <option value="">Select Type</option>
+                          {vehicleTypes.map((vt: any) => <option key={vt.id} value={vt.id}>{vt.displayName} ({vt.category})</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -9,7 +9,10 @@ import {
   Vehicle,
   Ride,
   VendorFilters,
-  EntityStatus
+  EntityStatus,
+  VendorDashboardData,
+  VendorAttachment,
+  VendorEarningsData
 } from '@/types';
 
 export const vendorService = {
@@ -42,6 +45,35 @@ export const vendorService = {
   },
 
   // =====================
+  // Vendor Dashboard & Analytics APIs
+  // =====================
+  
+  async getDashboard(): Promise<ApiResponse<VendorDashboardData>> {
+    const response = await vendorApi.get('/dashboard');
+    return response.data;
+  },
+
+  async getAttachments(): Promise<ApiResponse<VendorAttachment[]>> {
+    const response = await vendorApi.get('/attachments');
+    return response.data;
+  },
+
+  async getRideById(id: string): Promise<ApiResponse<Ride>> {
+    const response = await vendorApi.get(`/rides/${id}`);
+    return response.data;
+  },
+
+  async getEarnings(): Promise<ApiResponse<VendorEarningsData>> {
+    const response = await vendorApi.get('/earnings');
+    return response.data;
+  },
+
+  async getAnalytics(): Promise<ApiResponse<VendorAnalytics>> {
+    const response = await vendorApi.get('/analytics');
+    return response.data;
+  },
+
+  // =====================
   // Vendor Data APIs
   // =====================
 
@@ -60,10 +92,6 @@ export const vendorService = {
     return response.data;
   },
 
-  async getAnalytics(): Promise<ApiResponse<VendorAnalytics>> {
-    const response = await vendorApi.get('/analytics');
-    return response.data;
-  },
 
   // =====================
   // Admin Vendor APIs
@@ -80,6 +108,16 @@ export const vendorService = {
 
   async updateStatus(id: string, status: EntityStatus): Promise<ApiResponse<Vendor>> {
     const response = await adminApi.put(`/vendors/${id}/status`, { status });
+    return response.data;
+  },
+
+  async createVendor(data: VendorRegisterRequest): Promise<ApiResponse<Vendor>> {
+    const response = await adminApi.post('/vendors', data);
+    return response.data;
+  },
+
+  async createVehicle(data: any): Promise<ApiResponse<Vehicle>> {
+    const response = await adminApi.post('/vehicles', data);
     return response.data;
   },
 

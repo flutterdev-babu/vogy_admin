@@ -57,7 +57,7 @@ export default function AgentRegisterPage() {
             <Briefcase size={36} className="text-[#E32222]" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">Agent Registration</h1>
-          <p className="text-neutral-400">Join VOGY operations team</p>
+          <p className="text-neutral-400">Join Ara Travels operations team</p>
         </div>
 
         <div className="p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
@@ -113,7 +113,7 @@ export default function AgentRegisterPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/50 transition-all"
-                placeholder="agent@vogy.in"
+                placeholder="agent@aratravels.in"
               />
             </div>
 
