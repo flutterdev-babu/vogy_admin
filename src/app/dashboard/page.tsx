@@ -21,6 +21,7 @@ import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { StatusBadge } from '@/components/ui/Badge';
 import Link from 'next/link';
 
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<AdminDashboardData | null>(null);
   const [activity, setActivity] = useState<AdminRecentActivity | null>(null);

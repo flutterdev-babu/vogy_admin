@@ -10,11 +10,15 @@ import {
   MapPin,
   Car,
   DollarSign,
-  User
+  User,
+  FileText,
+  Star,
+  Bell
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { TOKEN_KEYS, USER_KEYS } from '@/lib/api';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavItem {
   href: string;
@@ -27,6 +31,9 @@ const navItems: NavItem[] = [
   { href: '/partner/dashboard/rides', label: 'My Rides', icon: MapPin },
   { href: '/partner/dashboard/vehicle', label: 'Vehicle Status', icon: Car },
   { href: '/partner/dashboard/earnings', label: 'Earnings', icon: DollarSign },
+  { href: '/partner/dashboard/documents', label: 'Documents', icon: FileText },
+  { href: '/partner/dashboard/feedback', label: 'Feedback', icon: Star },
+  { href: '/partner/dashboard/inbox', label: 'Inbox', icon: Bell },
   { href: '/partner/dashboard/profile', label: 'Profile', icon: User },
 ];
 
@@ -93,9 +100,8 @@ export default function PartnerSidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    active ? 'bg-gradient-to-r from-[#E32222] to-emerald-600 text-white shadow-md shadow-emerald-500/30' : 'text-gray-600 hover:bg-emerald-50 hover:text-emerald-600'
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${active ? 'bg-gradient-to-r from-[#E32222] to-emerald-600 text-white shadow-md shadow-emerald-500/30' : 'text-gray-600 hover:bg-emerald-50 hover:text-emerald-600'
+                    }`}
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
@@ -112,10 +118,15 @@ export default function PartnerSidebar() {
               <p className="text-xs text-gray-500 truncate">{partner.email || partner.phone}</p>
             </div>
           )}
-          <button onClick={logout} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-xl transition-all duration-200 font-medium">
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <button onClick={logout} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-xl transition-all duration-200 font-medium">
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </div>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
     </>

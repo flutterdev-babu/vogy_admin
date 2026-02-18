@@ -139,6 +139,7 @@ export interface Partner {
   licenseImage?: string;
   // Banking Details
   bankAccountNumber?: string;
+  ifscCode?: string;
   upiId?: string;
   rating?: number;
   totalEarnings?: number;
@@ -249,6 +250,42 @@ export interface SetFarePricingRequest {
   baseKm: number;
   baseFare: number;
   perKmAfterBase: number;
+}
+
+// =====================================
+// Corporate Employee Types
+// =====================================
+
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  spendingLimit: number;
+  createdAt: string;
+}
+
+export interface CreateEmployeeRequest {
+  name: string;
+  email: string;
+  department: string;
+  spendingLimit: number;
+}
+
+export interface CorporateBookingRequest {
+  pickupLat: number;
+  pickupLng: number;
+  pickupAddress: string;
+  dropLat: number;
+  dropLng: number;
+  dropAddress: string;
+  vehicleTypeId: string;
+  scheduledDateTime?: string;
+  bookingNotes?: string;
+  employeeId: string;
+  guestName?: string;
+  guestPhone?: string;
 }
 
 // =====================================

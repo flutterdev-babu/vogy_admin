@@ -10,11 +10,15 @@ import {
   Car,
   Users,
   DollarSign,
-  Settings
+  Settings,
+  Truck,
+  FileText,
+  HelpCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { TOKEN_KEYS, USER_KEYS } from '@/lib/api';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavItem {
   href: string;
@@ -24,9 +28,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: '/vendor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/vendor/dashboard/vehicles', label: 'My Vehicles', icon: Car },
+  { href: '/vendor/dashboard/rides', label: 'Ride History', icon: Car },
+  { href: '/vendor/dashboard/fleet', label: 'Fleet Management', icon: Truck },
   { href: '/vendor/dashboard/drivers', label: 'My Drivers', icon: Users },
   { href: '/vendor/dashboard/earnings', label: 'Earnings', icon: DollarSign },
+  { href: '/vendor/dashboard/documents', label: 'Documents', icon: FileText },
+  { href: '/vendor/dashboard/support', label: 'Support', icon: HelpCircle },
   { href: '/vendor/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -93,9 +100,8 @@ export default function VendorSidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    active ? 'bg-gradient-to-r from-[#E32222] to-orange-600 text-white shadow-md shadow-orange-500/30' : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${active ? 'bg-gradient-to-r from-[#E32222] to-orange-600 text-white shadow-md shadow-orange-500/30' : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                    }`}
                 >
                   <Icon size={20} />
                   <span>{item.label}</span>
@@ -112,10 +118,15 @@ export default function VendorSidebar() {
               <p className="text-xs text-gray-500 truncate">{vendor.companyName}</p>
             </div>
           )}
-          <button onClick={logout} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-xl transition-all duration-200 font-medium">
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <button onClick={logout} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-xl transition-all duration-200 font-medium">
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </div>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
     </>

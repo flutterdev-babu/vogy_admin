@@ -20,10 +20,13 @@ import {
   MapPin,
   CreditCard,
   ChevronDown,
-  Paperclip
+  Paperclip,
+  Bell,
+  FileVideo
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavSection {
   title: string;
@@ -73,6 +76,9 @@ const navSections: NavSection[] = [
     items: [
       { href: '/dashboard/city-codes', label: 'City Codes', icon: MapPin },
       { href: '/dashboard/pricing', label: 'Pricing Config', icon: DollarSign },
+      { href: '/dashboard/permissions', label: 'Permissions', icon: UserCheck },
+      { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
+      { href: '/dashboard/audit-logs', label: 'Audit Logs', icon: FileVideo },
     ],
   },
   {
@@ -123,9 +129,8 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 shadow-sm z-40 flex flex-col transform transition-transform duration-300 lg:translate-x-0 ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 shadow-sm z-40 flex flex-col transform transition-transform duration-300 lg:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Logo */}
         <div className="p-6 border-b border-gray-100 flex-shrink-0">
@@ -168,17 +173,16 @@ export default function Sidebar() {
                     {section.items.map((item) => {
                       const Icon = item.icon;
                       const active = isActive(item.href);
-                      
+
                       return (
                         <Link
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsMobileOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                            active
-                              ? 'bg-[#E32222] text-white shadow-md shadow-red-500/30'
-                              : 'text-gray-500 hover:bg-red-50 hover:text-red-600'
-                          }`}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${active
+                            ? 'bg-[#E32222] text-white shadow-md shadow-red-500/30'
+                            : 'text-gray-500 hover:bg-red-50 hover:text-red-600'
+                            }`}
                         >
                           <Icon size={18} />
                           <span>{item.label}</span>
@@ -203,15 +207,20 @@ export default function Sidebar() {
               </span>
             </div>
           )}
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-xl transition-all duration-200 font-medium"
-          >
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <button
+                onClick={logout}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 rounded-xl transition-all duration-200 font-medium"
+              >
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </div>
+            <ThemeToggle />
+          </div>
         </div>
-      </aside>
+      </aside >
     </>
   );
 }
