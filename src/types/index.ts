@@ -131,6 +131,7 @@ export interface Partner {
   aadhaarNumber?: string; // Standardized with API
   licenseNumber?: string;
   licenseImage?: string;
+  panNumber?: string;
   panImage?: string;
   aadhaarImage?: string;
   hasLicense?: boolean;
