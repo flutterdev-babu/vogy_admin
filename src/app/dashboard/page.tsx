@@ -12,36 +12,148 @@ import {
   ShieldCheck, 
   Briefcase, 
   AlertCircle,
-  Activity,
-  UserPlus
+  UserPlus,
+  Zap,
+  Loader2,
+  RotateCcw
 } from 'lucide-react';
 import { adminDashboardService } from '@/services/adminDashboardService';
-import { AdminDashboardData, AdminRecentActivity } from '@/types';
+import { AdminDashboardData } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { StatusBadge } from '@/components/ui/Badge';
 import Link from 'next/link';
-
+import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<AdminDashboardData | null>(null);
-  const [activity, setActivity] = useState<AdminRecentActivity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAutomating, setIsAutomating] = useState(false);
+
+  const handleAutomation = async () => {
+    setIsAutomating(true);
+    const toastId = toast.loading('Starting Automation...');
+
+    try {
+      const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const token = localStorage.getItem('admin_token');
+
+      if (!token) throw new Error('No admin token found. Please login again.');
+
+      const headers = { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      toast.loading('Fetching Lookups...', { id: toastId });
+
+      const [cityRes, vtRes] = await Promise.all([
+        fetch(`${baseURL}/admin/city-codes`, { headers }),
+        fetch(`${baseURL}/admin/vehicle-types`, { headers })
+      ]);
+
+      const cities = (await cityRes.json()).data;
+      const vts = (await vtRes.json()).data;
+
+      const blrCity = cities.find((c: any) => c.code === 'BLR');
+      const sedanType = vts.find((t: any) => 
+        t.name.includes('SEDAN') || t.displayName.includes('Sedan')
+      );
+
+      if (!blrCity) throw new Error('BLR City Code not found');
+      if (!sedanType) throw new Error('Sedan Vehicle Type not found');
+
+      toast.loading('Registering Partner...', { id: toastId });
+
+      const pRegRes = await fetch(`${baseURL}/admin/partners`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          firstName: "Kiran",
+          lastName: "Perepalle",
+          name: "Kiran Perepalle",
+          phone: "+91" + Math.floor(7000000000 + Math.random() * 2000000000),
+          password: "Password@123",
+          cityCodeId: blrCity.id,
+          gender: "MALE",
+          dateOfBirth: "1990-01-01",
+          localAddress: "Bangalore, India",
+          hasLicense: true,
+          licenseNumber: "KA01" + Math.floor(1000000000 + Math.random() * 9000000000),
+          licenseImage: "https://via.placeholder.com/600x400?text=Driving+License"
+        })
+      });
+
+      const partner = (await pRegRes.json()).data;
+
+      toast.loading('Registering Vehicle...', { id: toastId });
+
+      const vRegRes = await fetch(`${baseURL}/admin/vehicles`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          registrationNumber: "KA01" + Math.floor(1000 + Math.random() * 9000),
+          vehicleModel: "Toyota Etios",
+          vehicleTypeId: sedanType.id,
+          cityCodeId: blrCity.id,
+          fuelType: "PETROL",
+          rcImage: "https://via.placeholder.com/600x400?text=Registration+Certificate"
+        })
+      });
+
+      const vehicle = (await vRegRes.json()).data;
+
+      toast.loading('Registering Vendor...', { id: toastId });
+
+      const vnRegRes = await fetch(`${baseURL}/admin/vendors`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name: "Raju Kumar",
+          companyName: "Raju Travels",
+          phone: "+91" + Math.floor(7000000000 + Math.random() * 2000000000),
+          password: "Password@123",
+          cityCodeId: blrCity.id,
+          address: "Bangalore, India"
+        })
+      });
+
+      const vendor = (await vnRegRes.json()).data;
+
+      toast.loading('Creating Attachment...', { id: toastId });
+
+      await fetch(`${baseURL}/admin/attachments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          partnerCustomId: partner.customId,
+          vehicleCustomId: vehicle.customId,
+          vendorCustomId: vendor.customId,
+          cityCode: blrCity.code
+        })
+      });
+
+      toast.success('Automation Completed Successfully!', { id: toastId });
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Automation failed:', err);
+      toast.error(err.message || 'Automation failed', { id: toastId });
+    } finally {
+      setIsAutomating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [statsRes, activityRes] = await Promise.all([
-          adminDashboardService.getDashboard(),
-          adminDashboardService.getRecentActivity(10),
-        ]);
+        const statsRes = await adminDashboardService.getDashboard();
 
-        if (statsRes.success) setStats(statsRes.data);
-        if (activityRes.success) setActivity(activityRes.data);
-        
-        if (!statsRes.success) setError(statsRes.message || 'Failed to fetch dashboard statistics');
-      } catch (err: any) {
-        console.error('Failed to fetch dashboard data:', err);
+        if (statsRes.success) {
+          setStats(statsRes.data);
+        } else {
+          setError(statsRes.message || 'Failed to fetch dashboard statistics');
+        }
+      } catch (err) {
+        console.error('Dashboard error:', err);
         setError('An error occurred while loading dashboard data');
       } finally {
         setIsLoading(false);
@@ -59,7 +171,10 @@ export default function DashboardPage() {
         <AlertCircle size={48} className="text-red-500 mb-4" />
         <h2 className="text-xl font-bold text-gray-800 mb-2">Dashboard Error</h2>
         <p className="text-gray-600 mb-6 max-w-md">{error}</p>
-        <button onClick={() => window.location.reload()} className="px-6 py-2 bg-[#E32222] text-white rounded-xl font-medium hover:bg-red-600 transition-colors">
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-2 bg-[#E32222] text-white rounded-xl font-medium hover:bg-red-600 transition-colors"
+        >
           Retry
         </button>
       </div>
@@ -78,12 +193,49 @@ export default function DashboardPage() {
   return (
     <div className="animate-fade-in space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">System Overview</h1>
-        <p className="text-gray-500 mt-1">Global statistics and real-time activity for the platform.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">System Overview</h1>
+            <p className="text-gray-500 mt-1">Global statistics overview for the platform.</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#E32222] transition-colors shadow-sm"
+          >
+            <RotateCcw size={18} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/rides/manual"
+            className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-lg active:scale-95 text-xs italic uppercase"
+          >
+            <Route size={14} className="text-[#E32222]" />
+            Manual Dispatch
+          </Link>
+
+          <button
+            onClick={handleAutomation}
+            disabled={isAutomating}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all shadow-lg text-xs italic uppercase ${
+              isAutomating
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-orange-500 to-[#E32222] text-white hover:scale-105 active:scale-95 shadow-red-500/20'
+            }`}
+          >
+            {isAutomating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Zap className="w-4 h-4 fill-current" />
+            )}
+            {isAutomating ? 'Running Automation...' : 'Automation'}
+          </button>
+        </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Entity Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {entityCards.map((stat) => (
           <Link key={stat.label} href={stat.href} className="card p-4 block hover:shadow-md transition-all group border border-gray-100">
@@ -91,7 +243,7 @@ export default function DashboardPage() {
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
                 <stat.icon className="w-5 h-5 text-white" />
               </div>
-              <div className="min-w-0">
+              <div>
                 <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider truncate">{stat.label}</p>
                 <p className="text-xl font-black text-gray-900 mt-0.5">{stat.value}</p>
                 {stat.subValue && <p className="text-[10px] font-bold text-emerald-500 mt-0.5">{stat.subValue}</p>}
@@ -100,131 +252,6 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
-
-      {/* Top Section: Rides & Revenue */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Ride Stats */}
-        <div className="card p-8 bg-white border-none shadow-xl shadow-gray-200/50">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Route className="text-[#E32222]" /> Ride Performance
-            </h2>
-            <div className="px-3 py-1 bg-red-50 text-[#E32222] text-xs font-bold rounded-full">TODAY: {stats?.rides.today || 0}</div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-            <StatSmall label="Total Rides" value={stats?.rides.total || 0} icon={<Activity size={16} />} color="text-gray-800" />
-            <StatSmall label="Completed" value={stats?.rides.completed || 0} icon={<TrendingUp size={16} />} color="text-emerald-500" />
-            <StatSmall label="Active Now" value={stats?.rides.active || 0} icon={<Clock size={16} />} color="text-orange-500" />
-          </div>
-        </div>
-
-        {/* Revenue Card */}
-        <div className="card p-8 bg-[#E32222] border-none shadow-xl shadow-red-500/20 text-white">
-          <div className="flex items-center justify-between mb-8">
-            <p className="text-red-100 text-sm font-bold uppercase tracking-widest">Platform Revenue</p>
-            <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
-              <DollarSign className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <div className="space-y-4">
-            <p className="text-4xl lg:text-5xl font-black">₹{stats?.revenue.total.toLocaleString('en-IN') || '0'}</p>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-              <div>
-                <p className="text-red-100 text-[10px] font-bold uppercase">Today's Revenue</p>
-                <p className="text-lg font-bold">₹{stats?.revenue.todayRevenue.toLocaleString('en-IN') || '0'}</p>
-              </div>
-              <div>
-                <p className="text-red-100 text-[10px] font-bold uppercase">App Commission</p>
-                <p className="text-lg font-bold">₹{stats?.revenue.commission.toLocaleString('en-IN') || '0'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Activity Feed Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Recent Rides */}
-        <div className="xl:col-span-2 card p-6 border border-gray-100">
-           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-800">Recent Rides</h2>
-            <Link href="/dashboard/rides" className="text-orange-500 hover:text-orange-600 font-medium text-sm">View All →</Link>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="text-left py-4 px-4 font-bold text-[10px] uppercase tracking-wider text-gray-400">Ride ID</th>
-                  <th className="text-left py-4 px-4 font-bold text-[10px] uppercase tracking-wider text-gray-400">User</th>
-                  <th className="text-left py-4 px-4 font-bold text-[10px] uppercase tracking-wider text-gray-400">Partner</th>
-                  <th className="text-left py-4 px-4 font-bold text-[10px] uppercase tracking-wider text-gray-400">Fare</th>
-                  <th className="text-left py-4 px-4 font-bold text-[10px] uppercase tracking-wider text-gray-400">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {activity?.recentRides.map((ride) => (
-                  <tr key={ride.id} className="hover:bg-red-50/30 transition-colors">
-                    <td className="py-4 px-4">
-                      <Link href={`/dashboard/rides/${ride.id}`} className="text-[#E32222] hover:underline font-mono text-xs font-bold">{ride.customId || `#${ride.id.slice(-6)}`}</Link>
-                    </td>
-                    <td className="py-4 px-4 text-sm font-medium text-gray-800">{ride.user?.name}</td>
-                    <td className="py-4 px-4 text-sm text-gray-600">{ride.partner?.name || 'Unassigned'}</td>
-                    <td className="py-4 px-4 font-bold text-gray-900">₹{ride.totalFare}</td>
-                    <td className="py-4 px-4"><StatusBadge status={ride.status} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Other Recent Entities */}
-        <div className="space-y-8">
-          <div className="card p-6 border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-6">New Partners</h2>
-            <div className="space-y-4">
-              {activity?.recentPartners.slice(0, 5).map((p) => (
-                <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl">
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-800 truncate">{p.name}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">{p.customId}</p>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${p.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                    {p.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card p-6 border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-800 mb-6">New Users</h2>
-            <div className="space-y-4">
-              {activity?.recentUsers.slice(0, 5).map((u) => (
-                <div key={u.id} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500">{u.name[0]}</div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-800 truncate">{u.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{u.phone}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatSmall({ label, value, icon, color }: { label: string, value: number | string, icon: React.ReactNode, color: string }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5 text-gray-400 mb-1">
-        {icon}
-        <p className="text-[10px] font-bold uppercase tracking-wider">{label}</p>
-      </div>
-      <p className={`text-2xl font-black ${color}`}>{value}</p>
     </div>
   );
 }

@@ -59,7 +59,8 @@ export default function AdminRideDetailsPage() {
     if (!selectedPartnerId) return;
     setIsUpdating(true);
     try {
-      const res = await adminRideService.manualAssignPartner(ride!.id, selectedPartnerId);
+      const selectedPartner = partners.find(p => p.id === selectedPartnerId);
+      const res = await adminRideService.manualAssignPartner(ride!.id, selectedPartnerId, selectedPartner?.customId);
       if (res.success) {
         toast.success('Partner assigned successfully');
         fetchData();

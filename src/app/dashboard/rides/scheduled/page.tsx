@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Calendar, UserPlus, Loader2 } from 'lucide-react';
-import { rideService } from '@/services/rideService';
+import { adminRideService } from '@/services/adminRideService';
 import { partnerService } from '@/services/partnerService';
 import { Ride, Partner } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -21,7 +21,7 @@ export default function ScheduledRidesPage() {
   const fetchData = async () => {
     try {
       const [ridesRes, partnersRes] = await Promise.all([
-        rideService.getScheduled(),
+        adminRideService.getAllRides({ status: 'SCHEDULED' }), // Fetching scheduled rides via admin
         partnerService.getAll(),
       ]);
       setRides(ridesRes.data || []);
@@ -46,7 +46,7 @@ export default function ScheduledRidesPage() {
 
     setIsAssigning(true);
     try {
-      await rideService.assignPartner(selectedRide.id, selectedPartnerId);
+      await adminRideService.manualAssignPartner(selectedRide.id, selectedPartnerId);
       toast.success('Captain assigned successfully');
       setSelectedRide(null);
       setSelectedPartnerId('');

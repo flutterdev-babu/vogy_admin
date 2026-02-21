@@ -8,6 +8,8 @@ import {
   Ride,
   PartnerFilters,
   EntityStatus,
+  EntityVerificationStatus,
+  EntityActiveStatus,
   PartnerDashboardData,
   PartnerVehicleData,
   PartnerEarningsData
@@ -85,27 +87,37 @@ export const partnerService = {
   // =====================
 
   async getAll(filters?: PartnerFilters): Promise<ApiResponse<Partner[]>> {
-    const params = new URLSearchParams();
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.isOnline !== undefined) params.append('isOnline', String(filters.isOnline));
-    if (filters?.search) params.append('search', filters.search);
-
-    const response = await adminApi.get(`/partners?${params.toString()}`);
+    const response = await adminApi.get('/partners', { params: filters });
     return response.data;
   },
 
-  async updateStatus(id: string, status: EntityStatus): Promise<ApiResponse<Partner>> {
-    const response = await adminApi.put(`/partners/${id}/status`, { status });
+  async getById(id: string): Promise<ApiResponse<Partner>> {
+    const response = await adminApi.get(`/partners/${id}`);
     return response.data;
   },
 
-  async assignVehicle(partnerId: string, vehicleId: string): Promise<ApiResponse<Partner>> {
-    const response = await adminApi.post(`/partners/${partnerId}/assign-vehicle`, { vehicleId });
+  async updatePartner(id: string, data: Partial<PartnerRegisterRequest>): Promise<ApiResponse<Partner>> {
+    const response = await adminApi.put(`/partners/${id}`, data);
+    return response.data;
+  },
+
+  async verify(id: string, status: EntityVerificationStatus): Promise<ApiResponse<Partner>> {
+    const response = await adminApi.patch(`/partners/${id}/verify`, { status });
+    return response.data;
+  },
+
+  async updateStatus(id: string, status: EntityActiveStatus): Promise<ApiResponse<Partner>> {
+    const response = await adminApi.patch(`/partners/${id}/status`, { status });
     return response.data;
   },
 
   async createPartner(data: PartnerRegisterRequest): Promise<ApiResponse<Partner>> {
     const response = await adminApi.post('/partners', data);
+    return response.data;
+  },
+
+  async deletePartner(id: string): Promise<ApiResponse<void>> {
+    const response = await adminApi.delete(`/partners/${id}`);
     return response.data;
   },
 

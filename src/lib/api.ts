@@ -113,6 +113,8 @@ const addCommonAuthInterceptor = (api: AxiosInstance) => {
   });
 };
 
+addCommonAuthInterceptor(publicApi);
+addCommonAuthInterceptor(agentApi);
 addCommonAuthInterceptor(rideApi);
 addCommonAuthInterceptor(paymentApi);
 

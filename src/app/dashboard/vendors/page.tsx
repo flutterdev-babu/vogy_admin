@@ -4,20 +4,28 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Building2, Search, Eye, Phone, Mail, MapPin, Plus, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
-import { Vendor, EntityStatus } from '@/types';
+import { Vendor, EntityActiveStatus, EntityVerificationStatus } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
+import { Trash2, ShieldCheck, ShieldAlert } from 'lucide-react';
 
-const statusColors: Record<EntityStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  APPROVED: 'bg-green-100 text-green-700',
-  SUSPENDED: 'bg-red-100 text-red-700',
+const activeStatusColors: Record<EntityActiveStatus, string> = {
+  ACTIVE: 'bg-green-100 text-green-700',
+  INACTIVE: 'bg-gray-100 text-gray-700',
+  SUSPENDED: 'bg-yellow-100 text-yellow-700',
+  BANNED: 'bg-red-100 text-red-700',
+};
+
+const verifyStatusColors: Record<EntityVerificationStatus, string> = {
+  UNDER_REVIEW: 'bg-orange-100 text-orange-700',
+  VERIFIED: 'bg-blue-100 text-blue-700',
+  REJECTED: 'bg-red-100 text-red-700',
 };
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<EntityStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<EntityActiveStatus | ''>('');
   const [filters, setFilters] = useState({
     name: '',
     company: '',
@@ -47,14 +55,34 @@ export default function VendorsPage() {
     fetchVendors();
   }, [statusFilter]);
 
-  const handleStatusChange = async (vendor: Vendor, newStatus: EntityStatus) => {
+  const handleStatusUpdate = async (vendor: Vendor, status: EntityActiveStatus) => {
     try {
-      await vendorService.updateStatus(vendor.id, newStatus);
-      toast.success(`Vendor ${newStatus.toLowerCase()}`);
+      await vendorService.updateStatus(vendor.id, status);
+      toast.success(`Vendor status updated to ${status}`);
       fetchVendors();
     } catch (error) {
-      console.error('Failed to update status:', error);
-      toast.error('Failed to update vendor status');
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleVerify = async (vendor: Vendor, status: EntityVerificationStatus) => {
+    try {
+      await vendorService.verify(vendor.id, status);
+      toast.success(`Vendor verification set to ${status}`);
+      fetchVendors();
+    } catch (error) {
+      toast.error('Failed to update verification');
+    }
+  };
+
+  const handleDelete = async (vendor: Vendor) => {
+    if (!window.confirm('Are you sure you want to delete this vendor? This action is permanent.')) return;
+    try {
+      await vendorService.deleteVendor(vendor.id);
+      toast.success('Vendor deleted successfully');
+      fetchVendors();
+    } catch (error) {
+      toast.error('Failed to delete vendor');
     }
   };
 
@@ -101,13 +129,14 @@ export default function VendorsPage() {
       <div className="flex gap-2">
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as EntityStatus | '')}
+          onChange={(e) => setStatusFilter(e.target.value as EntityActiveStatus | '')}
           className="text-xs p-2 border border-gray-200 rounded-lg bg-white outline-none min-w-[120px]"
         >
           <option value="">All Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED">Approved</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
           <option value="SUSPENDED">Suspended</option>
+          <option value="BANNED">Banned</option>
         </select>
       </div>
 
@@ -194,24 +223,52 @@ export default function VendorsPage() {
                       <span className="text-[10px] font-medium text-gray-500">{vendor.gstNumber ? '✓' : '-'}</span>
                     </td>
                     <td className="px-3 py-3">
-                      <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase ${statusColors[vendor.status]}`}>
-                        {vendor.status}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase w-fit ${activeStatusColors[vendor.status] || 'bg-gray-100 text-gray-700'}`}>
+                          Status: {vendor.status}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase w-fit ${verifyStatusColors[vendor.verifyStatus] || 'bg-gray-100 text-gray-700'}`}>
+                          Verify: {vendor.verifyStatus}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex gap-1">
                         <select
                           value=""
                           onChange={(e) => {
-                            if (e.target.value) handleStatusChange(vendor, e.target.value as EntityStatus);
+                            if (e.target.value) handleStatusUpdate(vendor, e.target.value as EntityActiveStatus);
                           }}
                           className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer"
                         >
-                          <option value="">Set Status</option>
-                          <option value="APPROVED">Approve</option>
-                          <option value="PENDING">Pending</option>
+                          <option value="">Status</option>
+                          <option value="ACTIVE">Activate</option>
+                          <option value="INACTIVE">Deactivate</option>
                           <option value="SUSPENDED">Suspend</option>
+                          <option value="BANNED">Ban</option>
                         </select>
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) handleVerify(vendor, e.target.value as EntityVerificationStatus);
+                          }}
+                          className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer"
+                        >
+                          <option value="">Verify</option>
+                          <option value="VERIFIED">Verify</option>
+                          <option value="REJECTED">Reject</option>
+                          <option value="UNDER_REVIEW">Review</option>
+                        </select>
+                        <Link href={`/dashboard/vendors/${vendor.id}/edit`} className="p-1 px-2 text-blue-600 hover:bg-blue-50 rounded text-[9px] font-bold flex items-center gap-1">
+                          <Eye size={12} /> Edit
+                        </Link>
+                        <button 
+                          onClick={() => handleDelete(vendor)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete Vendor"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>

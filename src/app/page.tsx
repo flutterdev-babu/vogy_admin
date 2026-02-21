@@ -1,9 +1,9 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Car, 
   MapPin, 
@@ -12,209 +12,19 @@ import {
   Clock, 
   Shield, 
   Smartphone,
-  Menu,
-  X,
   ChevronRight,
-  Phone,
-  Mail,
-  Instagram,
-  Facebook,
-  Linkedin,
-  Briefcase,
-  LayoutDashboard
+  Briefcase
 } from 'lucide-react';
-import { TOKEN_KEYS } from '@/lib/api';
-
-// Helper to get the correct href based on auth state
-const getAuthAwareHref = (role: 'partner' | 'vendor' | 'agent' | 'corporate', isLoggedIn: boolean) => {
-  const dashboardPaths = {
-    partner: '/partner/dashboard',
-    vendor: '/vendor/dashboard',
-    agent: '/agent/dashboard',
-    corporate: '/corporate/dashboard',
-  };
-  const loginPaths = {
-    partner: '/partner/login',
-    vendor: '/vendor/login',
-    agent: '/agent/login',
-    corporate: '/corporate/login',
-  };
-  return isLoggedIn ? dashboardPaths[role] : loginPaths[role];
-};
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 
 export default function LandingPage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [bookingTab, setBookingTab] = useState<'local' | 'rental' | 'outstation'>('local');
   
-  // Track login state for each role
-  const [authState, setAuthState] = useState({
-    partner: false,
-    vendor: false,
-    agent: false,
-    corporate: false,
-    admin: false,
-  });
-
-  useEffect(() => {
-    // Check auth tokens on mount
-    if (typeof window !== 'undefined') {
-      setAuthState({
-        partner: !!localStorage.getItem(TOKEN_KEYS.partner),
-        vendor: !!localStorage.getItem(TOKEN_KEYS.vendor),
-        agent: !!localStorage.getItem(TOKEN_KEYS.agent),
-        corporate: !!localStorage.getItem(TOKEN_KEYS.corporate),
-        admin: !!localStorage.getItem(TOKEN_KEYS.admin),
-      });
-    }
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#0D0D0D] font-sans text-white overflow-x-hidden selection:bg-[#E32222] selection:text-white">
       
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-[#0D0D0D]/80 backdrop-blur-md border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="relative w-12 h-12">
-                <Image 
-                  src="/logo_image.png" 
-                  alt="Ara Travels Logo" 
-                  fill
-                  className="object-contain rounded-xl"
-                />
-              </div>
-              <span className="text-2xl font-bold tracking-tight">ARA <span className="text-[#E32222]">TRAVELS</span></span>
-            </div>
-
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">Home</Link>
-              <Link href="#about" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">About</Link>
-              <Link href="#services" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">Services</Link>
-              <Link href="/contact-us" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">Contact</Link>
-              
-              {/* Join Us Dropdown */}
-              <div className="relative group">
-                <button className="text-sm font-medium text-neutral-300 hover:text-white transition-colors flex items-center gap-1">
-                  Join Us
-                  <ChevronRight size={14} className="rotate-90 group-hover:rotate-[270deg] transition-transform" />
-                </button>
-                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="bg-neutral-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 min-w-[180px] shadow-xl shadow-black/50">
-                    <Link href={getAuthAwareHref('partner', authState.partner)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
-                      <Car size={18} className="text-[#E32222]" />
-                      <div>
-                        <p className="text-sm font-medium text-white">Partner</p>
-                        <p className="text-xs text-neutral-500">{authState.partner ? 'Go to Dashboard' : 'Drive & Earn'}</p>
-                      </div>
-                    </Link>
-                    <Link href={getAuthAwareHref('vendor', authState.vendor)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
-                      <Shield size={18} className="text-[#E32222]" />
-                      <div>
-                        <p className="text-sm font-medium text-white">Vendor</p>
-                        <p className="text-xs text-neutral-500">{authState.vendor ? 'Go to Dashboard' : 'Manage Fleet'}</p>
-                      </div>
-                    </Link>
-                    <Link href={getAuthAwareHref('agent', authState.agent)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
-                      <MapPin size={18} className="text-[#E32222]" />
-                      <div>
-                        <p className="text-sm font-medium text-white">Agent</p>
-                        <p className="text-xs text-neutral-500">{authState.agent ? 'Go to Dashboard' : 'City Operations'}</p>
-                      </div>
-                    </Link>
-                    <Link href={getAuthAwareHref('corporate', authState.corporate)} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors">
-                      <Briefcase size={18} className="text-[#E32222]" />
-                      <div>
-                        <p className="text-sm font-medium text-white">Corporate</p>
-                        <p className="text-xs text-neutral-500">{authState.corporate ? 'Go to Dashboard' : 'Business Travel'}</p>
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Auth Buttons */}
-            <div className="hidden md:flex items-center gap-4">
-              {authState.admin ? (
-                <Link href="/dashboard" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white text-sm font-semibold transition-all shadow-lg shadow-red-900/20 hover:shadow-red-900/40">
-                  <LayoutDashboard size={16} />
-                  Dashboard
-                </Link>
-              ) : (
-                <Link href="/login" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">
-                  Admin Login
-                </Link>
-              )}
-              <Link 
-                href="/download"
-                className="px-5 py-2.5 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white text-sm font-semibold transition-all shadow-lg shadow-red-900/20 hover:shadow-red-900/40"
-              >
-                Download App
-              </Link>
-            </div>
-
-            {/* Mobile Toggle */}
-            <button 
-              className="md:hidden p-2 text-white"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden bg-[#0a0a0a] border-b border-white/10 overflow-hidden"
-            >
-              <div className="px-4 py-6 space-y-4">
-                <Link href="/" className="block text-base font-medium text-white/90">Home</Link>
-                <Link href="#about" className="block text-base font-medium text-white/90">About</Link>
-                <Link href="#services" className="block text-base font-medium text-white/90">Services</Link>
-                <Link href="/contact-us" className="block text-base font-medium text-white/90">Contact</Link>
-                
-                <div className="pt-4 border-t border-white/10">
-                  <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Join Us</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link href={getAuthAwareHref('partner', authState.partner)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-white/90">
-                      <Car size={16} className="text-[#E32222]" />
-                      <span className="text-sm">Partner</span>
-                    </Link>
-                    <Link href={getAuthAwareHref('vendor', authState.vendor)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-white/90">
-                      <Shield size={16} className="text-[#E32222]" />
-                      <span className="text-sm">Vendor</span>
-                    </Link>
-                    <Link href={getAuthAwareHref('agent', authState.agent)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-white/90">
-                      <MapPin size={16} className="text-[#E32222]" />
-                      <span className="text-sm">Agent</span>
-                    </Link>
-                    <Link href={getAuthAwareHref('corporate', authState.corporate)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-white/90">
-                      <Briefcase size={16} className="text-[#E32222]" />
-                      <span className="text-sm">Corporate</span>
-                    </Link>
-                  </div>
-                </div>
-                
-                {authState.admin ? (
-                  <Link href="/dashboard" className="flex items-center gap-2 text-base font-medium text-[#E32222] pt-2">
-                    <LayoutDashboard size={16} /> Admin Dashboard
-                  </Link>
-                ) : (
-                  <Link href="/login" className="block text-base font-medium text-[#E32222] pt-2">Admin Login</Link>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-4 overflow-hidden">
@@ -337,30 +147,30 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <RoleCard 
               title="Partner" 
-              subtitle={authState.partner ? 'Go to Dashboard' : 'Drive & Earn'} 
+              subtitle="Drive & Earn" 
               icon={<Car size={32} />} 
-              href={getAuthAwareHref('partner', authState.partner)}
+              href="/partner/login"
               delay={0}
             />
             <RoleCard 
               title="Vendor" 
-              subtitle={authState.vendor ? 'Go to Dashboard' : 'Manage Fleet'} 
+              subtitle="Manage Fleet" 
               icon={<Shield size={32} />} 
-              href={getAuthAwareHref('vendor', authState.vendor)}
+              href="/vendor/login"
               delay={0.1}
             />
             <RoleCard 
               title="Agent" 
-              subtitle={authState.agent ? 'Go to Dashboard' : 'City Operations'} 
+              subtitle="City Operations" 
               icon={<MapPin size={32} />} 
-              href={getAuthAwareHref('agent', authState.agent)}
+              href="/agent/login"
               delay={0.2}
             />
             <RoleCard 
               title="Corporate" 
-              subtitle={authState.corporate ? 'Go to Dashboard' : 'Business Travel'} 
+              subtitle="Business Travel" 
               icon={<Briefcase size={32} />} 
-              href={getAuthAwareHref('corporate', authState.corporate)}
+              href="/corporate/login"
               delay={0.3}
             />
           </div>
@@ -381,7 +191,7 @@ export default function LandingPage() {
                </p>
 
                <div className="grid sm:grid-cols-2 gap-6">
-                 <FeatureCard icon={<Clock />} title="Faster Pickups" desc="Average 5 min wait time" />
+                 <FeatureCard icon={<Clock />} title="Advanced Pickups" desc="No 5 mins pickup" />
                  <FeatureCard icon={<Shield />} title="Safe Rides" desc="Verified drivers & tracking" />
                  <FeatureCard icon={<Smartphone />} title="Easy Booking" desc="3-tap booking process" />
                  <FeatureCard icon={<CheckCircle />} title="Best Fares" desc="Transparent pricing" />
@@ -398,7 +208,6 @@ export default function LandingPage() {
                      priority
                    />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent">
-                    
                   </div>
                 </div>
              </div>
@@ -406,50 +215,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#050505] border-t border-white/5 pt-20 pb-10 px-4">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 mb-16">
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold">ARA <span className="text-[#E32222]">TRAVELS</span></h3>
-            <p className="text-neutral-500 leading-relaxed text-sm">Redefining mobility in India with safety, comfort, and transparency at the core of our service.</p>
-            <div className="flex gap-4">
-              <SocialIcon icon={<Instagram size={20} />} />
-              <SocialIcon icon={<Facebook size={20} />} />
-              <SocialIcon icon={<Linkedin size={20} />} />
-            </div>
-          </div>
-          
-          <div>
-            <h4 className="font-bold text-lg mb-6 text-white">Company</h4>
-            <ul className="space-y-4 text-neutral-500 text-sm">
-              <li><Link href="#" className="hover:text-[#E32222] transition-colors">About Us</Link></li>
-              <li><Link href="#" className="hover:text-[#E32222] transition-colors">Careers</Link></li>
-              <li><Link href="#" className="hover:text-[#E32222] transition-colors">Blog</Link></li>
-            </ul>
-          </div>
-
-          <div>
-             <h4 className="font-bold text-lg mb-6 text-white">Services</h4>
-            <ul className="space-y-4 text-neutral-500 text-sm">
-              <li><Link href="#" className="hover:text-[#E32222] transition-colors">Local Rides</Link></li>
-              <li><Link href="#" className="hover:text-[#E32222] transition-colors">Outstation</Link></li>
-              <li><Link href="#" className="hover:text-[#E32222] transition-colors">Corporate</Link></li>
-            </ul>
-          </div>
-
-          <div>
-             <h4 className="font-bold text-lg mb-6 text-white">Contact</h4>
-            <ul className="space-y-4 text-neutral-500 text-sm">
-              <li className="flex items-center gap-3"><Phone size={18} className="text-[#E32222]" /> +91 98765 43210</li>
-              <li className="flex items-center gap-3"><Mail size={18} className="text-[#E32222]" /> support@aratravels.in</li>
-            </ul>
-          </div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 text-center text-neutral-600 text-xs">
-          <p>&copy; 2026 Ara Travels. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
 
     </div>
   );
@@ -489,13 +255,5 @@ function FeatureCard({ icon, title, desc }: { icon: React.ReactNode, title: stri
         <p className="text-sm text-neutral-500">{desc}</p>
       </div>
     </div>
-  );
-}
-
-function SocialIcon({ icon }: { icon: React.ReactNode }) {
-  return (
-    <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-neutral-400 hover:bg-[#E32222] hover:text-white transition-all transform hover:scale-110">
-      {icon}
-    </a>
   );
 }

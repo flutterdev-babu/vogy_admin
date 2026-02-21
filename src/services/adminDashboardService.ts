@@ -29,8 +29,5 @@ export const adminDashboardService = {
     return response.data;
   },
 
-  async getRecentActivity(limit: number = 20): Promise<ApiResponse<AdminRecentActivity>> {
-    const response = await api.get(`/recent-activity?limit=${limit}`);
-    return response.data;
-  },
+
 };

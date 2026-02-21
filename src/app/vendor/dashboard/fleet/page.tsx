@@ -4,20 +4,48 @@ import { useState, useEffect } from 'react';
 import { AdvancedTable } from '@/components/ui/AdvancedTable';
 import { Car, AlertTriangle, CheckCircle, Clock, Plus, Loader2 } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
+import { vehicleTypeService } from '@/services/vehicleTypeService';
+import { cityCodeService } from '@/services/cityCodeService';
 import { Vehicle } from '@/types';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'react-hot-toast';
 
 export default function VendorFleetPage() {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
+    const [cityCodes, setCityCodes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newVehicle, setNewVehicle] = useState({ model: '', number: '', insuranceExpiry: '', permitExpiry: '' });
+    const [newVehicle, setNewVehicle] = useState({ 
+        vehicleModel: '', 
+        registrationNumber: '', 
+        vehicleTypeId: '', 
+        cityCodeId: '',
+        color: '',
+        fuelType: '',
+        seatingCapacity: '',
+        insuranceExpiry: '', 
+        permitExpiry: '' 
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         loadVehicles();
+        loadLookups();
     }, []);
+
+    const loadLookups = async () => {
+        try {
+            const [typesRes, codesRes] = await Promise.all([
+                vehicleTypeService.getAll(),
+                cityCodeService.getAll()
+            ]);
+            if (typesRes.success) setVehicleTypes(typesRes.data || []);
+            if (codesRes.success) setCityCodes(codesRes.data || []);
+        } catch (error) {
+            console.error('Failed to load lookups:', error);
+        }
+    };
 
     const loadVehicles = async () => {
         setIsLoading(true);
@@ -36,22 +64,38 @@ export default function VendorFleetPage() {
     const handleAddVehicle = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        console.log('Submitting vehicle data (Vendor):', newVehicle);
         try {
             const response = await vendorService.addVehicle({
-                ...newVehicle,
+                registrationNumber: newVehicle.registrationNumber.toUpperCase(),
+                vehicleModel: newVehicle.vehicleModel,
+                vehicleTypeId: newVehicle.vehicleTypeId,
+                cityCodeId: newVehicle.cityCodeId,
+                color: newVehicle.color || undefined,
+                fuelType: newVehicle.fuelType || undefined,
+                seatingCapacity: newVehicle.seatingCapacity ? parseInt(newVehicle.seatingCapacity) : undefined,
+                rtoTaxExpiryDate: newVehicle.permitExpiry || undefined, // Mapping permitExpiry to rtoTaxExpiry as placeholder if needed
                 status: 'ACTIVE'
             });
 
             if (response.success) {
                 toast.success('Vehicle added successfully');
                 setIsModalOpen(false);
-                setNewVehicle({ model: '', number: '', insuranceExpiry: '', permitExpiry: '' });
+                setNewVehicle({ 
+                    vehicleModel: '', registrationNumber: '', vehicleTypeId: '', cityCodeId: '',
+                    color: '', fuelType: '', seatingCapacity: '', insuranceExpiry: '', permitExpiry: '' 
+                });
                 loadVehicles();
             } else {
                 toast.error(response.message || 'Failed to add vehicle');
             }
-        } catch (error) {
-            toast.error('An error occurred');
+        } catch (error: any) {
+            console.error('Failed to add vehicle - Full Error:', error);
+            if (error.response) {
+                console.error('Error Status:', error.response.status);
+                console.error('Error Data:', error.response.data);
+            }
+            toast.error(error.response?.data?.message || 'An error occurred');
         } finally {
             setIsSubmitting(false);
         }
@@ -118,26 +162,56 @@ export default function VendorFleetPage() {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add New Vehicle">
                 <form onSubmit={handleAddVehicle} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Model</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Model *</label>
                         <input
                             required
                             type="text"
-                            value={newVehicle.model}
-                            onChange={(e) => setNewVehicle({ ...newVehicle, model: e.target.value })}
+                            value={newVehicle.vehicleModel}
+                            onChange={(e) => setNewVehicle({ ...newVehicle, vehicleModel: e.target.value })}
                             className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500/20 outline-none"
                             placeholder="e.g. Toyota Innova"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Number</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Registration Number *</label>
                         <input
                             required
                             type="text"
-                            value={newVehicle.number}
-                            onChange={(e) => setNewVehicle({ ...newVehicle, number: e.target.value })}
+                            value={newVehicle.registrationNumber}
+                            onChange={(e) => setNewVehicle({ ...newVehicle, registrationNumber: e.target.value.toUpperCase() })}
                             className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500/20 outline-none"
                             placeholder="e.g. KA-01-AB-1234"
                         />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Type *</label>
+                            <select
+                                required
+                                value={newVehicle.vehicleTypeId}
+                                onChange={(e) => setNewVehicle({ ...newVehicle, vehicleTypeId: e.target.value })}
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500/20 outline-none bg-white"
+                            >
+                                <option value="">Select Type</option>
+                                {vehicleTypes.map(vt => (
+                                    <option key={vt.id} value={vt.id}>{vt.displayName}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">City Code *</label>
+                            <select
+                                required
+                                value={newVehicle.cityCodeId}
+                                onChange={(e) => setNewVehicle({ ...newVehicle, cityCodeId: e.target.value })}
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500/20 outline-none bg-white"
+                            >
+                                <option value="">Select City</option>
+                                {cityCodes.map(cc => (
+                                    <option key={cc.id} value={cc.id}>{cc.cityName}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>

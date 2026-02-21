@@ -26,7 +26,7 @@ export const rideService = {
   },
 
   async assignPartner(rideId: string, partnerId: string): Promise<ApiResponse<Ride>> {
-    const response = await api.post(`/${rideId}/assign`, { partnerId });
+    const response = await api.post(`/${rideId}/assign-rider`, { partnerId });
     return response.data;
   },
   
