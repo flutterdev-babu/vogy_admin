@@ -1,21 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { 
   Paperclip, Search, CheckCircle, XCircle, Clock, 
   RotateCcw, ShieldCheck, User, Car, Building2, 
-  AlertCircle, ChevronLeft, ChevronRight, Loader2
+  AlertCircle, ChevronLeft, ChevronRight, Loader2, Eye
 } from 'lucide-react';
 import { attachmentService } from '@/services/attachmentService';
 import { Attachment, AttachmentStatus } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
-const statusColors: Record<AttachmentStatus, string> = {
+const statusColors: any = {
   PENDING: 'bg-yellow-100 text-yellow-700',
-  APPROVED: 'bg-green-100 text-green-700',
+  VERIFIED: 'bg-green-100 text-green-700',
   REJECTED: 'bg-red-100 text-red-700',
   SUSPENDED: 'bg-gray-100 text-gray-700',
+  APPROVED: 'bg-green-100 text-green-700', // Temporary for backward compatibility if data has it
 };
 
 export default function AttachmentsPage() {
@@ -44,12 +46,12 @@ export default function AttachmentsPage() {
     fetchAttachments();
   }, [statusFilter]);
 
-  const handleVerify = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+  const handleVerify = async (id: string, status: 'VERIFIED' | 'REJECTED') => {
     setIsVerifying(id);
     try {
       const res = await attachmentService.verify(id, { status });
       if (res.success) {
-        toast.success(`Attachment ${status.toLowerCase()} successfully`);
+        toast.success(`Attachment verified successfully`);
         fetchAttachments();
       }
     } catch (error: any) {
@@ -81,12 +83,21 @@ export default function AttachmentsPage() {
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">Verify and manage Partner-Vehicle assignments</p>
         </div>
-        <button 
-          onClick={fetchAttachments}
-          className="p-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20 transition-all active:scale-95"
-        >
-          <RotateCcw size={18} />
-        </button>
+        <div className="flex items-center gap-3">
+          <Link 
+            href="/dashboard/attachments/create"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-xl hover:bg-black transition-all shadow-lg active:scale-95 uppercase tracking-wider"
+          >
+            <Paperclip size={14} className="text-[#E32222]" />
+            Add New Attachment
+          </Link>
+          <button 
+            onClick={fetchAttachments}
+            className="p-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20 transition-all active:scale-95"
+          >
+            <RotateCcw size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -98,7 +109,7 @@ export default function AttachmentsPage() {
         >
           <option value="">All Statuses</option>
           <option value="PENDING">Pending Review</option>
-          <option value="APPROVED">Approved</option>
+          <option value="VERIFIED">Verified</option>
           <option value="REJECTED">Rejected</option>
           <option value="SUSPENDED">Suspended</option>
         </select>
@@ -159,8 +170,8 @@ export default function AttachmentsPage() {
                           <Car size={14} />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-gray-800 underline underline-offset-2 decoration-emerald-200">{a.vehicle.registrationNumber}</span>
-                          <span className="text-[9px] text-gray-500">{a.vehicle.vehicleModel} ({a.vehicle.vehicleType.displayName})</span>
+                          <span className="text-[11px] font-bold text-emerald-600 font-mono uppercase underline underline-offset-2 decoration-emerald-200">{a.vehicle.customId}</span>
+                          <span className="text-[9px] text-gray-500 font-bold">{a.vehicle.registrationNumber} ({a.vehicle.vehicleModel})</span>
                         </div>
                       </div>
                     </td>
@@ -179,30 +190,38 @@ export default function AttachmentsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      {a.status === 'PENDING' ? (
-                        <div className="flex gap-2">
-                          <button 
-                            disabled={!!isVerifying}
-                            onClick={() => handleVerify(a.id, 'APPROVED')}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50"
-                          >
-                            {isVerifying === a.id ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
-                            Approve
-                          </button>
-                          <button 
-                            disabled={!!isVerifying}
-                            onClick={() => handleVerify(a.id, 'REJECTED')}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-[10px] font-bold rounded-lg hover:bg-red-600 transition-all shadow-md shadow-red-500/20 disabled:opacity-50"
-                          >
-                            <XCircle size={12} />
-                            Reject
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 italic">
-                          <AlertCircle size={12} /> Action Completed
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {a.status === 'PENDING' ? (
+                          <div className="flex gap-2 flex-1">
+                            <button 
+                              disabled={!!isVerifying}
+                              onClick={() => handleVerify(a.id, 'VERIFIED')}
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-bold rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50"
+                            >
+                              {isVerifying === a.id ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
+                              Verify
+                            </button>
+                            <button 
+                              disabled={!!isVerifying}
+                              onClick={() => handleVerify(a.id, 'REJECTED')}
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-[10px] font-bold rounded-lg hover:bg-red-600 transition-all shadow-md shadow-red-500/20 disabled:opacity-50"
+                            >
+                              <XCircle size={12} />
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 italic flex-1">
+                            <AlertCircle size={12} /> Action Completed
+                          </div>
+                        )}
+                        <Link 
+                          href={`/dashboard/attachments/${a.id}/edit`} 
+                          className="p-1 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[10px] font-bold flex items-center gap-2 transition-colors whitespace-nowrap border border-blue-100 shadow-sm"
+                        >
+                          <Eye size={12} /> Details & Verify
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))

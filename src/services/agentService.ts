@@ -47,7 +47,7 @@ export const agentService = {
   // =====================
   
   async createCityCode(code: string, cityName: string): Promise<ApiResponse<CityCode>> {
-    const response = await agentApi.post('/city-codes', { code, cityName });
+    const response = await publicApi.post('/city-codes', { code, cityName, isActive: true });
     return response.data;
   },
 

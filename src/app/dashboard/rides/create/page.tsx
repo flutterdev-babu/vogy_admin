@@ -21,7 +21,7 @@ import {
   Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { rideService } from '@/services/rideService';
+import { adminRideService } from '@/services/adminRideService';
 import { cityCodeService } from '@/services/cityCodeService';
 import { vehicleTypeService } from '@/services/vehicleTypeService';
 import { corporateService } from '@/services/corporateService';
@@ -36,8 +36,8 @@ export default function CreateRidePage() {
     phone: '',
     email: '',
     altMobile: '',
-    pickup: '',
-    drop: '',
+    pickupAddress: '',
+    dropAddress: '',
     vehicleTypeId: '',
     rideType: 'AIRPORT' as BookingType,
     agentCode: '',
@@ -45,8 +45,12 @@ export default function CreateRidePage() {
     corporateId: '',
     bookingDate: '',
     bookingTime: '',
-    distanceKm: 10,
+    distanceKm: 0,
     paymentMode: 'CASH',
+    pickupLat: 0,
+    pickupLng: 0,
+    dropLat: 0,
+    dropLng: 0,
   });
 
   const [loading, setLoading] = useState(false);
@@ -75,25 +79,40 @@ export default function CreateRidePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.customerName || !formData.phone || !formData.vehicleTypeId || !formData.cityCodeId || !formData.pickupAddress || !formData.dropAddress) {
+      toast.error('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const scheduledDateTime = formData.bookingDate && formData.bookingTime 
-        ? `${formData.bookingDate}T${formData.bookingTime}:00` 
-        : undefined;
+        ? new Date(`${formData.bookingDate}T${formData.bookingTime}:00`).toISOString() 
+        : new Date().toISOString();
 
-      await rideService.createManualRide({
-        ...formData,
-        customerName: formData.customerName,
-        phone: `+91${formData.phone}`,
+      await adminRideService.createManualRide({
+        userName: formData.customerName,
+        userPhone: `+91${formData.phone}`,
+        vehicleTypeId: formData.vehicleTypeId,
+        cityCodeId: formData.cityCodeId,
         rideType: formData.rideType,
-        corporateId: formData.corporateId,
+        paymentMode: formData.paymentMode,
+        pickupAddress: formData.pickupAddress,
+        dropAddress: formData.dropAddress,
+        pickupLat: formData.pickupLat || 12.9716, // Fallback to default coordinates
+        pickupLng: formData.pickupLng || 77.5946,
+        dropLat: formData.dropLat || 12.9352,
+        dropLng: formData.dropLng || 77.6245,
+        distanceKm: Number(formData.distanceKm),
         scheduledDateTime,
+        bookingNotes: `Email: ${formData.email}, Alt: ${formData.altMobile}, Agent: ${formData.agentCode}, Corporate: ${formData.corporateId}`,
         isManualBooking: true
       });
       toast.success('Ride booked successfully!');
       router.push('/dashboard/rides');
-    } catch (err) {
-      toast.error('Failed to book ride');
+    } catch (err: any) {
+      console.error('Booking Error:', err);
+      toast.error(err.response?.data?.message || 'Failed to book ride');
     } finally {
       setLoading(false);
     }
@@ -225,21 +244,64 @@ export default function CreateRidePage() {
                 ))}
               </select>
             </div>
+            <div className={inputGroupClass}>
+              <label className={labelSideClass}>Vehicle Type</label>
+              <select required value={formData.vehicleTypeId}
+                onChange={e => setFormData({...formData, vehicleTypeId: e.target.value})}
+                className={`${fieldClass} appearance-none bg-white`}>
+                <option value="">Select Vehicle</option>
+                {vehicleTypes.map((vt) => (
+                  <option key={vt.id} value={vt.id}>{vt.displayName} ({vt.category})</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Pickup & Drop */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className={inputGroupClass}>
-              <label className={labelSideClass}>Pickup</label>
-              <input type="text" required value={formData.pickup}
-                onChange={e => setFormData({...formData, pickup: e.target.value})}
-                className={fieldClass} placeholder="Pickup Location" />
+            <div className="space-y-4">
+              <div className={inputGroupClass}>
+                <label className={labelSideClass}>Pickup</label>
+                <input type="text" required value={formData.pickupAddress}
+                  onChange={e => setFormData({...formData, pickupAddress: e.target.value})}
+                  className={fieldClass} placeholder="Pickup Location" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className={inputGroupClass}>
+                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lat</label>
+                  <input type="number" step="0.000001" value={formData.pickupLat}
+                    onChange={e => setFormData({...formData, pickupLat: parseFloat(e.target.value) || 0})}
+                    className="flex-1 px-2 py-1 text-xs outline-none" />
+                </div>
+                <div className={inputGroupClass}>
+                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lng</label>
+                  <input type="number" step="0.000001" value={formData.pickupLng}
+                    onChange={e => setFormData({...formData, pickupLng: parseFloat(e.target.value) || 0})}
+                    className="flex-1 px-2 py-1 text-xs outline-none" />
+                </div>
+              </div>
             </div>
-            <div className={inputGroupClass}>
-              <label className={labelSideClass}>Drop</label>
-              <input type="text" required value={formData.drop}
-                onChange={e => setFormData({...formData, drop: e.target.value})}
-                className={fieldClass} placeholder="Drop Location" />
+            <div className="space-y-4">
+              <div className={inputGroupClass}>
+                <label className={labelSideClass}>Drop</label>
+                <input type="text" required value={formData.dropAddress}
+                  onChange={e => setFormData({...formData, dropAddress: e.target.value})}
+                  className={fieldClass} placeholder="Drop Location" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className={inputGroupClass}>
+                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lat</label>
+                  <input type="number" step="0.000001" value={formData.dropLat}
+                    onChange={e => setFormData({...formData, dropLat: parseFloat(e.target.value) || 0})}
+                    className="flex-1 px-2 py-1 text-xs outline-none" />
+                </div>
+                <div className={inputGroupClass}>
+                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lng</label>
+                  <input type="number" step="0.000001" value={formData.dropLng}
+                    onChange={e => setFormData({...formData, dropLng: parseFloat(e.target.value) || 0})}
+                    className="flex-1 px-2 py-1 text-xs outline-none" />
+                </div>
+              </div>
             </div>
           </div>
 

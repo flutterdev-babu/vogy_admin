@@ -18,8 +18,8 @@ export const adminRideService = {
     return response.data;
   },
 
-  async manualAssignPartner(rideId: string, partnerId: string): Promise<ApiResponse<Ride>> {
-    const response = await api.post(`/rides/${rideId}/assign`, { partnerId });
+  async manualAssignPartner(rideId: string, partnerId: string, partnerCustomId?: string): Promise<ApiResponse<Ride>> {
+    const response = await api.post(`/rides/${rideId}/assign-rider`, { partnerId, partnerCustomId });
     return response.data;
   },
 
@@ -30,6 +30,12 @@ export const adminRideService = {
 
   async getRideOtp(id: string): Promise<ApiResponse<{ otp: string }>> {
     const response = await api.get(`/rides/${id}/otp`);
+    return response.data;
+  },
+
+  async createManualRide(data: any): Promise<ApiResponse<Ride>> {
+    const response = await api.post('/rides', data);
+    console.log("Manual Ride API Response:", response);
     return response.data;
   }
 };

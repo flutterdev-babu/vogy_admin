@@ -1,25 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Building2, Loader2, Plus, ShieldCheck, Info, MapPin, CreditCard, Lock, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Building2, Loader2, Save, ShieldCheck, CreditCard, MapPin, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { vendorService } from '@/services/vendorService';
 import { cityCodeService } from '@/services/cityCodeService';
+import { PageLoader } from '@/components/ui/LoadingSpinner';
 
-export default function AdminCreateVendorPage() {
+export default function EditVendorPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const { id } = use(params);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [cityCodes, setCityCodes] = useState<any[]>([]);
-  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
     companyName: '',
     phone: '',
     email: '',
-    password: '',
     cityCodeId: '',
     type: 'BUSINESS' as 'INDIVIDUAL' | 'BUSINESS',
     gstNumber: '',
@@ -30,16 +31,40 @@ export default function AdminCreateVendorPage() {
   });
 
   useEffect(() => {
-    const loadCities = async () => {
+    const fetchData = async () => {
       try {
-        const res = await cityCodeService.getAll();
-        if (res.success) setCityCodes(res.data || []);
+        const [cityRes, vendorRes] = await Promise.all([
+          cityCodeService.getAll(),
+          vendorService.getById(id)
+        ]);
+        
+        if (cityRes.success) setCityCodes(cityRes.data || []);
+        
+        if (vendorRes.success && vendorRes.data) {
+          const v = vendorRes.data;
+          setFormData({
+            name: v.name || '',
+            companyName: v.companyName || '',
+            phone: v.phone.replace('+91', ''),
+            email: v.email || '',
+            cityCodeId: v.cityCode?.id || '',
+            type: v.type || 'BUSINESS',
+            gstNumber: v.gstNumber || '',
+            panNumber: v.panNumber || '',
+            ccMobile: v.ccMobile || '',
+            accountNumber: v.accountNumber || '',
+            officeAddress: v.officeAddress || '',
+          });
+        }
       } catch (err) {
-        console.error('Failed to load city codes:', err);
+        console.error('Failed to load data:', err);
+        toast.error('Failed to load vendor details');
+      } finally {
+        setIsLoading(false);
       }
     };
-    loadCities();
-  }, []);
+    fetchData();
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,14 +72,13 @@ export default function AdminCreateVendorPage() {
       toast.error('Please fill all required fields');
       return;
     }
-    setIsLoading(true);
+    setIsSaving(true);
     try {
-      const submitData: any = {
+      const updateData: any = {
         name: formData.name,
         companyName: formData.companyName,
         phone: formData.phone.startsWith('+91') ? formData.phone : `+91${formData.phone}`,
         email: formData.email || undefined,
-        password: formData.password || undefined,
         cityCodeId: formData.cityCodeId,
         type: formData.type,
         gstNumber: formData.gstNumber || undefined,
@@ -63,15 +87,16 @@ export default function AdminCreateVendorPage() {
         accountNumber: formData.accountNumber || undefined,
         officeAddress: formData.officeAddress || undefined,
       };
-      const response = await vendorService.createVendor(submitData);
+
+      const response = await vendorService.updateVendor(id, updateData);
       if (response.success) {
-        toast.success('Vendor registered successfully!');
+        toast.success('Vendor updated successfully!');
         router.push('/dashboard/vendors');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create vendor');
+      toast.error(error.response?.data?.message || 'Failed to update vendor');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -79,6 +104,8 @@ export default function AdminCreateVendorPage() {
   const labelClass = "text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1";
   const fieldClass = "w-full px-3 py-2 text-xs text-gray-800 placeholder-gray-400 border border-gray-200 rounded-xl focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/10 transition-all bg-white shadow-sm hover:border-gray-300 font-medium h-10";
   const selectClass = "w-full px-3 py-2 text-xs text-gray-800 appearance-none border border-gray-200 rounded-xl focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/10 transition-all bg-white shadow-sm hover:border-gray-300 font-medium cursor-pointer h-10";
+
+  if (isLoading) return <PageLoader />;
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in pb-12 px-4 md:px-0">
@@ -88,7 +115,8 @@ export default function AdminCreateVendorPage() {
             <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
             Vendors
           </Link>
-          <h1 className="text-2xl font-black text-gray-800 tracking-tight italic uppercase leading-none">Register Vendor</h1>
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight italic uppercase leading-none">Edit Vendor</h1>
+          <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-wider">ID: {id}</p>
         </div>
         <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center border border-red-100">
           <Building2 size={24} className="text-[#E32222]" />
@@ -149,18 +177,6 @@ export default function AdminCreateVendorPage() {
                 <option value="INDIVIDUAL">Individual Owner</option>
               </select>
             </div>
-            <div className={inputGroupClass}>
-               <label className={labelClass}>Portal Password (Optional)</label>
-               <div className="relative">
-                 <input type={showPassword ? "text" : "password"} value={formData.password}
-                   onChange={e => setFormData({...formData, password: e.target.value})}
-                   className={fieldClass} placeholder="Default: Vendor@123" />
-                 <button type="button" onClick={() => setShowPassword(!showPassword)}
-                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                   {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                 </button>
-               </div>
-            </div>
           </div>
         </div>
 
@@ -210,18 +226,18 @@ export default function AdminCreateVendorPage() {
 
         <div className="flex flex-col md:flex-row items-center justify-between p-4 bg-gray-900 rounded-2xl gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-              <Plus size={16} className="text-[#E32222]" />
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Save size={16} className="text-blue-500" />
             </div>
             <div>
-              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Onboard Vendor</p>
-              <p className="text-[10px] text-white/60 font-medium">Registering will enable vendor portal access.</p>
+              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Update Vendor</p>
+              <p className="text-[10px] text-white/60 font-medium">Changes will be reflected in the vendor portal immediately.</p>
             </div>
           </div>
-          <button type="submit" disabled={isLoading}
-            className="w-full md:w-auto px-10 h-10 bg-[#E32222] hover:bg-[#ff2a1a] text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-            {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Building2 size={14} />}
-            {isLoading ? 'Processing' : 'Onboard Vendor'}
+          <button type="submit" disabled={isSaving}
+            className="w-full md:w-auto px-10 h-10 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+            {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {isSaving ? 'Processing' : 'Update Vendor'}
           </button>
         </div>
       </form>

@@ -2,14 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { Truck, Search, Filter, Plus, Eye, Car, Building2, UserCheck, MapPin, X, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { vehicleService } from '@/services/vehicleService';
 import { vendorService } from '@/services/vendorService';
 import { partnerService } from '@/services/partnerService';
 import { vehicleTypeService } from '@/services/vehicleTypeService';
 import { cityCodeService } from '@/services/cityCodeService';
-import { Vehicle, Vendor, Partner, VehicleType, CityCode } from '@/types';
+import { Vehicle, Vendor, Partner, VehicleType, CityCode, EntityActiveStatus, EntityVerificationStatus } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
+import { Trash2, ShieldCheck, ShieldAlert, CheckCircle2, XCircle } from 'lucide-react';
+
+const activeStatusColors: Record<EntityActiveStatus, string> = {
+  ACTIVE: 'bg-green-100 text-green-700',
+  INACTIVE: 'bg-gray-100 text-gray-700',
+  SUSPENDED: 'bg-yellow-100 text-yellow-700',
+  BANNED: 'bg-red-100 text-red-700',
+};
+
+const verifyStatusColors: Record<EntityVerificationStatus, string> = {
+  UNDER_REVIEW: 'bg-orange-100 text-orange-700',
+  VERIFIED: 'bg-blue-100 text-blue-700',
+  REJECTED: 'bg-red-100 text-red-700',
+};
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -25,16 +40,16 @@ export default function VehiclesPage() {
   const [formData, setFormData] = useState({
     partnerId: '', registrationNumber: '', vehicleModel: '',
     color: '', fuelType: '', vehicleTypeId: '',
-    cityCodeId: '', seatingCapacity: '',
-    rtoTaxExpiryDate: '', speedGovernor: '',
+    cityCodeId: '', rcNumber: '', chassisNumber: '',
+    insuranceNumber: '', insuranceExpiryDate: '',
   });
 
   const fetchData = async () => {
     try {
       const [vehiclesRes, vendorsRes, partnersRes, typesRes, codesRes] = await Promise.all([
-        vehicleService.getAll({ vendorId: vendorFilter || undefined, search: search || undefined }),
-        vendorService.getAll({ status: 'APPROVED' }),
-        partnerService.getAll({ status: 'APPROVED' }),
+        vehicleService.getAll(),
+        vendorService.getAll(),
+        partnerService.getAll(),
         vehicleTypeService.getAll(),
         cityCodeService.getAll(),
       ]);
@@ -51,43 +66,92 @@ export default function VehiclesPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, [vendorFilter]);
-  useEffect(() => {
-    const debounce = setTimeout(() => fetchData(), 300);
-    return () => clearTimeout(debounce);
-  }, [search]);
+  useEffect(() => { 
+    fetchData(); 
+  }, []);
+
+  const filteredVehicles = vehicles.filter(v => {
+    const searchLower = search.toLowerCase();
+    const matchesSearch = !search || 
+      v.registrationNumber.toLowerCase().includes(searchLower) ||
+      v.vehicleModel.toLowerCase().includes(searchLower) ||
+      v.customId.toLowerCase().includes(searchLower) ||
+      v.vendor?.companyName?.toLowerCase().includes(searchLower) ||
+      v.partner?.name?.toLowerCase().includes(searchLower);
+    
+    const matchesVendor = !vendorFilter || v.vendor?.id === vendorFilter;
+    
+    return matchesSearch && matchesVendor;
+  });
 
   const handleCreate = async () => {
     if (!formData.registrationNumber || !formData.vehicleModel || !formData.vehicleTypeId || !formData.cityCodeId) {
       toast.error('Please fill all required fields'); return;
     }
     setIsCreating(true);
+    const submitData = {
+      registrationNumber: formData.registrationNumber,
+      vehicleModel: formData.vehicleModel,
+      vehicleTypeId: formData.vehicleTypeId,
+      partnerId: formData.partnerId || undefined,
+      cityCodeId: formData.cityCodeId,
+      color: formData.color || undefined,
+      fuelType: formData.fuelType ? (formData.fuelType as any) : undefined,
+      rcNumber: formData.rcNumber || undefined,
+      chassisNumber: formData.chassisNumber || undefined,
+      insuranceNumber: formData.insuranceNumber || undefined,
+      insuranceExpiryDate: formData.insuranceExpiryDate || undefined,
+    };
+
+    console.log('Submitting vehicle data (Modal):', submitData);
     try {
-      await vehicleService.create({
-        registrationNumber: formData.registrationNumber,
-        vehicleModel: formData.vehicleModel,
-        vehicleTypeId: formData.vehicleTypeId,
-        partnerId: formData.partnerId || undefined,
-        cityCodeId: formData.cityCodeId,
-        color: formData.color || undefined,
-        fuelType: formData.fuelType ? (formData.fuelType as any) : undefined,
-        seatingCapacity: formData.seatingCapacity ? parseInt(formData.seatingCapacity) : undefined,
-        rtoTaxExpiryDate: formData.rtoTaxExpiryDate || undefined,
-        speedGovernor: formData.speedGovernor === 'YES',
-      });
+      await vehicleService.create(submitData);
       toast.success('Vehicle created successfully');
       setShowCreateModal(false);
-      setFormData({ partnerId: '', registrationNumber: '', vehicleModel: '', color: '', fuelType: '', vehicleTypeId: '', cityCodeId: '', seatingCapacity: '', rtoTaxExpiryDate: '', speedGovernor: '' });
+      setFormData({ partnerId: '', registrationNumber: '', vehicleModel: '', color: '', fuelType: '', vehicleTypeId: '', cityCodeId: '', rcNumber: '', chassisNumber: '', insuranceNumber: '', insuranceExpiryDate: '' });
       fetchData();
-    } catch (error) {
-      console.error('Failed to create vehicle:', error);
-      toast.error('Failed to create vehicle');
+    } catch (error: any) {
+      console.error('Failed to create vehicle - Full Error:', error);
+      if (error.response) {
+        console.error('Error Status:', error.response.status);
+        console.error('Error Data:', error.response.data);
+      }
+      toast.error(error.response?.data?.message || 'Failed to create vehicle');
     } finally {
       setIsCreating(false);
     }
   };
 
-  if (isLoading) return <PageLoader />;
+  const handleStatusUpdate = async (vehicle: Vehicle, status: EntityActiveStatus) => {
+    try {
+      await vehicleService.updateStatus(vehicle.id, status);
+      toast.success(`Vehicle status updated to ${status}`);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleVerifyHelper = async (vehicle: Vehicle, status: EntityVerificationStatus) => {
+    try {
+      await vehicleService.verify(vehicle.id, status);
+      toast.success(`Vehicle verification set to ${status}`);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update verification');
+    }
+  };
+
+  const handleDelete = async (vehicle: Vehicle) => {
+    if (!window.confirm('Are you sure you want to delete this vehicle? This action is permanent.')) return;
+    try {
+      await vehicleService.deleteVehicle(vehicle.id);
+      toast.success('Vehicle deleted successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to delete vehicle');
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -99,7 +163,7 @@ export default function VehiclesPage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="px-3 py-1.5 rounded-full bg-orange-100 text-orange-600 text-sm font-semibold">
-            {vehicles.length} Vehicles
+            {filteredVehicles.length} Vehicles
           </span>
           <button onClick={() => setShowCreateModal(true)}
             className="btn-primary flex items-center gap-2 py-2.5 px-4">
@@ -111,10 +175,12 @@ export default function VehiclesPage() {
       {/* Filters */}
       <div className="card p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by registration number..." className="input pl-11" />
+          <div className="flex-1 flex gap-2">
+            <div className="relative flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by registration number..." className="input pl-11" />
+            </div>
           </div>
           <div className="relative">
             <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -127,58 +193,131 @@ export default function VehiclesPage() {
         </div>
       </div>
 
-      {/* Vehicles Grid */}
-      {vehicles.length === 0 ? (
-        <div className="card p-12 text-center">
-          <Truck size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700">No vehicles found</h3>
+      {/* Vehicles Table */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[1200px]">
+            <thead className="bg-[#E32222] text-white">
+              <tr>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[120px]">Vehicle ID</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Reg No.</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Model / Type</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Owner (Vendor)</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Assignment</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">City</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[80px]">Status</th>
+                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[160px]">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 italic text-gray-800">
+              {filteredVehicles.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500 italic not-italic">No vehicles found.</td>
+                </tr>
+              ) : (
+                filteredVehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="hover:bg-red-50/20 transition-colors not-italic">
+                    <td className="px-3 py-4">
+                      <span className="text-[11px] font-bold text-orange-600 font-mono uppercase">
+                        {vehicle.customId}
+                      </span>
+                    </td>
+                    <td className="px-3 py-4">
+                       <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-[#E32222]">
+                          <Car size={14} />
+                        </div>
+                        <span className="text-[11px] font-black text-gray-800 tracking-tight">{vehicle.registrationNumber}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-gray-700">{vehicle.vehicleModel}</span>
+                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{vehicle.vehicleType?.displayName}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-orange-600 font-mono">{vehicle.vendor?.customId}</span>
+                        <span className="text-[10px] text-gray-500 truncate max-w-[150px]">{vehicle.vendor?.companyName || vehicle.vendor?.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4">
+                       {vehicle.partner ? (
+                        <div className="flex items-center gap-2">
+                          <UserCheck size={12} className="text-blue-500" />
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-gray-700">{vehicle.partner.name}</span>
+                            <span className="text-[9px] text-emerald-600 font-mono font-bold tracking-tighter uppercase">{vehicle.partner.customId}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 italic">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-4 text-[11px] font-medium text-gray-600">
+                      {vehicle.cityCode?.cityName}
+                    </td>
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${activeStatusColors[vehicle.status] || 'bg-gray-100 text-gray-700'}`}>
+                          {vehicle.status}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${verifyStatusColors[vehicle.verifyStatus] || 'bg-gray-100 text-gray-700'}`}>
+                          {vehicle.verifyStatus}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex gap-1">
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) handleStatusUpdate(vehicle, e.target.value as EntityActiveStatus);
+                            }}
+                            className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer flex-1"
+                          >
+                            <option value="">Status</option>
+                            <option value="ACTIVE">Activate</option>
+                            <option value="INACTIVE">Deactivate</option>
+                            <option value="SUSPENDED">Suspend</option>
+                            <option value="BANNED">Ban</option>
+                          </select>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) handleVerifyHelper(vehicle, e.target.value as EntityVerificationStatus);
+                            }}
+                            className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer flex-1"
+                          >
+                            <option value="">Verify</option>
+                            <option value="VERIFIED">Verify</option>
+                            <option value="REJECTED">Reject</option>
+                            <option value="UNDER_REVIEW">Review</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-2">
+                          <Link href={`/dashboard/vehicles/${vehicle.id}/edit`} className="p-1 px-2 text-blue-600 hover:bg-blue-50 rounded text-[9px] font-bold flex items-center gap-1">
+                            <Eye size={12} /> Edit
+                          </Link>
+                          <button onClick={() => handleDelete(vehicle)} className="p-1 px-2 text-red-600 hover:bg-red-50 rounded text-[9px] font-bold flex items-center gap-1">
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((vehicle) => (
-            <div key={vehicle.id} className="card p-6 hover:border-orange-300 transition-all">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-md">
-                  <Car size={24} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-xs text-orange-500 font-medium">{vehicle.customId}</p>
-                  <h3 className="font-bold text-gray-800">{vehicle.registrationNumber}</h3>
-                </div>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Truck size={14} /><span>{vehicle.vehicleModel}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Car size={14} /><span>{vehicle.vehicleType?.displayName}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Building2 size={14} /><span>{vehicle.vendor?.companyName || vehicle.vendor?.name}</span>
-                </div>
-                {vehicle.partner && (
-                  <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <UserCheck size={14} /><span>{vehicle.partner.name}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <MapPin size={14} /><span>{vehicle.cityCode?.cityName}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${vehicle.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
-                  {vehicle.isActive ? 'Active' : 'Inactive'}
-                </span>
-                <button className="flex items-center gap-1.5 text-orange-500 hover:text-orange-600 text-sm font-medium">
-                  <Eye size={14} />View
-                </button>
-              </div>
-            </div>
-          ))}
+        {/* Footer */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+          <span className="text-xs text-gray-500">Showing <span className="font-bold text-[#E32222]">{vehicles.length}</span> fleet vehicles</span>
         </div>
-      )}
+      </div>
 
       {/* Create Modal */}
       {showCreateModal && (
@@ -248,37 +387,28 @@ export default function VehiclesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Seating Capacity</label>
-                <select value={formData.seatingCapacity}
-                  onChange={(e) => setFormData({...formData, seatingCapacity: e.target.value})}
-                  className="input">
-                  <option value="">Select Seating Capacity</option>
-                  <option value="2">2</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="10">10</option>
-                  <option value="12">12</option>
-                  <option value="14">14</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">RC Number</label>
+                <input type="text" value={formData.rcNumber}
+                  onChange={(e) => setFormData({...formData, rcNumber: e.target.value.toUpperCase()})}
+                  className="input" placeholder="Enter RC Number" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">RTO Tax Expiry Date</label>
-                <input type="date" value={formData.rtoTaxExpiryDate}
-                  onChange={(e) => setFormData({...formData, rtoTaxExpiryDate: e.target.value})}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Chassis Number</label>
+                <input type="text" value={formData.chassisNumber}
+                  onChange={(e) => setFormData({...formData, chassisNumber: e.target.value.toUpperCase()})}
+                  className="input" placeholder="Enter Chassis Number" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Number</label>
+                <input type="text" value={formData.insuranceNumber}
+                  onChange={(e) => setFormData({...formData, insuranceNumber: e.target.value})}
+                  className="input" placeholder="Enter Insurance Number" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Expiry Date</label>
+                <input type="date" value={formData.insuranceExpiryDate}
+                  onChange={(e) => setFormData({...formData, insuranceExpiryDate: e.target.value})}
                   className="input" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Speed Governor</label>
-                <select value={formData.speedGovernor}
-                  onChange={(e) => setFormData({...formData, speedGovernor: e.target.value})}
-                  className="input">
-                  <option value="">Select Speed Governor</option>
-                  <option value="YES">Yes</option>
-                  <option value="NO">No</option>
-                </select>
               </div>
               </div>
             </div>

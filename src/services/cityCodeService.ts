@@ -8,19 +8,19 @@ export const cityCodeService = {
     return response.data;
   },
 
-  // Admin endpoints
+  // Agent/Admin endpoints for management
   async create(code: string, cityName: string): Promise<ApiResponse<CityCode>> {
-    const response = await adminApi.post('/city-codes', { code, cityName });
+    const response = await publicApi.post('/city-codes', { code, cityName, isActive: true });
     return response.data;
   },
 
   async update(id: string, code: string, cityName: string): Promise<ApiResponse<CityCode>> {
-    const response = await adminApi.put(`/city-codes/${id}`, { code, cityName });
+    const response = await publicApi.put(`/city-codes/${id}`, { code, cityName });
     return response.data;
   },
 
   async delete(id: string): Promise<ApiResponse<void>> {
-    const response = await adminApi.delete(`/city-codes/${id}`);
+    const response = await publicApi.delete(`/city-codes/${id}`);
     return response.data;
   },
 };

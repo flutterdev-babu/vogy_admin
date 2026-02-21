@@ -10,9 +10,13 @@ import {
   Ride,
   VendorFilters,
   EntityStatus,
+  EntityVerificationStatus,
+  EntityActiveStatus,
   VendorDashboardData,
   VendorAttachment,
-  VendorEarningsData
+  VendorEarningsData,
+  VerifyAttachmentRequest, // Repurposing or using for consistency
+  UpdateStatusRequest
 } from '@/types';
 
 export const vendorService = {
@@ -98,16 +102,28 @@ export const vendorService = {
   // =====================
 
   async getAll(filters?: VendorFilters): Promise<ApiResponse<Vendor[]>> {
-    const params = new URLSearchParams();
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.search) params.append('search', filters.search);
-
-    const response = await adminApi.get(`/vendors?${params.toString()}`);
+    const response = await adminApi.get('/vendors', { params: filters });
+    console.log("Vendor API Response:", response);
     return response.data;
   },
 
-  async updateStatus(id: string, status: EntityStatus): Promise<ApiResponse<Vendor>> {
-    const response = await adminApi.put(`/vendors/${id}/status`, { status });
+  async getById(id: string): Promise<ApiResponse<Vendor>> {
+    const response = await adminApi.get(`/vendors/${id}`);
+    return response.data;
+  },
+
+  async updateVendor(id: string, data: Partial<VendorRegisterRequest>): Promise<ApiResponse<Vendor>> {
+    const response = await adminApi.put(`/vendors/${id}`, data);
+    return response.data;
+  },
+
+  async verify(id: string, status: EntityVerificationStatus): Promise<ApiResponse<Vendor>> {
+    const response = await adminApi.patch(`/vendors/${id}/verify`, { status });
+    return response.data;
+  },
+
+  async updateStatus(id: string, status: EntityActiveStatus): Promise<ApiResponse<Vendor>> {
+    const response = await adminApi.patch(`/vendors/${id}/status`, { status });
     return response.data;
   },
 
@@ -116,8 +132,8 @@ export const vendorService = {
     return response.data;
   },
 
-  async createVehicle(data: any): Promise<ApiResponse<Vehicle>> {
-    const response = await adminApi.post('/vehicles', data);
+  async deleteVendor(id: string): Promise<ApiResponse<void>> {
+    const response = await adminApi.delete(`/vendors/${id}`);
     return response.data;
   },
 

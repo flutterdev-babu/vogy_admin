@@ -4,21 +4,28 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { UserCheck, Search, Filter, CheckCircle, XCircle, Clock, Eye, Phone, Wifi, WifiOff, Plus, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { partnerService } from '@/services/partnerService';
-import { Partner, EntityStatus } from '@/types';
+import { Partner, EntityActiveStatus, EntityVerificationStatus } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
-import React from 'react';
+import { Trash2, ShieldCheck, ShieldAlert } from 'lucide-react';
 
-const statusColors: Record<EntityStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  APPROVED: 'bg-green-100 text-green-700',
-  SUSPENDED: 'bg-red-100 text-red-700',
+const activeStatusColors: Record<EntityActiveStatus, string> = {
+  ACTIVE: 'bg-green-100 text-green-700',
+  INACTIVE: 'bg-gray-100 text-gray-700',
+  SUSPENDED: 'bg-yellow-100 text-yellow-700',
+  BANNED: 'bg-red-100 text-red-700',
+};
+
+const verifyStatusColors: Record<EntityVerificationStatus, string> = {
+  UNDER_REVIEW: 'bg-orange-100 text-orange-700',
+  VERIFIED: 'bg-blue-100 text-blue-700',
+  REJECTED: 'bg-red-100 text-red-700',
 };
 
 export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<EntityStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<EntityActiveStatus | ''>('');
   const [onlineFilter, setOnlineFilter] = useState<string>('');
   const [filters, setFilters] = useState({
     name: '',
@@ -51,14 +58,34 @@ export default function PartnersPage() {
     fetchPartners();
   }, [statusFilter, onlineFilter]);
 
-  const handleStatusChange = async (partner: Partner, newStatus: EntityStatus) => {
+  const handleStatusUpdate = async (partner: Partner, status: EntityActiveStatus) => {
     try {
-      await partnerService.updateStatus(partner.id, newStatus);
-      toast.success(`Partner ${newStatus.toLowerCase()}`);
+      await partnerService.updateStatus(partner.id, status);
+      toast.success(`Partner status updated to ${status}`);
       fetchPartners();
     } catch (error) {
-      console.error('Failed to update status:', error);
-      toast.error('Failed to update partner status');
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleVerify = async (partner: Partner, status: EntityVerificationStatus) => {
+    try {
+      await partnerService.verify(partner.id, status);
+      toast.success(`Partner verification set to ${status}`);
+      fetchPartners();
+    } catch (error) {
+      toast.error('Failed to update verification');
+    }
+  };
+
+  const handleDelete = async (partner: Partner) => {
+    if (!window.confirm('Are you sure you want to delete this partner? This action is permanent.')) return;
+    try {
+      await partnerService.deletePartner(partner.id);
+      toast.success('Partner deleted successfully');
+      fetchPartners();
+    } catch (error) {
+      toast.error('Failed to delete partner');
     }
   };
 
@@ -120,13 +147,14 @@ export default function PartnersPage() {
       <div className="flex gap-2">
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as EntityStatus | '')}
+          onChange={(e) => setStatusFilter(e.target.value as EntityActiveStatus | '')}
           className="text-xs p-2 border border-gray-200 rounded-lg bg-white outline-none min-w-[120px]"
         >
           <option value="">All Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED">Approved</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
           <option value="SUSPENDED">Suspended</option>
+          <option value="BANNED">Banned</option>
         </select>
         <select
           value={onlineFilter}
@@ -245,8 +273,11 @@ export default function PartnersPage() {
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-col gap-1 items-start">
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${statusColors[partner.status]}`}>
-                          {partner.status}
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${activeStatusColors[partner.status] || 'bg-gray-100 text-gray-700'}`}>
+                          Status: {partner.status}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${verifyStatusColors[partner.verifyStatus] || 'bg-gray-100 text-gray-700'}`}>
+                          Verify: {partner.verifyStatus}
                         </span>
                         {partner.isOnline ? (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full text-[8px] font-bold">
@@ -264,15 +295,38 @@ export default function PartnersPage() {
                         <select
                           value=""
                           onChange={(e) => {
-                            if (e.target.value) handleStatusChange(partner, e.target.value as EntityStatus);
+                            if (e.target.value) handleStatusUpdate(partner, e.target.value as EntityActiveStatus);
                           }}
                           className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer w-full"
                         >
-                          <option value="">Set Status</option>
-                          <option value="APPROVED">Approve</option>
-                          <option value="PENDING">Pending</option>
+                          <option value="">Status</option>
+                          <option value="ACTIVE">Activate</option>
+                          <option value="INACTIVE">Deactivate</option>
                           <option value="SUSPENDED">Suspend</option>
+                          <option value="BANNED">Ban</option>
                         </select>
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) handleVerify(partner, e.target.value as EntityVerificationStatus);
+                          }}
+                          className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer w-full"
+                        >
+                          <option value="">Verify</option>
+                          <option value="VERIFIED">Verify</option>
+                          <option value="REJECTED">Reject</option>
+                          <option value="UNDER_REVIEW">Review</option>
+                        </select>
+                        <Link href={`/dashboard/partners/${partner.id}/edit`} className="p-1 px-2 text-blue-600 hover:bg-blue-50 rounded text-[9px] font-bold flex items-center gap-1">
+                          <Eye size={12} /> Edit
+                        </Link>
+                        <button 
+                          onClick={() => handleDelete(partner)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete Partner"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>

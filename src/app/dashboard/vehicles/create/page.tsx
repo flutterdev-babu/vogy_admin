@@ -1,25 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Car, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Truck, Loader2, Plus, ShieldCheck, Info, MapPin, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { cityCodeService } from '@/services/cityCodeService';
+import { vehicleService } from '@/services/vehicleService';
 import { vehicleTypeService } from '@/services/vehicleTypeService';
-import { vendorService } from '@/services/vendorService';
 import { partnerService } from '@/services/partnerService';
-import { CreateVehicleRequest, FuelType } from '@/types';
+import { cityCodeService } from '@/services/cityCodeService';
+import { vendorService } from '@/services/vendorService';
+import { DocImageInput } from '@/components/ui/DocImageInput';
 
 export default function AdminCreateVehiclePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [showAdditional, setShowAdditional] = useState(false);
-
-  const [cityCodes, setCityCodes] = useState<any[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
-  const [vendors, setVendors] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
+  const [cityCodes, setCityCodes] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     registrationNumber: '',
@@ -28,27 +27,29 @@ export default function AdminCreateVehiclePage() {
     vendorCustomId: '',
     partnerCustomId: '',
     cityCodeId: '',
-    // Additional
     color: '',
-    fuelType: '' as FuelType | '',
-    seatingCapacity: '',
-    rtoTaxExpiryDate: '',
-    speedGovernor: false,
+    fuelType: '',
+    rcNumber: '',
+    rcImage: '',
+    chassisNumber: '',
+    engineNumber: '',
+    insuranceNumber: '',
+    insuranceExpiryDate: '',
   });
 
   useEffect(() => {
     const loadLookups = async () => {
       try {
-        const [cityRes, vtRes, vendorRes, partnerRes] = await Promise.all([
-          cityCodeService.getAll(),
+        const [vtRes, pRes, cityRes, vRes] = await Promise.all([
           vehicleTypeService.getAll(),
-          vendorService.getAll(),
           partnerService.getAll(),
+          cityCodeService.getAll(),
+          vendorService.getAll(),
         ]);
-        if (cityRes.success) setCityCodes(cityRes.data || []);
         if (vtRes.success) setVehicleTypes(vtRes.data || []);
-        if (vendorRes.success) setVendors(vendorRes.data || []);
-        if (partnerRes.success) setPartners(partnerRes.data || []);
+        if (pRes.success) setPartners(pRes.data || []);
+        if (cityRes.success) setCityCodes(cityRes.data || []);
+        if (vRes.success) setVendors(vRes.data || []);
       } catch (err) {
         console.error('Failed to load lookups:', err);
       }
@@ -58,187 +59,232 @@ export default function AdminCreateVehiclePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.registrationNumber || !formData.vehicleModel || !formData.vehicleTypeId || !formData.cityCodeId) {
+    if (!formData.registrationNumber || !formData.vehicleModel || !formData.vehicleTypeId || !formData.cityCodeId || !formData.vendorCustomId) {
       toast.error('Please fill all required fields');
-      return;
-    }
-    if (!formData.vendorCustomId) {
-      toast.error('Please select a vendor');
       return;
     }
     setIsLoading(true);
     try {
       const selectedVendor = vendors.find((v: any) => v.customId === formData.vendorCustomId);
       const selectedPartner = partners.find((p: any) => p.customId === formData.partnerCustomId);
-      const submitData: CreateVehicleRequest = {
+      
+      const submitData: any = {
         registrationNumber: formData.registrationNumber.toUpperCase(),
         vehicleModel: formData.vehicleModel,
         vehicleTypeId: formData.vehicleTypeId,
-        vendorId: selectedVendor?.id || undefined,
-        vendorCustomId: formData.vendorCustomId || undefined,
+        vendorId: selectedVendor?.id,
+        vendorCustomId: formData.vendorCustomId,
         partnerId: selectedPartner?.id || undefined,
         partnerCustomId: formData.partnerCustomId || undefined,
         cityCodeId: formData.cityCodeId,
         color: formData.color || undefined,
-        fuelType: formData.fuelType ? (formData.fuelType as FuelType) : undefined,
-        seatingCapacity: formData.seatingCapacity ? parseInt(formData.seatingCapacity) : undefined,
-        rtoTaxExpiryDate: formData.rtoTaxExpiryDate || undefined,
-        speedGovernor: formData.speedGovernor,
+        fuelType: formData.fuelType || undefined,
+        rcNumber: formData.rcNumber || undefined,
+        rcImage: formData.rcImage || undefined,
+        chassisNumber: formData.chassisNumber || undefined,
+        engineNumber: formData.engineNumber || undefined,
+        insuranceNumber: formData.insuranceNumber || undefined,
+        insuranceExpiryDate: formData.insuranceExpiryDate || undefined,
       };
-      const response = await vendorService.createVehicle(submitData);
+
+      const response = await vehicleService.create(submitData);
       if (response.success) {
-        toast.success('Vehicle created successfully!');
+        toast.success('Vehicle registered successfully!');
         router.push('/dashboard/vehicles');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create vehicle');
+      toast.error(error.response?.data?.message || 'Failed to register vehicle');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/30 transition-all bg-white";
-  const labelClass = "text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block";
+  const inputGroupClass = "flex flex-col gap-1";
+  const labelClass = "text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1";
+  const fieldClass = "w-full px-3 py-2 text-xs text-gray-800 placeholder-gray-400 border border-gray-200 rounded-xl focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/10 transition-all bg-white shadow-sm hover:border-gray-300 font-medium h-10";
+  const selectClass = "w-full px-3 py-2 text-xs text-gray-800 appearance-none border border-gray-200 rounded-xl focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/10 transition-all bg-white shadow-sm hover:border-gray-300 font-medium cursor-pointer h-10";
 
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in">
-      <Link href="/dashboard/vehicles" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors mb-6 group text-sm">
-        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-        Back to Vehicles
-      </Link>
-
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Register New Vehicle</h1>
-        <p className="text-sm text-gray-500 mt-1">Add a vehicle to the fleet</p>
+    <div className="max-w-6xl mx-auto animate-fade-in pb-12 px-4 md:px-0">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <Link href="/dashboard/vehicles" className="inline-flex items-center gap-2 text-gray-400 hover:text-[#E32222] transition-colors mb-2 group text-[10px] font-black uppercase tracking-widest">
+            <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+            Vehicles
+          </Link>
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight italic uppercase leading-none">Register Vehicle</h1>
+        </div>
+        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center border border-red-100">
+          <Truck size={24} className="text-[#E32222]" />
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Vehicle Info */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-[#E32222] uppercase tracking-wide mb-2">Vehicle Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Registration Number *</label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Section: Deployment & Specification */}
+        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-50 bg-gray-50/50 flex items-center gap-2">
+            <Info size={14} className="text-[#E32222]" />
+            <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Deployment & Spec</h2>
+          </div>
+          
+          <div className="p-5 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className={inputGroupClass}>
+              <label className={labelClass}>License Plate *</label>
               <input type="text" required value={formData.registrationNumber}
                 onChange={e => setFormData({...formData, registrationNumber: e.target.value.toUpperCase()})}
-                className={inputClass} placeholder="KA01AB1234" />
+                className={fieldClass} placeholder="KA 03 MB 1234" />
             </div>
-            <div>
-              <label className={labelClass}>Vehicle Model *</label>
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Model / Make *</label>
               <input type="text" required value={formData.vehicleModel}
                 onChange={e => setFormData({...formData, vehicleModel: e.target.value})}
-                className={inputClass} placeholder="Maruti Dzire" />
+                className={fieldClass} placeholder="Maruti Dzire" />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Vehicle Type *</label>
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Category *</label>
               <select required value={formData.vehicleTypeId}
                 onChange={e => setFormData({...formData, vehicleTypeId: e.target.value})}
-                className={inputClass + " appearance-none"}>
+                className={selectClass}>
                 <option value="">Select Type</option>
-                {vehicleTypes.map((vt: any) => <option key={vt.id} value={vt.id}>{vt.displayName} ({vt.category})</option>)}
+                {vehicleTypes.map((vt: any) => <option key={vt.id} value={vt.id}>{vt.displayName}</option>)}
               </select>
             </div>
-            <div>
-              <label className={labelClass}>City Code *</label>
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Operating City *</label>
               <select required value={formData.cityCodeId}
                 onChange={e => setFormData({...formData, cityCodeId: e.target.value})}
-                className={inputClass + " appearance-none"}>
-                <option value="">Select City</option>
-                {cityCodes.map((c: any) => <option key={c.id} value={c.id}>{c.cityName} ({c.code})</option>)}
+                className={selectClass}>
+                <option value="">Choose City</option>
+                {cityCodes.map((c: any) => <option key={c.id} value={c.id}>{c.cityName}</option>)}
               </select>
             </div>
           </div>
-        </div>
 
-        {/* Assignment */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-[#E32222] uppercase tracking-wide mb-2">Assignment</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Vendor *</label>
+          <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/30 py-4 border-t border-gray-50">
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Assign Vendor *</label>
               <select required value={formData.vendorCustomId}
                 onChange={e => setFormData({...formData, vendorCustomId: e.target.value})}
-                className={inputClass + " appearance-none"}>
+                className={selectClass}>
                 <option value="">Select Vendor</option>
                 {vendors.map((v: any) => <option key={v.id} value={v.customId}>{v.companyName || v.name} ({v.customId})</option>)}
               </select>
             </div>
-            <div>
-              <label className={labelClass}>Partner (Optional)</label>
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Assign Partner (Optional)</label>
               <select value={formData.partnerCustomId}
                 onChange={e => setFormData({...formData, partnerCustomId: e.target.value})}
-                className={inputClass + " appearance-none"}>
-                <option value="">No Partner</option>
+                className={selectClass}>
+                <option value="">No Partner Assigned</option>
                 {partners.map((p: any) => <option key={p.id} value={p.customId}>{p.name} ({p.customId})</option>)}
               </select>
             </div>
           </div>
         </div>
 
-        {/* Additional Details (Collapsible) */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-          <button type="button" onClick={() => setShowAdditional(!showAdditional)}
-            className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
-            <span className="font-semibold text-gray-700 text-sm">Additional Details</span>
-            {showAdditional ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
-          </button>
-          {showAdditional && (
-            <div className="px-6 pb-6 space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className={labelClass}>Color</label>
-                  <input type="text" value={formData.color}
-                    onChange={e => setFormData({...formData, color: e.target.value})}
-                    className={inputClass} placeholder="White" />
-                </div>
-                <div>
-                  <label className={labelClass}>Fuel Type</label>
-                  <select value={formData.fuelType}
-                    onChange={e => setFormData({...formData, fuelType: e.target.value as any})}
-                    className={inputClass + " appearance-none"}>
-                    <option value="">Select</option>
-                    <option value="PETROL">Petrol</option>
-                    <option value="DIESEL">Diesel</option>
-                    <option value="CNG">CNG</option>
-                    <option value="ELECTRIC">Electric</option>
-                    <option value="HYBRID">Hybrid</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass}>Seating Capacity</label>
-                  <input type="number" value={formData.seatingCapacity}
-                    onChange={e => setFormData({...formData, seatingCapacity: e.target.value})}
-                    className={inputClass} placeholder="4" min="1" max="50" />
-                </div>
+        {/* Section: Compliance & Identity */}
+        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-50 bg-gray-50/50 flex items-center gap-2">
+            <ShieldCheck size={14} className="text-[#E32222]" />
+            <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">KYC Documents & Tech</h2>
+          </div>
+          
+          <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="space-y-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+               <div className={inputGroupClass}>
+                <label className={labelClass}>RC Number</label>
+                <input type="text" value={formData.rcNumber}
+                  onChange={e => setFormData({...formData, rcNumber: e.target.value.toUpperCase()})}
+                  className={fieldClass} placeholder="Enter RC Number" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>RTO Tax Expiry Date</label>
-                  <input type="date" value={formData.rtoTaxExpiryDate}
-                    onChange={e => setFormData({...formData, rtoTaxExpiryDate: e.target.value})}
-                    className={inputClass} />
-                </div>
-                <div className="flex items-end pb-1">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={formData.speedGovernor}
-                      onChange={e => setFormData({...formData, speedGovernor: e.target.checked})}
-                      className="w-4 h-4 accent-[#E32222] rounded" />
-                    <span className="text-sm font-medium text-gray-700">Speed Governor Installed</span>
-                  </label>
-                </div>
+              <DocImageInput 
+                label="RC Image" 
+                value={formData.rcImage} 
+                onChange={(val) => setFormData({...formData, rcImage: val})} 
+              />
+            </div>
+
+            <div className="space-y-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Insurance Number</label>
+                <input type="text" value={formData.insuranceNumber}
+                  onChange={e => setFormData({...formData, insuranceNumber: e.target.value.toUpperCase()})}
+                  className={fieldClass} placeholder="Policy Number" />
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Insurance Expiry</label>
+                <input type="date" value={formData.insuranceExpiryDate}
+                  onChange={e => setFormData({...formData, insuranceExpiryDate: e.target.value})}
+                  className={fieldClass} />
               </div>
             </div>
-          )}
+
+            <div className="p-4 bg-neutral-900 rounded-2xl border border-neutral-800 space-y-3">
+               <div className="flex items-center gap-2 mb-1">
+                 <Settings size={12} className="text-[#E32222]" />
+                 <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Technical details</span>
+               </div>
+               <div className="grid grid-cols-1 gap-3">
+                 <div className={inputGroupClass}>
+                   <label className={labelClass + " text-neutral-500"}>Chassis Number</label>
+                   <input type="text" value={formData.chassisNumber}
+                     onChange={e => setFormData({...formData, chassisNumber: e.target.value.toUpperCase()})}
+                     className={fieldClass + " bg-neutral-800 border-neutral-700 text-white"} placeholder="Last 17 Digits" />
+                 </div>
+                 <div className={inputGroupClass}>
+                   <label className={labelClass + " text-neutral-500"}>Engine Number</label>
+                   <input type="text" value={formData.engineNumber}
+                     onChange={e => setFormData({...formData, engineNumber: e.target.value.toUpperCase()})}
+                     className={fieldClass + " bg-neutral-800 border-neutral-700 text-white"} placeholder="Engine ID" />
+                 </div>
+               </div>
+            </div>
+          </div>
+
+          <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-50">
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Vehicle Color</label>
+              <input type="text" value={formData.color}
+                onChange={e => setFormData({...formData, color: e.target.value})}
+                className={fieldClass} placeholder="White, Silver, etc" />
+            </div>
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Fuel Type</label>
+              <select value={formData.fuelType}
+                onChange={e => setFormData({...formData, fuelType: e.target.value})}
+                className={selectClass}>
+                <option value="">Select Fuel</option>
+                <option value="PETROL">Petrol</option>
+                <option value="DIESEL">Diesel</option>
+                <option value="CNG">CNG</option>
+                <option value="ELECTRIC">Electric</option>
+              </select>
+            </div>
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Year of Manufacture</label>
+              <input type="text" value={formData.insuranceExpiryDate}
+                onChange={e => setFormData({...formData, insuranceExpiryDate: e.target.value})}
+                className={fieldClass} placeholder="2024" />
+            </div>
+          </div>
         </div>
 
-        {/* Submit */}
-        <button type="submit" disabled={isLoading}
-          className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white font-semibold text-sm shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-          {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Car size={20} />}
-          <span>{isLoading ? 'Registering Vehicle...' : 'Register Vehicle'}</span>
-        </button>
+        <div className="flex flex-col md:flex-row items-center justify-between p-4 bg-gray-900 rounded-2xl gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+              <Plus size={16} className="text-[#E32222]" />
+            </div>
+            <div>
+              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Verify & Authorize</p>
+              <p className="text-[10px] text-white/60 font-medium">Add to fleet after verification of RC and insurance docs.</p>
+            </div>
+          </div>
+          <button type="submit" disabled={isLoading}
+            className="w-full md:w-auto px-10 h-10 bg-[#E32222] hover:bg-[#ff2a1a] text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+            {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
+            {isLoading ? 'Processing' : 'Authorize Vehicle'}
+          </button>
+        </div>
       </form>
     </div>
   );

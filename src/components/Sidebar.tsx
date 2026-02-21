@@ -56,13 +56,32 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Fleet Management',
+    title: 'Partners',
     items: [
-      { href: '/dashboard/vendors', label: 'Vendors', icon: Car },
-      { href: '/dashboard/partners', label: 'Partners', icon: UserCheck },
-      { href: '/dashboard/vehicles', label: 'Vehicles', icon: Truck },
-      { href: '/dashboard/attachments', label: 'Attachments', icon: Paperclip },
+      { href: '/dashboard/partners/create', label: 'Create Partner', icon: PlusCircle },
+      { href: '/dashboard/partners', label: 'Partner List', icon: UserCheck },
+    ],
+  },
+  {
+    title: 'Vehicles',
+    items: [
+      { href: '/dashboard/vehicles/create', label: 'Create Vehicle', icon: PlusCircle },
+      { href: '/dashboard/vehicles', label: 'Vehicle List', icon: Truck },
       { href: '/dashboard/vehicle-types', label: 'Vehicle Types', icon: Car },
+    ],
+  },
+  {
+    title: 'Vendors',
+    items: [
+      { href: '/dashboard/vendors/create', label: 'Create Vendor', icon: PlusCircle },
+      { href: '/dashboard/vendors', label: 'Vendor List', icon: Car },
+    ],
+  },
+  {
+    title: 'Attachments',
+    items: [
+      { href: '/dashboard/attachments/create', label: 'Create Attachment', icon: PlusCircle },
+      { href: '/dashboard/attachments', label: 'Attachment List', icon: Paperclip },
     ],
   },
   {

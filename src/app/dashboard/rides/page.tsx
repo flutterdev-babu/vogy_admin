@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Eye, RefreshCw, ChevronLeft, ChevronRight, Search, RotateCcw, Plus } from 'lucide-react';
-import { rideService } from '@/services/rideService';
+import { adminRideService } from '@/services/adminRideService';
 import { Ride, RideStatus, RideFilters } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { StatusBadge } from '@/components/ui/Badge';
@@ -38,7 +38,7 @@ export default function RidesPage() {
   const fetchRides = async () => {
     setIsLoading(true);
     try {
-      const response = await rideService.getAll(); // Fetching all for local tab filtering in this mockup style
+      const response = await adminRideService.getAllRides(); 
       setRides(response.data || []);
     } catch (error) {
       console.error('Failed to fetch rides:', error);

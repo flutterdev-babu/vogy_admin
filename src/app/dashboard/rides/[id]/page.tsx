@@ -32,7 +32,7 @@ export default function AdminRideDetailsPage() {
     try {
       const [rideRes, partnersRes] = await Promise.all([
         adminRideService.getRideById(id as string),
-        partnerService.getAll({ status: 'APPROVED' })
+        partnerService.getAll({ verifyStatus: 'VERIFIED' })
       ]);
       
       if (rideRes.success) {
@@ -59,7 +59,8 @@ export default function AdminRideDetailsPage() {
     if (!selectedPartnerId) return;
     setIsUpdating(true);
     try {
-      const res = await adminRideService.manualAssignPartner(ride!.id, selectedPartnerId);
+      const selectedPartner = partners.find(p => p.id === selectedPartnerId);
+      const res = await adminRideService.manualAssignPartner(ride!.id, selectedPartnerId, selectedPartner?.customId);
       if (res.success) {
         toast.success('Partner assigned successfully');
         fetchData();
