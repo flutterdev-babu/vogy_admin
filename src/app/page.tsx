@@ -52,7 +52,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-5xl lg:text-7xl font-bold leading-tight"
             >
-              Ride Smarter with <br />
+             Travel Better with <br />
               <span className="text-[#E32222] drop-shadow-[0_0_30px_rgba(227,34,34,0.3)]">ARA TRAVELS</span>
             </motion.h1>
 
@@ -191,7 +191,7 @@ export default function LandingPage() {
                </p>
 
                <div className="grid sm:grid-cols-2 gap-6">
-                 <FeatureCard icon={<Clock />} title="Advanced Pickups" desc="No 5 mins pickup" />
+                 <FeatureCard icon={<Clock />} title="Advanced Pickups" desc="No Peak Hour Charges" />
                  <FeatureCard icon={<Shield />} title="Safe Rides" desc="Verified drivers & tracking" />
                  <FeatureCard icon={<Smartphone />} title="Easy Booking" desc="3-tap booking process" />
                  <FeatureCard icon={<CheckCircle />} title="Best Fares" desc="Transparent pricing" />
