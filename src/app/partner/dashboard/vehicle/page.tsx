@@ -48,7 +48,7 @@ export default function PartnerVehiclePage() {
           </p>
         </div>
         <div className="px-6 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-2xl text-sm font-black tracking-widest uppercase">
-          {currentVehicle.status || 'Active'}
+          {currentVehicle.verificationStatus || currentVehicle.status || 'Active'}
         </div>
       </div>
 

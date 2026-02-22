@@ -7,10 +7,10 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<RideStatus, { bg: string; text: string; label: string }> = {
-  PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' },
+  UPCOMING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Upcoming' },
   INITIATED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Initiated' },
   SCHEDULED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Scheduled' },
-  ACCEPTED: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Accepted' },
+  ASSIGNED: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Assigned' },
   ARRIVED: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Arrived' },
   STARTED: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'In Progress' },
   COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' },
@@ -19,7 +19,7 @@ const statusConfig: Record<RideStatus, { bg: string; text: string; label: string
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const config = statusConfig[status] || statusConfig.PENDING;
+  const config = statusConfig[status] || statusConfig.UPCOMING;
   
   return (
     <span className={`badge ${config.bg} ${config.text}`}>

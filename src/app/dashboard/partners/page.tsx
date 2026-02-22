@@ -16,10 +16,12 @@ const activeStatusColors: Record<EntityActiveStatus, string> = {
   BANNED: 'bg-red-100 text-red-700',
 };
 
-const verifyStatusColors: Record<EntityVerificationStatus, string> = {
+const verificationStatusColors: Record<EntityVerificationStatus, string> = {
   UNDER_REVIEW: 'bg-orange-100 text-orange-700',
   VERIFIED: 'bg-blue-100 text-blue-700',
   REJECTED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-yellow-100 text-yellow-700',
+  UNVERIFIED: 'bg-gray-100 text-gray-700',
 };
 
 export default function PartnersPage() {
@@ -276,8 +278,8 @@ export default function PartnersPage() {
                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${activeStatusColors[partner.status] || 'bg-gray-100 text-gray-700'}`}>
                           Status: {partner.status}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${verifyStatusColors[partner.verifyStatus] || 'bg-gray-100 text-gray-700'}`}>
-                          Verify: {partner.verifyStatus}
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${verificationStatusColors[partner.verificationStatus] || 'bg-gray-100 text-gray-700'}`}>
+                          Verify: {partner.verificationStatus}
                         </span>
                         {partner.isOnline ? (
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-50 text-green-600 rounded-full text-[8px] font-bold">

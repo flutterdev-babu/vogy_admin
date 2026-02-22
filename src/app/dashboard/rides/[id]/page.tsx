@@ -6,14 +6,14 @@ import Link from 'next/link';
 import { 
   ArrowLeft, MapPin, Clock, User, Car, IndianRupee, 
   ShieldCheck, AlertCircle, CheckCircle2, XCircle,
-  Key, Save, Loader2, RefreshCw, Smartphone
+  Key, Save, Loader2, RefreshCw, Smartphone, 
+  Search, MessageCircle, MoreHorizontal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminRideService } from '@/services/adminRideService';
 import { partnerService } from '@/services/partnerService';
 import { Ride, RideStatus, Partner, EntityStatus } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { StatusBadge } from '@/components/ui/Badge';
 
 export default function AdminRideDetailsPage() {
   const { id } = useParams();
@@ -23,22 +23,32 @@ export default function AdminRideDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+  const [partnerSearch, setPartnerSearch] = useState('');
   const [newStatus, setNewStatus] = useState<RideStatus | ''>('');
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState<string>('');
+  const [userUniqueOtp, setUserUniqueOtp] = useState<string>('');
+  const [filterBy, setFilterBy] = useState<'VERIFIED' | 'NV' | 'NA'>('VERIFIED');
+  const [isAssignMode, setIsAssignMode] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
       const [rideRes, partnersRes] = await Promise.all([
         adminRideService.getRideById(id as string),
-        partnerService.getAll({ verifyStatus: 'VERIFIED' })
+        partnerService.getAll({ verificationStatus: filterBy === 'VERIFIED' ? 'VERIFIED' : undefined })
       ]);
       
       if (rideRes.success) {
-        setRide(rideRes.data);
-        setSelectedPartnerId(rideRes.data.partner?.id || '');
-        setNewStatus(rideRes.data.status);
+        const rideData = rideRes.data;
+        // Robust state mapping for legacy status values
+        let status = rideData.status as any;
+        if (status === 'PENDING') status = 'UPCOMING';
+        if (status === 'ACCEPTED') status = 'ASSIGNED';
+        
+        setRide({ ...rideData, status });
+        setSelectedPartnerId(rideData.partner?.id || '');
+        setNewStatus(status);
       }
       if (partnersRes.success) {
         setPartners(partnersRes.data || []);
@@ -53,7 +63,25 @@ export default function AdminRideDetailsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [id, filterBy]);
+
+  const handleShowOtp = async () => {
+    try {
+      const res = await adminRideService.getRideOtp(ride!.id);
+      if (res.success) {
+        setOtp(res.data.otp);
+        setShowOtp(true);
+      }
+    } catch (error: any) {
+      toast.error('Failed to retrieve OTP');
+    }
+  };
+
+  const filteredPartners = partnerSearch.length > 1 ? partners.filter(p => 
+    p.name.toLowerCase().includes(partnerSearch.toLowerCase()) || 
+    p.customId?.toLowerCase().includes(partnerSearch.toLowerCase()) ||
+    p.phone?.includes(partnerSearch)
+  ) : [];
 
   const handleAssignPartner = async () => {
     if (!selectedPartnerId) return;
@@ -73,30 +101,28 @@ export default function AdminRideDetailsPage() {
   };
 
   const handleUpdateStatus = async () => {
-    if (!newStatus || newStatus === ride?.status) return;
+    if (!newStatus) return;
+    
+    // Validate OTP for STARTED status
+    if (newStatus === 'STARTED') {
+      if (!userUniqueOtp || userUniqueOtp.length !== 4) {
+        toast.error('Please enter a valid 4-digit User OTP to start the ride');
+        return;
+      }
+    }
+
     setIsUpdating(true);
     try {
-      const res = await adminRideService.updateStatus(ride!.id, newStatus as RideStatus);
+      const res = await adminRideService.updateStatus(ride!.id, newStatus as RideStatus, newStatus === 'STARTED' ? userUniqueOtp : undefined);
       if (res.success) {
         toast.success('Ride status updated');
+        setUserUniqueOtp('');
         fetchData();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update status');
     } finally {
       setIsUpdating(false);
-    }
-  };
-
-  const handleShowOtp = async () => {
-    try {
-      const res = await adminRideService.getRideOtp(ride!.id);
-      if (res.success) {
-        setOtp(res.data.otp);
-        setShowOtp(true);
-      }
-    } catch (error: any) {
-      toast.error('Failed to retrieve OTP');
     }
   };
 
@@ -109,245 +135,387 @@ export default function AdminRideDetailsPage() {
     </div>
   );
 
-  const sectionClass = "bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6";
-  const headerClass = "px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between";
-  const labelClass = "text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1";
-  const valueClass = "text-sm font-semibold text-gray-800";
+  const cardClass = "bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full";
+  const labelClass = "text-xs font-semibold text-gray-800 mb-2 block";
+  const detailLabelClass = "text-[11px] font-bold text-gray-600 w-32 shrink-0";
+  const detailValueClass = "text-[11px] font-medium text-gray-600";
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in pb-12">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/rides" className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-gray-800">
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-gray-800">Ride #{ride.customId}</h1>
-              <StatusBadge status={ride.status} />
-              {ride.isManualBooking && (
-                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded uppercase tracking-wide border border-blue-100">Manual</span>
-              )}
-            </div>
-            <p className="text-sm text-gray-500 flex items-center gap-2">
-              <Clock size={14} /> Created {new Date(ride.createdAt).toLocaleString()}
-            </p>
-          </div>
-        </div>
-        <button onClick={fetchData} className="p-2 text-gray-400 hover:text-gray-800 transition-colors">
-          <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+    <div className="max-w-[1400px] mx-auto p-4 space-y-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-bold text-gray-800">Booking Details</h1>
+        <button 
+          onClick={fetchData} 
+          className="p-2 bg-[#D32F2F] text-white rounded-lg hover:bg-[#b71c1c] transition-colors shadow-sm"
+        >
+          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Ride Details */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className={sectionClass}>
-            <div className={headerClass}>
-              <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">
-                <MapPin size={16} className="text-[#E32222]" /> Route Information
-              </h2>
+      {/* Top Row: User, Ride, Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* User Details */}
+        <div className={cardClass}>
+          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">User Details</h2>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Mobile Number</span>
+              <span className={detailValueClass}>+{ride.user?.phone}</span>
             </div>
-            <div className="p-6">
-              <div className="relative pl-8 border-l-2 border-dashed border-gray-100 space-y-8">
-                <div className="relative">
-                  <div className="absolute -left-10 top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-white shadow-sm ring-4 ring-emerald-500/10" />
-                  <div>
-                    <span className={labelClass}>Pickup Point</span>
-                    <p className="text-sm font-bold text-gray-800">{ride.pickupAddress}</p>
-                    <div className="flex gap-4 mt-1">
-                      <span className="text-[10px] text-gray-400 font-medium">Lat: {ride.pickupLat}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">Lng: {ride.pickupLng}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="relative">
-                  <div className="absolute -left-10 top-0 w-4 h-4 rounded-full bg-red-500 border-4 border-white shadow-sm ring-4 ring-red-500/10" />
-                  <div>
-                    <span className={labelClass}>Drop Point</span>
-                    <p className="text-sm font-bold text-gray-800">{ride.dropAddress}</p>
-                    <div className="flex gap-4 mt-1">
-                      <span className="text-[10px] text-gray-400 font-medium">Lat: {ride.dropLat}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">Lng: {ride.dropLng}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
-                <div>
-                  <span className={labelClass}>Estimated Distance</span>
-                  <p className="text-base font-bold text-gray-800">{ride.distanceKm?.toFixed(2)} KM</p>
-                </div>
-                <div>
-                  <span className={labelClass}>Vehicle Type Required</span>
-                  <div className="flex items-center gap-2">
-                    <Car size={16} className="text-gray-400" />
-                    <p className="text-base font-bold text-gray-800 uppercase italic">
-                      {ride.vehicleType?.displayName || 'Any Sedan'} ({ride.vehicleType?.category})
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Full Name</span>
+              <span className={detailValueClass}>{ride.user?.name}</span>
             </div>
-          </div>
-
-          {/* Pricing Breakdown */}
-          <div className={sectionClass}>
-            <div className={headerClass}>
-              <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">
-                <IndianRupee size={16} className="text-emerald-600" /> Pricing Breakdown
-              </h2>
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Email Address</span>
+              <span className={detailValueClass}>{ride.user?.email}</span>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className={labelClass}>Base Fare</span>
-                  <p className="text-xl font-black text-gray-800">₹{ride.baseFare}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className={labelClass}>Per KM Price</span>
-                  <p className="text-xl font-black text-gray-800">₹{ride.perKmPrice}</p>
-                </div>
-                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                  <span className={`${labelClass} text-emerald-600`}>Partner Earning</span>
-                  <p className="text-xl font-black text-emerald-700">₹{ride.riderEarnings || ride.partnerEarnings}</p>
-                </div>
-                <div className="p-4 bg-[#E32222]/5 rounded-xl border border-[#E32222]/10">
-                  <span className={`${labelClass} text-[#E32222]`}>Commission</span>
-                  <p className="text-xl font-black text-[#E32222]">₹{ride.commission}</p>
-                </div>
-              </div>
-              <div className="mt-6 flex items-center justify-between p-4 bg-gray-800 rounded-xl text-white shadow-lg">
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Total Charged To User</span>
-                <span className="text-2xl font-black italic tracking-tighter">₹{ride.totalFare}</span>
-              </div>
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Alt. Mobile</span>
+              <span className={detailValueClass}>-</span>
+            </div>
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Unique OTP</span>
+              <span className="text-[11px] font-bold text-red-600">{ride.user?.uniqueOtp || '-'}</span>
             </div>
           </div>
         </div>
 
-        {/* Right Column - User, Partner & Admin Actions */}
-        <div className="space-y-6">
-          {/* User Info */}
-          <div className={sectionClass}>
-            <div className={headerClass}>
-              <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">
-                <User size={16} className="text-blue-500" /> Customer
-              </h2>
+        {/* Ride Details */}
+        <div className={cardClass}>
+          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">Ride Details</h2>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Booking ID</span>
+              <span className="text-[11px] font-bold text-red-600 uppercase">{ride.customId}</span>
             </div>
-            <div className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg uppercase">
-                {ride.user?.name?.[0] || 'C'}
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Booking Type</span>
+              <span className="text-[11px] font-bold text-red-600 capitalize">{ride.serviceType || 'Standard Booking'}</span>
+            </div>
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Booking Date/Time</span>
+              <span className="text-[11px] font-bold text-red-700">
+                {new Date(ride.scheduledDateTime || ride.createdAt).toLocaleString('en-IN', {
+                  day: '2-digit', month: 'short', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit', hour12: true
+                }).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex items-start">
+              <span className={detailLabelClass}>Pickup Location</span>
+              <span className="text-[10px] font-medium text-gray-500 leading-tight">
+                {ride.pickupAddress}
+              </span>
+            </div>
+            <div className="flex items-start">
+              <span className={detailLabelClass}>Drop Location</span>
+              <span className="text-[10px] font-medium text-gray-500 leading-tight">
+                {ride.dropAddress}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Booking Status */}
+        <div className={cardClass}>
+          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">Booking Status</h2>
+          <div className="space-y-4">
+            <div>
+              <select 
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value as RideStatus)}
+                className="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-gray-400 outline-none"
+              >
+                <option value="UPCOMING">Future</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="ARRIVED">Arrived</option>
+                <option value="STARTED">Started</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+
+            {newStatus === 'STARTED' && (
+              <div className="space-y-1 animate-in slide-in-from-top-2 duration-300">
+                <label className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Enter User OTP to Start</label>
+                <input 
+                  type="text"
+                  maxLength={4}
+                  placeholder="4-digit OTP"
+                  value={userUniqueOtp}
+                  onChange={(e) => setUserUniqueOtp(e.target.value.replace(/\D/g, ''))}
+                  className="w-full border-2 border-red-100 rounded px-3 py-1.5 text-xs font-bold focus:border-red-400 outline-none text-center tracking-[0.5em]"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <span className={detailLabelClass}>OTP</span>
+                <span className="text-xs font-bold text-red-600 tracking-wider">
+                  {showOtp ? (otp || ride.user?.uniqueOtp || '-') : '****'}
+                </span>
+              </div>
+              <button 
+                onClick={() => showOtp ? setShowOtp(false) : handleShowOtp()} 
+                className="text-[10px] text-blue-600 hover:underline font-bold uppercase tracking-tighter"
+              >
+                {showOtp ? 'Hide OTP' : 'Show OTP'}
+              </button>
+            </div>
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Payment Type</span>
+              <span className="text-xs font-bold text-blue-400 capitalize">{ride.paymentMode || '-'}</span>
+            </div>
+            <div className="flex items-center">
+              <span className={detailLabelClass}>Payment Status</span>
+              <span className="text-xs font-bold text-red-600 uppercase">
+                {ride.status === 'COMPLETED' ? 'PAID' : 'PENDING'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Middle Row: Partner Details, Vehicle Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Partner Details */}
+        <div className={cardClass}>
+          <div className="flex items-center justify-between mb-4 border-b pb-2">
+            <h2 className="text-sm font-bold text-gray-800">Partner Details</h2>
+            <button 
+              onClick={() => setIsAssignMode(!isAssignMode)}
+              className="text-[10px] bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 font-bold uppercase text-gray-600 transition-colors"
+            >
+              {isAssignMode ? 'View Assigned' : (ride.partner ? 'Change Partner' : 'Assign Partner')}
+            </button>
+          </div>
+
+          {!isAssignMode && ride.partner ? (
+            <div className="space-y-3 animate-in fade-in duration-300">
+              <div className="flex items-center">
+                <span className={detailLabelClass}>Partner Name</span>
+                <span className={detailValueClass}>{ride.partner.name}</span>
+              </div>
+              <div className="flex items-center">
+                <span className={detailLabelClass}>Partner ID</span>
+                <span className="text-[11px] font-bold text-red-600">{ride.partner.customId}</span>
+              </div>
+              <div className="flex items-center">
+                <span className={detailLabelClass}>Phone Number</span>
+                <span className={detailValueClass}>{ride.partner.phone}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-[11px] font-bold text-gray-600">Filter:</span>
+                {(['VERIFIED', 'NV', 'NA'] as const).map((type) => (
+                  <label key={type} className="flex items-center gap-1 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="filter" 
+                      checked={filterBy === type}
+                      onChange={() => setFilterBy(type)}
+                      className="w-3 h-3 text-red-600"
+                    />
+                    <span className="text-[11px] text-gray-600">{type === 'VERIFIED' ? 'Verified' : type}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <input 
+                    type="text"
+                    placeholder="Search Partner ID / Name / Phone"
+                    value={partnerSearch}
+                    onChange={(e) => setPartnerSearch(e.target.value)}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-red-400 font-medium"
+                  />
+                  {filteredPartners.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {filteredPartners.map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => {
+                            setSelectedPartnerId(p.id);
+                            setPartnerSearch(p.name);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-[11px] hover:bg-gray-50 border-b border-gray-50 last:border-0 ${selectedPartnerId === p.id ? 'bg-red-50 font-bold' : ''}`}
+                        >
+                          <div className="flex justify-between">
+                            <span>{p.name}</span>
+                            <span className="text-red-600 font-mono">{p.customId}</span>
+                          </div>
+                          <div className="text-[9px] text-gray-400">{p.phone}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button 
+                  onClick={handleAssignPartner}
+                  disabled={isUpdating || !selectedPartnerId}
+                  className="bg-[#2E7D32] text-white px-6 py-2 rounded text-xs font-bold hover:bg-[#1b5e20] transition-colors disabled:opacity-50"
+                >
+                  Assign
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Vehicle Details */}
+        <div className={cardClass}>
+          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">Vehicle Details</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-50 rounded-lg text-red-600">
+                  <Car size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Category</p>
+                  <p className="text-xs font-bold text-gray-800 italic uppercase">
+                    {ride.vehicleType?.displayName || ride.vehicleType?.category || '-'}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Distance</p>
+                <p className="text-sm font-black text-[#D32F2F]">{ride.distanceKm?.toFixed(1) || '0.0'} Km</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-50">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Model</p>
+                <p className="text-[11px] font-bold text-gray-700">{ride.partner?.vehicleModel || '-'}</p>
               </div>
               <div>
-                <p className="font-bold text-gray-800 leading-none mb-1">{ride.user?.name}</p>
-                <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Smartphone size={10} /> {ride.user?.phone}
-                </p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Plate Number</p>
+                <p className="text-[11px] font-bold text-red-600 uppercase tracking-wider font-mono">{ride.partner?.vehicleNumber || '-'}</p>
               </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <a 
+                href={ride.partner?.phone ? `https://wa.me/${ride.partner.phone.replace(/\D/g, '')}` : '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-1.5 bg-[#4CAF50] text-white rounded-full hover:bg-[#388E3C] transition-shadow shadow-sm"
+              >
+                <MessageCircle size={14} fill="currentColor" />
+                <span className="text-[10px] font-bold uppercase tracking-tight">Chat with Partner</span>
+              </a>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Partner Info & Assignment */}
-          <div className={sectionClass}>
-            <div className={headerClass}>
-              <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">
-                <ShieldCheck size={16} className="text-emerald-500" /> Partner Assignment
-              </h2>
+      {/* Bottom Row: Pricing */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Partner Price Details */}
+        <div className={cardClass}>
+          <h2 className="text-sm font-bold text-gray-800 mb-6 font-mono">Partner Price Details</h2>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Partner Base Price</span>
+              <span className="text-gray-800">₹ {(ride.baseFare * 0.8).toFixed(2)}</span>
             </div>
-            <div className="p-6 space-y-4">
-              {ride.partner ? (
-                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-lg">
-                    {ride.partner.name?.[0]}
-                  </div>
-                  <div>
-                    <label className={`${labelClass} text-emerald-600`}>Assigned Partner</label>
-                    <p className="font-bold text-gray-800">{ride.partner.name}</p>
-                    <p className="text-xs text-gray-500">{ride.partner.phone}</p>
-                  </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Extra Km</span>
+              <span className="text-gray-800">{ride.distanceKm?.toFixed(2)} Km</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Extra Per Km Charge</span>
+              <span className="text-gray-800">₹ {(ride.perKmPrice * 0.8).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Extra Km Charges</span>
+              <span className="text-gray-800">₹ {(ride.perKmPrice * ride.distanceKm * 0.8).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Toll Charges</span>
+              <span className="text-gray-800">₹ 0.00</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Additional Charges</span>
+              <span className="text-gray-800">₹ 0.00</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Manual Driver Discount</span>
+              <div className="flex items-center gap-2">
+                <div className="flex border rounded overflow-hidden">
+                  <button className="px-1 bg-gray-100 border-r text-gray-600">-</button>
+                  <button className="px-1 bg-[#2E7D32] text-white text-[8px]">+</button>
                 </div>
-              ) : (
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 border-dashed text-center">
-                  <p className="text-xs text-gray-400 font-medium italic">No partner assigned yet</p>
-                </div>
-              )}
-
-              <div className="space-y-2 pt-4 border-t border-gray-100">
-                <label className={labelClass}>Manual Assignment</label>
-                <div className="flex gap-2">
-                  <select 
-                    value={selectedPartnerId}
-                    onChange={(e) => setSelectedPartnerId(e.target.value)}
-                    className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E32222]"
-                  >
-                    <option value="">Select Partner</option>
-                    {partners.map(p => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.customId})</option>
-                    ))}
-                  </select>
-                  <button 
-                    disabled={isUpdating || !selectedPartnerId}
-                    onClick={handleAssignPartner}
-                    className="p-2 bg-[#E32222] text-white rounded-lg hover:bg-black transition-all disabled:opacity-50"
-                    title="Assign Partner"
-                  >
-                    {isUpdating ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                  </button>
+                <div className="flex items-center border rounded px-1 min-w-[60px]">
+                  <span className="text-[8px] text-gray-400 mr-1">₹</span>
+                  <input type="text" value="0" readOnly className="w-full text-right outline-none bg-transparent py-1" />
                 </div>
               </div>
+            </div>
+
+            <div className="pt-4 border-t-2 border-gray-100 flex justify-between items-center">
+              <span className="text-sm font-bold text-gray-800">Partner Total Amount</span>
+              <span className="text-lg font-bold text-gray-800 font-mono">₹ {(ride.riderEarnings || ride.partnerEarnings || 0).toFixed(2)}</span>
             </div>
           </div>
+        </div>
 
-          {/* Status Override */}
-          <div className={sectionClass}>
-            <div className={headerClass}>
-              <h2 className="text-sm font-bold text-gray-800 uppercase flex items-center gap-2">
-                <AlertCircle size={16} className="text-orange-500" /> Status Management
-              </h2>
+        {/* Price Details */}
+        <div className={cardClass}>
+          <div className="flex-1 space-y-4">
+            <h2 className="text-sm font-bold text-gray-800 mb-6 font-mono">Price Details</h2>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Base Price</span>
+              <span className="text-gray-800">₹ {ride.baseFare.toFixed(2)}</span>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className={labelClass}>Override Ride Status</label>
-                <div className="flex gap-2">
-                  <select 
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value as RideStatus)}
-                    className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#E32222]"
-                  >
-                    <option value="PENDING">Upcoming</option>
-                    <option value="ACCEPTED">Assigned</option>
-                    <option value="ARRIVED">Arrived</option>
-                    <option value="STARTED">Ongoing</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CANCELLED">Cancelled</option>
-                  </select>
-                  <button 
-                    disabled={isUpdating || newStatus === ride.status}
-                    onClick={handleUpdateStatus}
-                    className="p-2 bg-orange-500 text-white rounded-lg hover:bg-black transition-all disabled:opacity-50"
-                    title="Update Status"
-                  >
-                    {isUpdating ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                  </button>
-                </div>
-              </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Extra Km</span>
+              <span className="text-gray-800">{ride.distanceKm?.toFixed(2)} Km</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Extra Per Km Charge</span>
+              <span className="text-gray-800">₹ {ride.perKmPrice.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Extra Km Charges</span>
+              <span className="text-gray-800">₹ {(ride.perKmPrice * ride.distanceKm).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Taxes</span>
+              <span className="text-gray-800">₹ {(Math.max(0, ride.totalFare - ride.baseFare - (ride.perKmPrice * ride.distanceKm))).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Toll Charges</span>
+              <span className="text-gray-800">₹ 0.00</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Additional Charges</span>
+              <span className="text-gray-800">₹ 0.00</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
+              <span className="capitalize">Reason</span>
+              <span className="text-gray-800">-</span>
+            </div>
 
-              <div className="pt-4 border-t border-gray-100">
-                <label className={labelClass}>Security</label>
-                {!showOtp ? (
-                  <button 
-                    onClick={handleShowOtp}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-gray-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-black transition-all shadow-lg active:scale-[0.98]"
-                  >
-                    <Key size={16} className="text-emerald-400" /> Retrieve Ride OTP
-                  </button>
-                ) : (
-                  <div className="p-4 bg-emerald-50 rounded-xl border-2 border-emerald-400 flex flex-col items-center text-center animate-bounce-subtle">
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Ride OTP</span>
-                    <span className="text-2xl font-black text-gray-800 tracking-widest">{otp}</span>
-                    <button onClick={() => setShowOtp(false)} className="mt-2 text-[10px] text-emerald-600 hover:underline">Hide OTP</button>
-                  </div>
-                )}
+            <div className="pt-6 border-t-2 border-gray-100 space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold text-gray-800">Total Amount</span>
+                <span className="text-lg font-bold text-gray-800 font-mono">₹ {ride.totalFare.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-end">
+                <button 
+                  onClick={handleUpdateStatus}
+                  disabled={isUpdating}
+                  className="bg-[#673AB7] text-white px-10 py-2 rounded shadow-md font-bold text-xs hover:bg-[#512DA8] transition-colors active:scale-95 disabled:opacity-50"
+                >
+                  {isUpdating ? <Loader2 size={14} className="animate-spin inline mr-2" /> : 'Update'}
+                </button>
               </div>
             </div>
           </div>

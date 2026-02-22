@@ -26,15 +26,25 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
     dateOfBirth: '',
     gender: '',
     localAddress: '',
+    permanentAddress: '',
+    profileImage: '',
     panNumber: '',
     panImage: '',
+    panCardPhoto: '',
     aadhaarNumber: '',
     aadhaarImage: '',
+    aadhaarFrontPhoto: '',
+    aadhaarBackPhoto: '',
     licenseNumber: '',
     licenseImage: '',
+    licenseExpiryDate: '',
     bankName: '',
     accountNumber: '',
     ifscCode: '',
+    accountHolderName: '',
+    cancelledChequePhoto: '',
+    status: 'ACTIVE' as any,
+    verificationStatus: 'PENDING' as any,
   });
 
   useEffect(() => {
@@ -59,15 +69,25 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
             dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth).toISOString().split('T')[0] : '',
             gender: p.gender || '',
             localAddress: p.localAddress || '',
+            permanentAddress: p.permanentAddress || '',
+            profileImage: p.profileImage || '',
             panNumber: p.panNumber || '',
             panImage: p.panImage || '',
+            panCardPhoto: p.panCardPhoto || p.panImage || '',
             aadhaarNumber: p.aadhaarNumber || '',
             aadhaarImage: p.aadhaarImage || '',
+            aadhaarFrontPhoto: p.aadhaarFrontPhoto || p.aadhaarImage || '',
+            aadhaarBackPhoto: p.aadhaarBackPhoto || '',
             licenseNumber: p.licenseNumber || '',
             licenseImage: p.licenseImage || '',
+            licenseExpiryDate: p.licenseExpiryDate ? new Date(p.licenseExpiryDate).toISOString().split('T')[0] : '',
             bankName: p.bankName || '',
             accountNumber: p.accountNumber || '',
             ifscCode: p.ifscCode || '',
+            accountHolderName: p.accountHolderName || '',
+            cancelledChequePhoto: p.cancelledChequePhoto || '',
+            status: p.status || 'ACTIVE',
+            verificationStatus: p.verificationStatus || 'PENDING',
           });
         }
       } catch (err) {
@@ -92,21 +112,34 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
         firstName: formData.firstName,
         lastName: formData.lastName,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
-        phone: `+91${formData.phone}`,
         email: formData.email || undefined,
-        cityCodeId: formData.cityCodeId,
+        profileImage: formData.profileImage || undefined,
+        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : undefined,
         gender: formData.gender || undefined,
-        dateOfBirth: formData.dateOfBirth || undefined,
         localAddress: formData.localAddress || undefined,
+        permanentAddress: formData.permanentAddress || undefined,
+        
+        // Identity
         panNumber: formData.panNumber || undefined,
-        panImage: formData.panImage || undefined,
+        panCardPhoto: formData.panCardPhoto || formData.panImage || undefined,
         aadhaarNumber: formData.aadhaarNumber || undefined,
-        aadhaarImage: formData.aadhaarImage || undefined,
+        aadhaarFrontPhoto: formData.aadhaarFrontPhoto || formData.aadhaarImage || undefined,
+        aadhaarBackPhoto: formData.aadhaarBackPhoto || undefined,
         licenseNumber: formData.licenseNumber || undefined,
         licenseImage: formData.licenseImage || undefined,
+        licenseExpiryDate: formData.licenseExpiryDate ? new Date(formData.licenseExpiryDate).toISOString() : undefined,
+        hasLicense: true,
+
+        // Bank
+        accountHolderName: formData.accountHolderName || undefined,
         bankName: formData.bankName || undefined,
         accountNumber: formData.accountNumber || undefined,
         ifscCode: formData.ifscCode || undefined,
+        cancelledChequePhoto: formData.cancelledChequePhoto || undefined,
+
+        // Governance
+        status: formData.status || undefined,
+        verificationStatus: formData.verificationStatus || undefined,
       };
 
       const response = await partnerService.updatePartner(id, updateData);
@@ -153,58 +186,87 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
           </div>
           
           <div className="p-5 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <div className={inputGroupClass}>
-              <label className={labelClass}>First Name *</label>
-              <input type="text" required value={formData.firstName}
-                onChange={e => setFormData({...formData, firstName: e.target.value})}
-                className={fieldClass} placeholder="First name" />
+            <div className="md:col-span-1 lg:col-span-1 flex flex-col items-center justify-center p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+               <DocImageInput 
+                label="Profile Photo" 
+                value={formData.profileImage} 
+                onChange={(val) => setFormData({...formData, profileImage: val})} 
+                className="w-full"
+              />
             </div>
-            <div className={inputGroupClass}>
-              <label className={labelClass}>Last Name *</label>
-              <input type="text" required value={formData.lastName}
-                onChange={e => setFormData({...formData, lastName: e.target.value})}
-                className={fieldClass} placeholder="Last name" />
-            </div>
-            <div className={inputGroupClass}>
-              <label className={labelClass}>Mobile *</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">+91</span>
-                <input type="tel" required value={formData.phone}
-                  onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
-                  className={fieldClass + " pl-10"} placeholder="Mobile" maxLength={10} />
+            <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className={inputGroupClass}>
+                <label className={labelClass}>First Name *</label>
+                <input type="text" required value={formData.firstName}
+                  onChange={e => setFormData({...formData, firstName: e.target.value})}
+                  className={fieldClass} placeholder="First name" />
               </div>
-            </div>
-            <div className={inputGroupClass}>
-              <label className={labelClass}>Email (Optional)</label>
-              <input type="email" value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
-                className={fieldClass} placeholder="Email" />
-            </div>
-            <div className={inputGroupClass}>
-              <label className={labelClass}>Gender</label>
-              <select value={formData.gender}
-                onChange={e => setFormData({...formData, gender: e.target.value})}
-                className={selectClass}>
-                <option value="">Select</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-            <div className={inputGroupClass}>
-              <label className={labelClass}>Date of Birth</label>
-              <input type="date" value={formData.dateOfBirth}
-                onChange={e => setFormData({...formData, dateOfBirth: e.target.value})}
-                className={fieldClass} />
-            </div>
-            <div className={inputGroupClass}>
-              <label className={labelClass}>Operational City *</label>
-              <select required value={formData.cityCodeId}
-                onChange={e => setFormData({...formData, cityCodeId: e.target.value})}
-                className={selectClass}>
-                <option value="">Choose City</option>
-                {cityCodes.map((c: any) => <option key={c.id} value={c.id}>{c.cityName}</option>)}
-              </select>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Last Name *</label>
+                <input type="text" required value={formData.lastName}
+                  onChange={e => setFormData({...formData, lastName: e.target.value})}
+                  className={fieldClass} placeholder="Last name" />
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Mobile *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">+91</span>
+                  <input type="tel" required value={formData.phone}
+                    onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                    className={fieldClass + " pl-10"} placeholder="Mobile" maxLength={10} />
+                </div>
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Email (Optional)</label>
+                <input type="email" value={formData.email}
+                  onChange={e => setFormData({...formData, email: e.target.value})}
+                  className={fieldClass} placeholder="Email" />
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Gender</label>
+                <select value={formData.gender}
+                  onChange={e => setFormData({...formData, gender: e.target.value})}
+                  className={selectClass}>
+                  <option value="">Select</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Date of Birth</label>
+                <input type="date" value={formData.dateOfBirth}
+                  onChange={e => setFormData({...formData, dateOfBirth: e.target.value})}
+                  className={fieldClass} />
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Operational City (Read Only)</label>
+                <div className={fieldClass + " bg-gray-50 text-gray-400 font-bold border-gray-100 flex items-center"}>
+                  {cityCodes.find(c => c.id === formData.cityCodeId)?.cityName || 'N/A'}
+                </div>
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Status</label>
+                <select value={formData.status}
+                  onChange={e => setFormData({...formData, status: e.target.value as any})}
+                  className={selectClass}>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="BANNED">Banned</option>
+                </select>
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>Verify Status</label>
+                <select value={formData.verificationStatus}
+                  onChange={e => setFormData({...formData, verificationStatus: e.target.value as any})}
+                  className={selectClass}>
+                  <option value="UNVERIFIED">Unverified</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="VERIFIED">Verified</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -226,25 +288,33 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
                   className={fieldClass} placeholder="Enter PAN Number" maxLength={10} />
               </div>
               <DocImageInput 
-                label="PAN Card Image" 
-                value={formData.panImage} 
-                onChange={(val) => setFormData({...formData, panImage: val})} 
+                label="PAN Card Photo" 
+                value={formData.panCardPhoto} 
+                onChange={(val) => setFormData({...formData, panCardPhoto: val})} 
               />
             </div>
 
             {/* Aadhaar Card */}
-            <div className="space-y-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-              <div className={inputGroupClass}>
-                <label className={labelClass}>Aadhaar Number</label>
-                <input type="text" value={formData.aadhaarNumber}
-                  onChange={e => setFormData({...formData, aadhaarNumber: e.target.value.replace(/\D/g, '')})}
-                  className={fieldClass} placeholder="12 Digit Aadhaar" maxLength={12} />
+            <div className="space-y-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-100 lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={inputGroupClass}>
+                  <label className={labelClass}>Aadhaar Number</label>
+                  <input type="text" value={formData.aadhaarNumber}
+                    onChange={e => setFormData({...formData, aadhaarNumber: e.target.value.replace(/\D/g, '')})}
+                    className={fieldClass} placeholder="12 Digit Aadhaar" maxLength={12} />
+                </div>
+                <div></div>
+                <DocImageInput 
+                  label="Aadhaar Front Photo" 
+                  value={formData.aadhaarFrontPhoto} 
+                  onChange={(val) => setFormData({...formData, aadhaarFrontPhoto: val})} 
+                />
+                <DocImageInput 
+                  label="Aadhaar Back Photo" 
+                  value={formData.aadhaarBackPhoto} 
+                  onChange={(val) => setFormData({...formData, aadhaarBackPhoto: val})} 
+                />
               </div>
-              <DocImageInput 
-                label="Aadhaar Image" 
-                value={formData.aadhaarImage} 
-                onChange={(val) => setFormData({...formData, aadhaarImage: val})} 
-              />
             </div>
 
             {/* Driving License */}
@@ -255,6 +325,12 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
                   onChange={e => setFormData({...formData, licenseNumber: e.target.value.toUpperCase()})}
                   className={fieldClass} placeholder="Enter DL Number" />
               </div>
+              <div className={inputGroupClass}>
+                <label className={labelClass}>DL Expiry Date</label>
+                <input type="date" value={formData.licenseExpiryDate}
+                  onChange={e => setFormData({...formData, licenseExpiryDate: e.target.value})}
+                  className={fieldClass} />
+              </div>
               <DocImageInput 
                 label="License Image" 
                 value={formData.licenseImage} 
@@ -263,12 +339,18 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
           
-          <div className="px-5 pb-5">
+          <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className={inputGroupClass}>
               <label className={labelClass}>Residential Address</label>
               <textarea value={formData.localAddress}
                 onChange={e => setFormData({...formData, localAddress: e.target.value})}
                 className={fieldClass + " h-16 py-2 resize-none"} placeholder="Enter current residential address" />
+            </div>
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Permanent Address</label>
+              <textarea value={formData.permanentAddress}
+                onChange={e => setFormData({...formData, permanentAddress: e.target.value})}
+                className={fieldClass + " h-16 py-2 resize-none"} placeholder="Enter permanent address" />
             </div>
           </div>
         </div>
@@ -279,7 +361,13 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
             <CreditCard size={14} className="text-[#E32222]" />
             <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Banking & Payouts</h2>
           </div>
-          <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={inputGroupClass}>
+              <label className={labelClass}>Account Holder Name</label>
+              <input type="text" value={formData.accountHolderName}
+                onChange={e => setFormData({...formData, accountHolderName: e.target.value})}
+                className={fieldClass} placeholder="As per bank records" />
+            </div>
             <div className={inputGroupClass}>
               <label className={labelClass}>Bank Name</label>
               <input type="text" value={formData.bankName}
@@ -297,6 +385,13 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
               <input type="text" value={formData.ifscCode}
                 onChange={e => setFormData({...formData, ifscCode: e.target.value.toUpperCase()})}
                 className={fieldClass} placeholder="IFSC Code" />
+            </div>
+            <div className="md:col-span-2">
+              <DocImageInput 
+                label="Cancelled Cheque / Passbook Photo" 
+                value={formData.cancelledChequePhoto} 
+                onChange={(val) => setFormData({...formData, cancelledChequePhoto: val})} 
+              />
             </div>
           </div>
         </div>

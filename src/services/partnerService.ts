@@ -1,4 +1,4 @@
-import { partnerApi, adminApi } from '@/lib/api';
+import { partnerApi, adminApi, riderApi, rideApi, userApi } from '@/lib/api';
 import {
   ApiResponse,
   Partner,
@@ -40,12 +40,43 @@ export const partnerService = {
   },
 
   async updateLocation(lat: number, lng: number): Promise<ApiResponse<Partner>> {
-    const response = await partnerApi.put('/location', { lat, lng });
+    const response = await partnerApi.patch('/location', { lat, lng });
     return response.data;
   },
 
-  async toggleOnlineStatus(isOnline: boolean): Promise<ApiResponse<Partner>> {
-    const response = await partnerApi.put('/online-status', { isOnline });
+  async toggleOnlineStatus(isOnline: boolean, lat?: number, lng?: number): Promise<ApiResponse<Partner>> {
+    const response = await partnerApi.patch('/online-status', { isOnline, lat, lng });
+    return response.data;
+  },
+
+  async updateProfile(data: Partial<Partner>): Promise<ApiResponse<Partner>> {
+    const response = await partnerApi.patch('/profile', data);
+    return response.data;
+  },
+
+  // =====================
+  // Partner Ride Lifecycle (using riderApi)
+  // =====================
+
+  async getAvailableRides(lat: number, lng: number, vehicleTypeId?: string): Promise<ApiResponse<Ride[]>> {
+    const response = await riderApi.get('/rides/available', {
+      params: { lat, lng, vehicleTypeId }
+    });
+    return response.data;
+  },
+
+  async acceptRide(id: string): Promise<ApiResponse<Ride>> {
+    const response = await riderApi.post(`/rides/${id}/accept`);
+    return response.data;
+  },
+
+  async updateRideStatus(id: string, status: 'ARRIVED' | 'STARTED', userOtp?: string): Promise<ApiResponse<Ride>> {
+    const response = await riderApi.patch(`/rides/${id}/status`, { status, userOtp });
+    return response.data;
+  },
+
+  async completeRide(id: string, userOtp: string): Promise<ApiResponse<Ride>> {
+    const response = await userApi.post(`/rides/${id}/complete`, { userOtp });
     return response.data;
   },
 
@@ -64,7 +95,7 @@ export const partnerService = {
   },
 
   async getRideById(id: string): Promise<ApiResponse<Ride>> {
-    const response = await partnerApi.get(`/rides/${id}`);
+    const response = await riderApi.get(`/rides/${id}`);
     return response.data;
   },
 
@@ -83,7 +114,7 @@ export const partnerService = {
   },
 
   // =====================
-  // Admin Partner APIs
+  // Admin Partner APIs (Remain on adminApi)
   // =====================
 
   async getAll(filters?: PartnerFilters): Promise<ApiResponse<Partner[]>> {
@@ -102,7 +133,7 @@ export const partnerService = {
   },
 
   async verify(id: string, status: EntityVerificationStatus): Promise<ApiResponse<Partner>> {
-    const response = await adminApi.patch(`/partners/${id}/verify`, { status });
+    const response = await adminApi.patch(`/partners/${id}/verify`, { verificationStatus: status });
     return response.data;
   },
 
@@ -141,7 +172,7 @@ export const partnerService = {
   },
 
   // =====================
-  // Documents & Settings
+  // KYC & Attachments
   // =====================
 
   async getDocuments(): Promise<ApiResponse<any[]>> {
@@ -150,16 +181,11 @@ export const partnerService = {
   },
 
   async uploadDocument(formData: FormData): Promise<ApiResponse<any>> {
-    const response = await partnerApi.post('/documents/upload', formData, {
+    const response = await partnerApi.post('/attachments', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
-  },
-
-  async updateProfile(data: Partial<Partner>): Promise<ApiResponse<Partner>> {
-    const response = await partnerApi.put('/profile', data);
     return response.data;
   },
 };

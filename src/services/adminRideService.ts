@@ -23,8 +23,8 @@ export const adminRideService = {
     return response.data;
   },
 
-  async updateStatus(id: string, status: RideStatus): Promise<ApiResponse<any>> {
-    const response = await api.patch(`/rides/${id}/status`, { status });
+  async updateStatus(id: string, status: RideStatus, userOtp?: string): Promise<ApiResponse<any>> {
+    const response = await api.patch(`/rides/${id}/status`, { status, userOtp });
     return response.data;
   },
 

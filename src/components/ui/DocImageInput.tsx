@@ -110,12 +110,37 @@ export const DocImageInput: React.FC<DocImageInputProps> = ({
           </div>
         )}
         
-        {/* Simple inline preview badge */}
+        {/* Improved Image Preview */}
         {value && (
-          <div className="absolute -right-1 -top-1">
-             <div className="w-4 h-4 rounded-full bg-green-500 border border-white shadow-sm flex items-center justify-center animate-bounce">
-                <Check size={8} className="text-white" />
-             </div>
+          <div className="mt-2 relative">
+            <div className="relative w-full aspect-video md:aspect-auto md:h-24 rounded-xl border border-gray-100 overflow-hidden bg-gray-50 group/preview shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={value} 
+                alt={label} 
+                className="w-full h-full object-cover group-hover/preview:scale-105 transition-transform duration-500"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200?text=Invalid+Image+URL';
+                }}
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center">
+                <a 
+                  href={value} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-lg text-white transition-all scale-90 group-hover/preview:scale-100"
+                  title="View full size"
+                >
+                  <ImageIcon size={14} />
+                </a>
+              </div>
+              <div className="absolute top-1 right-1">
+                <div className="px-1.5 py-0.5 rounded-md bg-emerald-500 text-white text-[7px] font-black uppercase tracking-tighter flex items-center gap-1 shadow-sm">
+                  <Check size={8} /> 
+                  Verified
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

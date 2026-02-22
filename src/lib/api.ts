@@ -19,7 +19,10 @@ export const adminApi = createApiInstance(`${API_BASE_URL}/admin`);
 export const vendorApi = createApiInstance(`${API_BASE_URL}/vendors`);
 
 // Partner API instance
-export const partnerApi = createApiInstance(`${API_BASE_URL}/partners`);
+export const partnerApi = createApiInstance(`${API_BASE_URL}/partner`);
+
+// Rider API instance (for ride lifecycle)
+export const riderApi = createApiInstance(`${API_BASE_URL}/rider`);
 
 // Agent API instance
 export const agentApi = createApiInstance(`${API_BASE_URL}/agent`);
@@ -33,6 +36,7 @@ export const publicApi = createApiInstance(API_BASE_URL);
 // Ride & Payment API instances
 export const rideApi = createApiInstance(`${API_BASE_URL}/ride`);
 export const paymentApi = createApiInstance(`${API_BASE_URL}/payment`);
+export const userApi = createApiInstance(`${API_BASE_URL}/user`);
 
 // Token keys for different user types
 export const TOKEN_KEYS = {
