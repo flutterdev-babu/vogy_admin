@@ -20,10 +20,12 @@ const activeStatusColors: Record<EntityActiveStatus, string> = {
   BANNED: 'bg-red-100 text-red-700',
 };
 
-const verifyStatusColors: Record<EntityVerificationStatus, string> = {
+const verificationStatusColors: Record<EntityVerificationStatus, string> = {
   UNDER_REVIEW: 'bg-orange-100 text-orange-700',
   VERIFIED: 'bg-blue-100 text-blue-700',
   REJECTED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-yellow-100 text-yellow-700',
+  UNVERIFIED: 'bg-gray-100 text-gray-700',
 };
 
 export default function VehiclesPage() {
@@ -263,8 +265,8 @@ export default function VehiclesPage() {
                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${activeStatusColors[vehicle.status] || 'bg-gray-100 text-gray-700'}`}>
                           {vehicle.status}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${verifyStatusColors[vehicle.verifyStatus] || 'bg-gray-100 text-gray-700'}`}>
-                          {vehicle.verifyStatus}
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${verificationStatusColors[vehicle.verificationStatus] || 'bg-gray-100 text-gray-700'}`}>
+                          {vehicle.verificationStatus}
                         </span>
                       </div>
                     </td>

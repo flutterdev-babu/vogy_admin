@@ -17,7 +17,8 @@ const statusColors: any = {
   VERIFIED: 'bg-green-100 text-green-700',
   REJECTED: 'bg-red-100 text-red-700',
   SUSPENDED: 'bg-gray-100 text-gray-700',
-  APPROVED: 'bg-green-100 text-green-700', // Temporary for backward compatibility if data has it
+  APPROVED: 'bg-green-100 text-green-700',
+  UNVERIFIED: 'bg-blue-100 text-blue-700',
 };
 
 export default function AttachmentsPage() {

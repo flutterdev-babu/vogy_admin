@@ -65,7 +65,8 @@ export default function PartnerRegisterPage() {
     aadhaarImage: '',
     licenseNumber: '',
     licenseImage: '',
-    bankAccountNumber: '',
+    bankAccountNumber: '', // We'll keep the key for now and map it, or just rename it. Let's rename it.
+    accountNumber: '',
     ifscCode: '',
     bankName: ''
   });
@@ -117,7 +118,7 @@ export default function PartnerRegisterPage() {
         licenseNumber: formData.licenseNumber,
         licenseImage: formData.licenseImage,
         bankName: formData.bankName || undefined,
-        accountNumber: formData.bankAccountNumber || undefined,
+        accountNumber: formData.accountNumber || undefined,
         ifscCode: formData.ifscCode || undefined,
       };
 
@@ -267,7 +268,7 @@ export default function PartnerRegisterPage() {
                 <div className="grid grid-cols-1 gap-3">
                   <input type="text" value={formData.bankName} onChange={e => setFormData({...formData, bankName: e.target.value})} className={inputClass} placeholder="BANK NAME" />
                   <div className="grid grid-cols-2 gap-3">
-                    <input type="text" value={formData.bankAccountNumber} onChange={e => setFormData({...formData, bankAccountNumber: e.target.value})} className={inputClass} placeholder="ACCOUNT NO" />
+                    <input type="text" value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value})} className={inputClass} placeholder="ACCOUNT NO" />
                     <input type="text" value={formData.ifscCode} onChange={e => setFormData({...formData, ifscCode: e.target.value.toUpperCase()})} className={inputClass} placeholder="IFSC CODE" />
                   </div>
                 </div>

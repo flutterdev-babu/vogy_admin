@@ -13,12 +13,12 @@ export const attachmentService = {
   },
 
   async verify(id: string, data: VerifyAttachmentRequest): Promise<ApiResponse<any>> {
-    const response = await api.patch(`/attachments/${id}/verify`, data); // Changed to PATCH as per lifecycle guide
+    const response = await api.post(`/attachments/${id}/verify`, data); // Changed to PATCH as per lifecycle guide
     return response.data;
   },
 
   async update(id: string, data: Partial<CreateAttachmentRequest>): Promise<ApiResponse<Attachment>> {
-    const response = await api.put(`/attachments/${id}`, data);
+    const response = await api.put(`/attachments/${id}/status`, data);
     return response.data;
   },
 

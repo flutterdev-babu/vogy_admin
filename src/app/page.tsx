@@ -62,7 +62,7 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg text-neutral-400 max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Experience affordable, safe, and reliable cab services in Bangalore, Pune, Mumbai, and Hyderabad. Local, Outstation, or Rentals - we cover it all.
+              Affordable cab services across all major cities — Local, Outstation, and Rentals made simple.
             </motion.p>
           </div>
 

@@ -144,10 +144,9 @@ export default function AttachmentDetailsPage() {
                     onChange={(e) => handleUpdate('verificationStatus', e.target.value)}
                     className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[11px] font-bold text-gray-700 outline-none focus:border-blue-500"
                   >
-                    <option value="VERIFIED">Verified</option>
-                    <option value="UNDER_REVIEW">Under Review</option>
-                    <option value="PENDING">Pending</option>
+                    <option value="VERIFIED">Verified (Approve)</option>
                     <option value="REJECTED">Rejected</option>
+                    <option value="UNVERIFIED">Unverified (Reset)</option>
                   </select>
                </div>
                <div>

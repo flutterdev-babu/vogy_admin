@@ -3,7 +3,7 @@
 // =====================================
 
 export type EntityStatus = 'PENDING' | 'APPROVED' | 'SUSPENDED';
-export type EntityVerificationStatus = 'VERIFIED' | 'REJECTED' | 'UNDER_REVIEW';
+export type EntityVerificationStatus = 'VERIFIED' | 'REJECTED' | 'UNVERIFIED' | 'PENDING' | 'UNDER_REVIEW';
 export type EntityActiveStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BANNED';
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 export type FuelType = 'PETROL' | 'DIESEL' | 'CNG' | 'ELECTRIC' | 'HYBRID';
@@ -55,7 +55,7 @@ export interface Vendor {
   email?: string;
   address?: string;
   status: EntityActiveStatus;
-  verifyStatus: EntityVerificationStatus;
+  verificationStatus: EntityVerificationStatus;
   cityCode?: CityCode;
   type?: 'INDIVIDUAL' | 'BUSINESS';
   // Contact Details
@@ -131,15 +131,21 @@ export interface Partner {
   aadhaarNumber?: string; // Standardized with API
   licenseNumber?: string;
   licenseImage?: string;
+  licenseExpiryDate?: string;
   panNumber?: string;
-  panImage?: string;
-  aadhaarImage?: string;
+  panImage?: string; // Existing
+  panCardPhoto?: string; // User example
+  aadhaarImage?: string; // Existing
+  aadhaarFrontPhoto?: string; // User example
+  aadhaarBackPhoto?: string; // User example
   hasLicense?: boolean;
   // Banking Details
   accountNumber?: string;
   bankName?: string;
   bankAccountNumber?: string;
   ifscCode?: string;
+  accountHolderName?: string; // User example
+  cancelledChequePhoto?: string; // User example
   upiId?: string;
   rating?: number;
   totalEarnings?: number;
@@ -148,7 +154,7 @@ export interface Partner {
   profileImage?: string;
   rides?: Ride[];
   status: EntityActiveStatus;
-  verifyStatus: EntityVerificationStatus;
+  verificationStatus: EntityVerificationStatus; // Standardized as per API v2.1
   isOnline: boolean;
   currentLat?: number;
   currentLng?: number;
@@ -187,6 +193,13 @@ export interface PartnerRegisterRequest {
   bankName?: string;
   accountNumber?: string;
   ifscCode?: string;
+  licenseExpiryDate?: string;
+  accountHolderName?: string;
+  cancelledChequePhoto?: string;
+  panCardPhoto?: string;
+  aadhaarFrontPhoto?: string;
+  aadhaarBackPhoto?: string;
+  verificationStatus?: string;
 }
 
 export interface PartnerLoginRequest {
@@ -384,7 +397,7 @@ export interface Vehicle {
   cityCode: CityCode;
   isActive: boolean;
   status: EntityActiveStatus;
-  verifyStatus: EntityVerificationStatus;
+  verificationStatus: EntityVerificationStatus;
   // New Fields
   color?: string;
   fuelType?: FuelType;
@@ -543,7 +556,7 @@ export type Rider = Partner;
 // Ride Types
 // =====================================
 
-export type RideStatus = 'PENDING' | 'INITIATED' | 'SCHEDULED' | 'ACCEPTED' | 'ARRIVED' | 'STARTED' | 'COMPLETED' | 'CANCELLED' | 'FUTURE';
+export type RideStatus = 'UPCOMING' | 'INITIATED' | 'SCHEDULED' | 'ASSIGNED' | 'ARRIVED' | 'STARTED' | 'COMPLETED' | 'CANCELLED' | 'FUTURE';
 
 export interface Ride {
   id: string;
@@ -592,6 +605,7 @@ export interface UserSummary {
   name: string;
   phone: string;
   email: string;
+  uniqueOtp?: string;
 }
 
 export interface PartnerSummary {
@@ -629,13 +643,13 @@ export interface RideFilters {
 
 export interface VendorFilters {
   status?: EntityActiveStatus;
-  verifyStatus?: EntityVerificationStatus;
+  verificationStatus?: EntityVerificationStatus;
   search?: string;
 }
 
 export interface PartnerFilters {
   status?: EntityActiveStatus;
-  verifyStatus?: EntityVerificationStatus;
+  verificationStatus?: EntityVerificationStatus;
   isOnline?: boolean;
   search?: string;
 }
@@ -644,7 +658,7 @@ export interface VehicleFilters {
   vendorId?: string;
   partnerId?: string;
   status?: EntityActiveStatus;
-  verifyStatus?: EntityVerificationStatus;
+  verificationStatus?: EntityVerificationStatus;
   search?: string;
 }
 
@@ -669,7 +683,7 @@ export interface VendorAttachment {
     name: string;
     phone: string;
     status: EntityActiveStatus;
-    verifyStatus: EntityVerificationStatus;
+    verificationStatus: EntityVerificationStatus;
     isOnline: boolean;
   };
   vehicle: {
@@ -721,10 +735,12 @@ export interface PartnerVehicleData {
   ownVehicle: Vehicle | null;
   assignedVehicle: {
     id: string;
+    customId: string;
     registrationNumber: string;
     vehicleModel: string;
+    status: string;
+    vehicleType: { displayName: string; category: string };
     vendor: { id: string; customId: string; name: string; companyName: string; phone: string };
-    vehicleType: { displayName: string; category: string; pricePerKm: number };
   } | null;
 }
 
@@ -805,7 +821,7 @@ export interface CreateAttachmentRequest {
 }
 
 export interface VerifyAttachmentRequest {
-  status: 'VERIFIED' | 'REJECTED' | 'UNDER_REVIEW' | AttachmentStatus;
+  status: 'VERIFIED' | 'REJECTED' | 'UNVERIFIED';
   notes?: string;
 }
 
