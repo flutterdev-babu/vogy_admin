@@ -19,7 +19,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 export default function LandingPage() {
-  const [bookingTab, setBookingTab] = useState<'local' | 'rental' | 'outstation'>('local');
+  const [bookingTab, setBookingTab] = useState<'local' | 'rental' | 'outstation' | 'airport'>('local');
   
   return (
     <div className="min-h-screen bg-[#0D0D0D] font-sans text-white overflow-x-hidden selection:bg-[#E32222] selection:text-white">
@@ -74,8 +74,8 @@ export default function LandingPage() {
             className="w-full max-w-md mx-auto bg-neutral-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 lg:p-8 shadow-2xl shadow-black/50 ring-1 ring-white/5"
           >
             {/* Tabs */}
-            <div className="flex p-1 bg-black/40 rounded-xl mb-6 border border-white/5">
-              {['local', 'rental', 'outstation'].map((tab) => (
+            <div className="flex p-1 bg-black/40 rounded-xl mb-6 border border-white/5 overflow-x-auto">
+              {['local', 'rental', 'outstation', 'airport'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setBookingTab(tab as any)}
@@ -92,6 +92,15 @@ export default function LandingPage() {
 
             {/* Form */}
             <div className="space-y-4">
+              <div className="relative group">
+                <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
+                <input 
+                  type="tel" 
+                  placeholder="Phone Number"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
+                />
+              </div>
+
               <div className="relative group">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
                 <input 
@@ -110,25 +119,8 @@ export default function LandingPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                  <div className="relative group">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={18} />
-                    <input 
-                      type="date"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors text-sm appearance-none"
-                    />
-                  </div>
-                  <div className="relative group">
-                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={18} />
-                    <input 
-                      type="time" 
-                      className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors text-sm appearance-none"
-                    />
-                  </div>
-              </div>
-
               <button className="w-full py-4 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white font-bold text-lg shadow-lg shadow-red-900/30 hover:shadow-red-900/50 transition-all transform hover:-translate-y-0.5 mt-2">
-                Calculate Fare
+                Enquire Now
               </button>
             </div>
           </motion.div>

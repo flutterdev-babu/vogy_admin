@@ -70,8 +70,8 @@ export const partnerService = {
     return response.data;
   },
 
-  async updateRideStatus(id: string, status: 'ARRIVED' | 'STARTED', userOtp?: string): Promise<ApiResponse<Ride>> {
-    const response = await riderApi.patch(`/rides/${id}/status`, { status, userOtp });
+  async updateRideStatus(id: string, status: string, options?: { userOtp?: string; startingKm?: number; endingKm?: number }): Promise<ApiResponse<Ride>> {
+    const response = await riderApi.patch(`/rides/${id}/status`, { status, ...options });
     return response.data;
   },
 

@@ -556,7 +556,7 @@ export type Rider = Partner;
 // Ride Types
 // =====================================
 
-export type RideStatus = 'UPCOMING' | 'INITIATED' | 'SCHEDULED' | 'ASSIGNED' | 'ARRIVED' | 'STARTED' | 'COMPLETED' | 'CANCELLED' | 'FUTURE';
+export type RideStatus = 'REQUESTED' | 'UPCOMING' | 'INITIATED' | 'SCHEDULED' | 'ASSIGNED' | 'ARRIVED' | 'STARTED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED' | 'FUTURE';
 
 export interface Ride {
   id: string;

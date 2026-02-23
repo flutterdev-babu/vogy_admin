@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Car, MapPin, Calendar, Clock, CheckCircle, Shield, TrendingDown, ZapOff } from 'lucide-react';
+import { Car, MapPin, Calendar, Clock, CheckCircle, Shield, TrendingDown, ZapOff, Star, Plane } from 'lucide-react';
 import { ReactNode } from 'react';
 
 export default function ServicesPage() {
@@ -62,11 +62,11 @@ export default function ServicesPage() {
             className="p-8 rounded-3xl bg-gradient-to-br from-blue-600/20 to-transparent border border-blue-600/20"
           >
             <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white mb-6">
-              <TrendingDown size={32} />
+              <Star size={32} />
             </div>
-            <h2 className="text-3xl font-bold mb-4">Low Fare Charges</h2>
+            <h2 className="text-3xl font-bold mb-4">Quality Services</h2>
             <p className="text-neutral-300 text-lg leading-relaxed">
-              We offer some of the most competitive rates in the industry. Our goal is to make premium cab services accessible to everyone without burning a hole in your pocket.
+              Experience edge-to-edge comfort and impeccable service. We maintain a fleet of highly well-kept vehicles and partner with professional drivers to ensure every ride meets premium standards.
             </p>
           </motion.div>
         </div>
@@ -80,7 +80,7 @@ export default function ServicesPage() {
             <p className="text-neutral-400 max-w-2xl mx-auto">Flexible options for all your travel requirements.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <ServiceCard 
               icon={<MapPin size={32} />} 
               title="Local Rides" 
@@ -98,6 +98,12 @@ export default function ServicesPage() {
               title="Rentals" 
               desc="Need a cab for several hours? Book our rental service for flexible hourly packages."
               features={["Flexible Hours", "Multiple Stops", "Professional Chauffeurs"]}
+            />
+            <ServiceCard 
+              icon={<Plane size={32} />} 
+              title="Airport Rides" 
+              desc="Reliable and timely airport transfers to ensure you never miss a flight."
+              features={["On-Time Guarantee", "Flight Tracking", "Comfortable Seating"]}
             />
           </div>
         </div>
@@ -124,8 +130,8 @@ export default function ServicesPage() {
                   <p className="font-bold">Safe</p>
                 </div>
                 <div className="aspect-square bg-white/5 rounded-3xl flex flex-col items-center justify-center p-6 text-center">
-                  <TrendingDown size={40} className="text-blue-500 mb-4" />
-                  <p className="font-bold">Cheap</p>
+                  <Star size={40} className="text-blue-500 mb-4" />
+                  <p className="font-bold">Premium</p>
                 </div>
                 <div className="aspect-square bg-white/5 rounded-3xl flex flex-col items-center justify-center p-6 text-center">
                   <ZapOff size={40} className="text-yellow-500 mb-4" />
