@@ -21,6 +21,8 @@ export default function PartnerDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpValue, setOtpValue] = useState('');
+  const [startingKm, setStartingKm] = useState('');
+  const [endingKm, setEndingKm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = useCallback(async (isSilent = false) => {
@@ -36,7 +38,7 @@ export default function PartnerDashboard() {
         if (response.data.rides.active > 0) {
           const ridesRes = await partnerService.getRides();
           if (ridesRes.success) {
-            const active = ridesRes.data.find(r => ['ASSIGNED', 'ARRIVED', 'STARTED'].includes(r.status));
+            const active = ridesRes.data.find(r => ['ASSIGNED', 'ARRIVED', 'STARTED', 'ONGOING'].includes(r.status));
             setActiveRide(active || null);
           }
         } else {
@@ -126,19 +128,34 @@ export default function PartnerDashboard() {
     }
   };
 
-  const handleUpdateStatus = async (status: 'ARRIVED' | 'STARTED') => {
+  const handleUpdateStatus = async (status: 'ARRIVED' | 'STARTED' | 'ONGOING') => {
     if (!activeRide) return;
-    if (status === 'STARTED' && otpValue.length !== 4) {
+    if (status === 'ONGOING' && otpValue.length !== 4) {
       toast.error('Please enter 4-digit User OTP');
       return;
     }
 
+    if (status === 'ONGOING' && activeRide.serviceType === 'RENTAL') {
+      if (!startingKm || Number(startingKm) < 0) {
+        toast.error('Please enter a valid starting odometer reading (KM)');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      const res = await partnerService.updateRideStatus(activeRide.id, status, status === 'STARTED' ? otpValue : undefined);
+      const options: any = {};
+      if (status === 'ONGOING') {
+        options.userOtp = otpValue;
+        if (activeRide.serviceType === 'RENTAL') {
+          options.startingKm = Number(startingKm);
+        }
+      }
+
+      const res = await partnerService.updateRideStatus(activeRide.id, status, options);
       if (res.success) {
         toast.success(`Ride status updated to ${status}`);
-        setOtpValue('');
+        if (status === 'ONGOING') setOtpValue('');
         fetchData(true);
       } else {
         toast.error(res.message || 'Update failed');
@@ -152,17 +169,21 @@ export default function PartnerDashboard() {
 
   const handleCompleteRide = async () => {
     if (!activeRide) return;
-    if (otpValue.length !== 4) {
-      toast.error('Please enter 4-digit User OTP to complete');
-      return;
+    
+    const options: any = {};
+    if (activeRide.serviceType === 'RENTAL') {
+      if (!endingKm || Number(endingKm) <= 0) {
+        toast.error('Please enter a valid ending odometer reading (KM)');
+        return;
+      }
+      options.endingKm = Number(endingKm);
     }
 
     setIsSubmitting(true);
     try {
-      const res = await partnerService.completeRide(activeRide.id, otpValue);
+      const res = await partnerService.updateRideStatus(activeRide.id, 'COMPLETED', options);
       if (res.success) {
         toast.success('Ride Completed successfully! 🎉');
-        setOtpValue('');
         fetchData(true);
       } else {
         toast.error(res.message || 'Completion failed');
@@ -309,7 +330,7 @@ export default function PartnerDashboard() {
                        <p className="text-2xl font-black text-emerald-400">₹{activeRide.totalFare}</p>
                     </div>
 
-                    {(activeRide.status === 'STARTED' || activeRide.status === 'ARRIVED') && (
+                    {(activeRide.status === 'STARTED') && (
                       <div className="space-y-4">
                         <input 
                           type="text" 
@@ -319,6 +340,27 @@ export default function PartnerDashboard() {
                           onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
                           className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-center text-xl font-black tracking-[0.5em] focus:outline-none focus:border-emerald-500 transition-colors"
                         />
+                        {activeRide.serviceType === 'RENTAL' && (
+                          <input 
+                            type="number" 
+                            placeholder="Starting Odometer (KM)"
+                            value={startingKm}
+                            onChange={(e) => setStartingKm(e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-center text-xl font-black focus:outline-none focus:border-emerald-500 transition-colors"
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {(activeRide.status === 'ONGOING' && activeRide.serviceType === 'RENTAL') && (
+                      <div className="space-y-4">
+                          <input 
+                            type="number" 
+                            placeholder="Ending Odometer (KM)"
+                            value={endingKm}
+                            onChange={(e) => setEndingKm(e.target.value)}
+                            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-center text-xl font-black focus:outline-none focus:border-emerald-500 transition-colors"
+                          />
                       </div>
                     )}
 
@@ -330,6 +372,9 @@ export default function PartnerDashboard() {
                         <ActionButton label="Start Ride" onClick={() => handleUpdateStatus('STARTED')} loading={isSubmitting} color="bg-emerald-500" />
                       )}
                       {activeRide.status === 'STARTED' && (
+                        <ActionButton label="Begin Trip (OTP)" onClick={() => handleUpdateStatus('ONGOING')} loading={isSubmitting} color="bg-emerald-500" />
+                      )}
+                      {activeRide.status === 'ONGOING' && (
                         <ActionButton label="Complete Ride" onClick={handleCompleteRide} loading={isSubmitting} color="bg-emerald-500" />
                       )}
                     </div>

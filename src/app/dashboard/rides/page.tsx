@@ -11,15 +11,17 @@ import { Ride, RideStatus, RideFilters } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 
 const STATUS_TABS: { label: string; value: RideStatus | 'ALL' }[] = [
+  { label: 'Requested', value: 'REQUESTED' },
   { label: 'Upcoming', value: 'UPCOMING' },
+  { label: 'Initiated', value: 'INITIATED' },
   { label: 'Assigned', value: 'ASSIGNED' },
-  { label: 'Started', value: 'STARTED' },
   { label: 'Arrived', value: 'ARRIVED' },
-  { label: 'Ongoing', value: 'INITIATED' },
+  { label: 'Started', value: 'STARTED' },
+  { label: 'Ongoing', value: 'ONGOING' },
   { label: 'Stopped', value: 'FUTURE' },
   { label: 'Completed', value: 'COMPLETED' },
   { label: 'Cancelled', value: 'CANCELLED' },
-  { label: 'CNR', value: 'ALL' },
+  { label: 'All', value: 'ALL' },
 ];
 
 export default function RidesPage() {

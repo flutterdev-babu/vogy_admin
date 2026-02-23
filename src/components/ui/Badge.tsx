@@ -7,12 +7,14 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<RideStatus, { bg: string; text: string; label: string }> = {
+  REQUESTED: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Requested' },
   UPCOMING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Upcoming' },
   INITIATED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Initiated' },
   SCHEDULED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Scheduled' },
-  ASSIGNED: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Assigned' },
-  ARRIVED: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Arrived' },
-  STARTED: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'In Progress' },
+  ASSIGNED: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Assigned' },
+  ARRIVED: { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', label: 'Arrived' },
+  STARTED: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Started' },
+  ONGOING: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Ongoing' },
   COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' },
   CANCELLED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Cancelled' },
   FUTURE: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Future' },

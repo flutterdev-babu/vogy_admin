@@ -28,6 +28,8 @@ export default function AdminRideDetailsPage() {
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState<string>('');
   const [userUniqueOtp, setUserUniqueOtp] = useState<string>('');
+  const [startingKm, setStartingKm] = useState<string>('');
+  const [endingKm, setEndingKm] = useState<string>('');
   const [filterBy, setFilterBy] = useState<'VERIFIED' | 'NV' | 'NA'>('VERIFIED');
   const [isAssignMode, setIsAssignMode] = useState(false);
 
@@ -103,20 +105,42 @@ export default function AdminRideDetailsPage() {
   const handleUpdateStatus = async () => {
     if (!newStatus) return;
     
-    // Validate OTP for STARTED status
-    if (newStatus === 'STARTED') {
+    // Validate OTP for ONGOING status
+    if (newStatus === 'ONGOING') {
       if (!userUniqueOtp || userUniqueOtp.length !== 4) {
         toast.error('Please enter a valid 4-digit User OTP to start the ride');
+        return;
+      }
+      if (ride?.serviceType === 'RENTAL') {
+        if (!startingKm || Number(startingKm) < 0) {
+          toast.error('Please enter a valid starting odometer reading (KM)');
+          return;
+        }
+      }
+    }
+
+    if (newStatus === 'COMPLETED' && ride?.serviceType === 'RENTAL') {
+      if (!endingKm || Number(endingKm) <= 0) {
+        toast.error('Please enter a valid ending odometer reading (KM)');
         return;
       }
     }
 
     setIsUpdating(true);
     try {
-      const res = await adminRideService.updateStatus(ride!.id, newStatus as RideStatus, newStatus === 'STARTED' ? userUniqueOtp : undefined);
+      const options: any = {};
+      if (newStatus === 'ONGOING') {
+        options.userOtp = userUniqueOtp;
+        if (ride?.serviceType === 'RENTAL') options.startingKm = Number(startingKm);
+      }
+      if (newStatus === 'COMPLETED' && ride?.serviceType === 'RENTAL') {
+        options.endingKm = Number(endingKm);
+      }
+
+      const res = await adminRideService.updateStatus(ride!.id, newStatus as string, options);
       if (res.success) {
         toast.success('Ride status updated');
-        setUserUniqueOtp('');
+        if (newStatus === 'ONGOING') setUserUniqueOtp('');
         fetchData();
       }
     } catch (error: any) {
@@ -228,25 +252,54 @@ export default function AdminRideDetailsPage() {
                 onChange={(e) => setNewStatus(e.target.value as RideStatus)}
                 className="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-gray-400 outline-none"
               >
+                <option value="REQUESTED">Requested</option>
                 <option value="UPCOMING">Future</option>
                 <option value="ASSIGNED">Assigned</option>
                 <option value="ARRIVED">Arrived</option>
                 <option value="STARTED">Started</option>
+                <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
                 <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
 
-            {newStatus === 'STARTED' && (
+            {newStatus === 'ONGOING' && (
+              <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Enter User OTP to Start</label>
+                  <input 
+                    type="text"
+                    maxLength={4}
+                    placeholder="4-digit OTP"
+                    value={userUniqueOtp}
+                    onChange={(e) => setUserUniqueOtp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full border-2 border-red-100 rounded px-3 py-1.5 text-xs font-bold focus:border-red-400 outline-none text-center tracking-[0.5em]"
+                  />
+                </div>
+                {ride?.serviceType === 'RENTAL' && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">Starting Odometer (KM)</label>
+                    <input 
+                      type="number"
+                      placeholder="Start KM"
+                      value={startingKm}
+                      onChange={(e) => setStartingKm(e.target.value)}
+                      className="w-full border border-gray-300 rounded px-3 py-1.5 text-xs font-bold focus:border-gray-400 outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {(newStatus === 'COMPLETED' && ride?.serviceType === 'RENTAL') && (
               <div className="space-y-1 animate-in slide-in-from-top-2 duration-300">
-                <label className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Enter User OTP to Start</label>
+                <label className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">Ending Odometer (KM)</label>
                 <input 
-                  type="text"
-                  maxLength={4}
-                  placeholder="4-digit OTP"
-                  value={userUniqueOtp}
-                  onChange={(e) => setUserUniqueOtp(e.target.value.replace(/\D/g, ''))}
-                  className="w-full border-2 border-red-100 rounded px-3 py-1.5 text-xs font-bold focus:border-red-400 outline-none text-center tracking-[0.5em]"
+                  type="number"
+                  placeholder="End KM"
+                  value={endingKm}
+                  onChange={(e) => setEndingKm(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-1.5 text-xs font-bold focus:border-gray-400 outline-none"
                 />
               </div>
             )}
