@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { partnerService } from '@/services/partnerService';
 import { PartnerVehicleData } from '@/types';
-import { Car, ShieldCheck, Calendar, Info, AlertCircle, FileText, CheckCircle2 } from 'lucide-react';
+import { Car, ShieldCheck, Calendar, Info, AlertCircle, FileText, CheckCircle2, ExternalLink } from 'lucide-react';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 
 export default function PartnerVehiclePage() {
@@ -62,9 +62,10 @@ export default function PartnerVehiclePage() {
               <SpecItem label="Vehicle Model" value={currentVehicle.vehicleModel} />
               <SpecItem label="Registration Number" value={currentVehicle.registrationNumber} />
               <SpecItem label="Vehicle Type" value={currentVehicle.vehicleType?.displayName || 'Standard'} />
-              <SpecItem label="Vehicle Category" value={currentVehicle.vehicleType?.category?.replace('_', ' ') || 'General'} />
-              <SpecItem label="Custom Fleet ID" value={currentVehicle.customId || 'N/A'} highlight={true} />
               <SpecItem label="Owner/Vendor" value={currentVehicle.vendor?.companyName || 'Ara Travels Fleet Management'} />
+              <SpecItem label="RC Number" value={currentVehicle.rcNumber || 'N/A'} highlight={true} />
+              <SpecItem label="Chassis Number" value={currentVehicle.chassisNumber || 'N/A'} highlight={true} />
+              <SpecItem label="Custom Fleet ID" value={currentVehicle.customId || 'N/A'} />
             </div>
           </div>
 
@@ -73,9 +74,18 @@ export default function PartnerVehiclePage() {
               <CheckCircle2 className="text-emerald-500" /> Maintenance & Safety
             </h2>
             <div className="space-y-4">
-              <MaintenanceItem label="Last Service" date="Oct 12, 2023" status="Completed" />
-              <MaintenanceItem label="Insurance Renewal" date="Dec 24, 2023" status="Upcoming" warning={true} />
-              <MaintenanceItem label="Pollution Check" date="Jan 05, 2024" status="Valid" />
+              {currentVehicle.insuranceNumber && currentVehicle.insuranceExpiryDate && (
+                <MaintenanceItem 
+                  label="Insurance Renewal" 
+                  date={new Date(currentVehicle.insuranceExpiryDate).toLocaleDateString()} 
+                  status="Active" 
+                  warning={new Date(currentVehicle.insuranceExpiryDate) < new Date(Date.now() + 30*24*60*60*1000)} 
+                />
+              )}
+              {(!currentVehicle.insuranceNumber || !currentVehicle.insuranceExpiryDate) && (
+                <MaintenanceItem label="Insurance Policy" date="Not Available" status="Missing" warning={true} />
+              )}
+              <MaintenanceItem label="Pollution Check (PUC)" date="Check Documents" status="Unknown" warning={true} />
             </div>
           </div>
         </div>
@@ -106,12 +116,23 @@ export default function PartnerVehiclePage() {
 
           <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
             <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <FileText className="text-gray-400" /> Documents
+              <FileText className="text-gray-400" /> Documents & Images
             </h2>
-            <div className="space-y-3">
-              <DocLink label="Registration Certificate" />
-              <DocLink label="Insurance Policy" />
-              <DocLink label="Pollution Certificate" />
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {currentVehicle.rcPhoto && <DocumentThumbnail label="RC Book" url={currentVehicle.rcPhoto} />}
+              {currentVehicle.insurancePhoto && <DocumentThumbnail label="Insurance Policy" url={currentVehicle.insurancePhoto} />}
+            </div>
+
+            <div className="space-y-3 pt-6 border-t border-gray-100">
+              <h3 className="text-sm font-bold text-gray-700 mb-3">All Attachments</h3>
+              {currentVehicle.attachments?.length > 0 ? (
+                currentVehicle.attachments.map((doc: any) => (
+                  <DocLink key={doc.id} label={doc.fileType?.replace(/_/g, ' ') || 'Document'} url={doc.fileUrl} status={doc.verificationStatus} />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 italic">No additional documents uploaded.</p>
+              )}
             </div>
           </div>
         </div>
@@ -143,12 +164,15 @@ function MaintenanceItem({ label, date, status, warning }: any) {
   );
 }
 
-function DocLink({ label }: { label: string }) {
+function DocLink({ label, url, status }: { label: string; url?: string; status?: string }) {
   return (
-    <button className="w-full flex justify-between items-center p-3 text-left hover:bg-gray-50 rounded-xl transition-colors group">
-      <span className="text-xs font-bold text-gray-600">{label}</span>
-      <ArrowUpRight size={14} className="text-gray-300 group-hover:text-[#E32222] transition-colors" />
-    </button>
+    <a href={url || '#'} target="_blank" rel="noopener noreferrer" className="w-full flex justify-between items-center p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group border border-gray-100">
+      <div>
+        <span className="text-xs font-bold text-gray-700 block mb-0.5 capitalize">{label}</span>
+        {status && <span className={`text-[9px] font-bold uppercase tracking-widest ${status === 'VERIFIED' ? 'text-emerald-500' : 'text-orange-500'}`}>{status}</span>}
+      </div>
+      <ArrowUpRight size={14} className="text-gray-400 group-hover:text-[#E32222] transition-colors" />
+    </a>
   );
 }
 
@@ -168,5 +192,22 @@ function ArrowUpRight({ size, className }: any) {
       <line x1="7" y1="17" x2="17" y2="7" />
       <polyline points="7 7 17 7 17 17" />
     </svg>
+  );
+}
+
+function DocumentThumbnail({ label, url }: { label: string; url?: string }) {
+  if (!url) return null;
+  return (
+    <div className="mt-3">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label} Image</p>
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block relative h-32 rounded-lg overflow-hidden border border-gray-200 hover:border-emerald-500 transition-colors group bg-gray-50 flex items-center justify-center">
+        <img src={url} alt={label} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-white text-xs font-bold px-3 py-1.5 bg-black/50 rounded-md flex items-center gap-1">
+            <ExternalLink size={14} /> View
+          </span>
+        </div>
+      </a>
+    </div>
   );
 }

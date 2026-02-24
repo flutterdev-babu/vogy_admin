@@ -176,7 +176,11 @@ export default function PartnerRegisterPage() {
                 <label className={labelClass}>Phone *</label>
                 <div className="flex">
                   <span className="px-4 py-3 bg-white/5 border border-white/10 border-r-0 rounded-l-xl text-xs font-bold text-neutral-500 flex items-center">+91</span>
-                  <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} className={inputClass + " rounded-l-none"} placeholder="10 Digit" maxLength={10} />
+                  <input type="tel" required value={formData.phone} onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, '');
+                    if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
+                    setFormData({...formData, phone: v.slice(0, 10)});
+                  }} className={inputClass + " rounded-l-none"} placeholder="10 Digit" maxLength={10} />
                 </div>
               </div>
             </div>

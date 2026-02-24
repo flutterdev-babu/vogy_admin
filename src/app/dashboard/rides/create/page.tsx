@@ -150,7 +150,11 @@ export default function CreateRidePage() {
                 <div className="flex flex-1">
                   <span className="flex items-center pl-3 text-sm text-gray-400">+91</span>
                   <input type="tel" required value={formData.phone}
-                    onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, '');
+                      if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
+                      setFormData({...formData, phone: v.slice(0, 10)});
+                    }}
                     className={fieldClass} placeholder="97569645049" maxLength={10} />
                 </div>
               </div>

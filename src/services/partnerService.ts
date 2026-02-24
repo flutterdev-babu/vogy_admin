@@ -95,7 +95,7 @@ export const partnerService = {
   },
 
   async getRideById(id: string): Promise<ApiResponse<Ride>> {
-    const response = await riderApi.get(`/rides/${id}`);
+    const response = await partnerApi.get(`/rides/${id}`);
     return response.data;
   },
 
