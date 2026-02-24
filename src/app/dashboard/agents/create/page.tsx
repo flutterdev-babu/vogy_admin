@@ -75,7 +75,11 @@ export default function AdminCreateAgentPage() {
               <div className="flex">
                 <span className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-200 rounded-l-xl text-gray-500 text-sm font-medium">+91</span>
                 <input type="tel" required value={formData.phone}
-                  onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, '');
+                    if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
+                    setFormData({...formData, phone: v.slice(0, 10)});
+                  }}
                   className="w-full border border-gray-200 rounded-r-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/30 transition-all"
                   placeholder="9876543210" maxLength={10} />
               </div>

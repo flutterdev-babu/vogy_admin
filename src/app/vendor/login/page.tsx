@@ -76,7 +76,11 @@ export default function VendorLoginPage() {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, '');
+                    if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
+                    setPhone(v.slice(0, 10));
+                  }}
                   className="w-full bg-white/5 border border-white/10 rounded-r-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/50 transition-all"
                   placeholder="9876543210"
                   maxLength={10}

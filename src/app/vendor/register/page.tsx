@@ -120,7 +120,11 @@ export default function VendorRegisterPage() {
                 <div className="flex gap-2">
                    <div className="bg-white/5 border border-white/10 rounded-xl px-3 flex items-center h-10 text-[10px] font-bold text-neutral-400">+91</div>
                   <input type="tel" required value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, '');
+                      if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
+                      setFormData({...formData, phone: v.slice(0, 10)});
+                    }}
                     className={inputClass} placeholder="9876543210" maxLength={10} />
                 </div>
               </div>

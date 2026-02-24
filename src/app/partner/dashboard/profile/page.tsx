@@ -9,7 +9,8 @@ import {
   Flag,
   Save,
   Wrench,
-  Loader2
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 import { partnerService } from '@/services/partnerService';
 import { toast } from 'react-hot-toast';
@@ -184,6 +185,32 @@ export default function PartnerProfilePage() {
                 </span>
               </div>
             </div>
+
+            {/* Performance Metrics */}
+            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-2 text-left">
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Rating</p>
+                <p className="font-semibold text-gray-800 text-lg">⭐ {partner.rating?.toFixed(1) || '0.0'}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Total Earnings</p>
+                <p className="font-semibold text-emerald-600 text-lg">₹ {partner.totalEarnings?.toLocaleString() || '0'}</p>
+              </div>
+            </div>
+            
+            {/* Extended KYC Metrics Summary */}
+            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-2 text-left">
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Documents</p>
+                <p className="font-semibold text-gray-800">{partner.attachments?.length || 0} Uploaded</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Assigned Vendor</p>
+                <p className="font-semibold text-gray-800 text-sm truncate" title={partner.vendor?.companyName || 'None'}>
+                  {partner.vendor?.companyName || 'None'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -227,6 +254,100 @@ export default function PartnerProfilePage() {
                     }`}
                   />
                 </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={partner.phone ?? ''}
+                    disabled
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="text"
+                    value={partner.dateOfBirth ? new Date(partner.dateOfBirth).toLocaleDateString() : 'N/A'}
+                    disabled
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                    Gender
+                  </label>
+                  <input
+                    type="text"
+                    value={partner.gender ?? 'N/A'}
+                    disabled
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed capitalize"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                    Local Address
+                  </label>
+                  <textarea
+                    value={partner.localAddress ?? 'N/A'}
+                    disabled
+                    rows={2}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                    Permanent Address
+                  </label>
+                  <textarea
+                    value={partner.permanentAddress ?? 'N/A'}
+                    disabled
+                    rows={2}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* KYC Details */}
+            <div className="card p-6 mb-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Flag className="w-5 h-5 text-emerald-600" />
+                KYC & Documents
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">PAN Number</label>
+                  <input type="text" value={partner.panNumber ?? 'N/A'} disabled className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed uppercase font-mono" />
+                  <DocumentThumbnail label="PAN Card" url={partner.panCardPhoto} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Aadhaar Number</label>
+                  <input type="text" value={partner.aadhaarNumber ?? 'N/A'} disabled className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed font-mono" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <DocumentThumbnail label="Aadhaar Front" url={partner.aadhaarFrontPhoto} />
+                    <DocumentThumbnail label="Aadhaar Back" url={partner.aadhaarBackPhoto} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">License Number</label>
+                  <input type="text" value={partner.licenseNumber ?? 'N/A'} disabled className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed uppercase font-mono" />
+                  <DocumentThumbnail label="Driving License" url={partner.licenseImage} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1">License Expiry</label>
+                  <input type="text" value={partner.licenseExpiryDate ? new Date(partner.licenseExpiryDate).toLocaleDateString() : 'N/A'} disabled className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed" />
+                </div>
               </div>
             </div>
 
@@ -237,7 +358,7 @@ export default function PartnerProfilePage() {
                 Banking Information
               </h3>
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
                     Bank Account Number
@@ -248,12 +369,13 @@ export default function PartnerProfilePage() {
                     value={formData.accountNumber}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className={`w-full px-3 py-2 border rounded-lg outline-none transition-all ${
+                    className={`w-full px-3 py-2 border rounded-lg outline-none transition-all mb-2 ${
                       isEditing
                         ? 'bg-white border-gray-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500'
                         : 'bg-gray-50 border-gray-200 text-gray-600'
                     }`}
                   />
+                  <DocumentThumbnail label="Cancelled Cheque" url={partner.cancelledChequePhoto} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -298,6 +420,23 @@ export default function PartnerProfilePage() {
           </form>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DocumentThumbnail({ label, url }: { label: string; url?: string }) {
+  if (!url) return null;
+  return (
+    <div className="mt-3">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label} Image</p>
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block relative h-32 rounded-lg overflow-hidden border border-gray-200 hover:border-emerald-500 transition-colors group bg-gray-50 flex items-center justify-center">
+        <img src={url} alt={label} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-white text-xs font-bold px-3 py-1.5 bg-black/50 rounded-md flex items-center gap-1">
+            <ExternalLink size={14} /> View
+          </span>
+        </div>
+      </a>
     </div>
   );
 }

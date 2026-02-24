@@ -212,7 +212,11 @@ export default function EditPartnerPage({ params }: { params: Promise<{ id: stri
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">+91</span>
                   <input type="tel" required value={formData.phone}
-                    onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, '');
+                      if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
+                      setFormData({...formData, phone: v.slice(0, 10)});
+                    }}
                     className={fieldClass + " pl-10"} placeholder="Mobile" maxLength={10} />
                 </div>
               </div>

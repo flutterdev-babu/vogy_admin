@@ -158,7 +158,7 @@ export interface Partner {
   isOnline: boolean;
   currentLat?: number;
   currentLng?: number;
-  vehicle?: Vehicle;
+  vehicle?: Vehicle; // Existing vehicle relation
   // Vendor association
   vendorId?: string;
   vendorCustomId?: string;
@@ -168,7 +168,22 @@ export interface Partner {
   ownVehicleNumber?: string;
   ownVehicleModel?: string;
   ownVehicleTypeId?: string;
+  ownVehicleType?: VehicleTypeSummary; // Added per API v2 docs
   cityCode?: CityCode;
+  
+  // New attachments list
+  attachments?: Array<{
+    id: string;
+    fileType: string;
+    fileUrl: string;
+    status: string;
+    verificationStatus: string;
+  }>;
+  _count?: {
+    rides: number;
+    [key: string]: number;
+  };
+
   createdAt: string;
   updatedAt?: string;
 }
@@ -562,6 +577,7 @@ export interface Ride {
   id: string;
   customId: string;
   status: RideStatus;
+  rideType?: string; // New field from v2 API
   pickupLat: number;
   pickupLng: number;
   pickupAddress: string;
@@ -586,8 +602,12 @@ export interface Ride {
   bookingNotes?: string;
   serviceType?: string;
   paymentMode?: string;
+  paymentStatus?: string; // New field from v2 API
   user: UserSummary;
   partner?: PartnerSummary;
+  vendor?: VendorSummary; // Expanded vendor field support
+  corporate?: any; // New corporate reference support
+  vehicle?: any; // Expanded full vehicle support
   vehicleType: VehicleTypeSummary;
   createdAt: string;
 }
@@ -739,8 +759,22 @@ export interface PartnerVehicleData {
     registrationNumber: string;
     vehicleModel: string;
     status: string;
-    vehicleType: { displayName: string; category: string };
-    vendor: { id: string; customId: string; name: string; companyName: string; phone: string };
+    verificationStatus?: string;
+    rcNumber?: string;
+    rcPhoto?: string;
+    chassisNumber?: string;
+    insuranceNumber?: string;
+    insurancePhoto?: string;
+    insuranceExpiryDate?: string;
+    vehicleType: { id?: string; displayName: string; category: string; name?: string; pricePerKm?: number; baseFare?: number; };
+    vendor: { id: string; customId: string; name: string; companyName: string; phone: string; email?: string; address?: string; };
+    attachments?: Array<{
+      id: string;
+      fileType: string;
+      fileUrl: string;
+      status: string;
+      verificationStatus: string;
+    }>;
   } | null;
 }
 
