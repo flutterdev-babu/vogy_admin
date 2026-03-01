@@ -37,5 +37,10 @@ export const adminRideService = {
     const response = await api.post('/rides', data);
     console.log("Manual Ride API Response:", response);
     return response.data;
+  },
+
+  async validateCoupon(data: any): Promise<ApiResponse<any>> {
+    const response = await api.post('/rides/validate-coupon', data);
+    return response.data;
   }
 };

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, UserPlus, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { agentService } from '@/services/agentService';
-import { AgentRegisterRequest } from '@/types';
+import { userService } from '@/services/userService';
+import { CreateUserRequest } from '@/types';
 
-export default function AdminCreateAgentPage() {
+export default function AdminCreateUserPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -16,24 +16,7 @@ export default function AdminCreateAgentPage() {
     name: '',
     phone: '',
     email: '',
-    password: '',
-    cityCodeId: ''
   });
-  const [cityCodes, setCityCodes] = useState<{ id: string; code: string; cityName: string }[]>([]);
-
-  useEffect(() => {
-    const loadCityCodes = async () => {
-      try {
-        const response = await agentService.getCityCodes();
-        if (response.success) {
-          setCityCodes(response.data || []);
-        }
-      } catch (error) {
-        console.error('Failed to load city codes', error);
-      }
-    };
-    loadCityCodes();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,26 +24,22 @@ export default function AdminCreateAgentPage() {
       toast.error('Phone number must be 10 digits');
       return;
     }
-    if (!formData.cityCodeId) {
-      toast.error('Please select a City Location');
-      return;
-    }
+    
     setIsLoading(true);
     try {
-      const submitData: AgentRegisterRequest = {
+      const submitData: CreateUserRequest = {
         name: formData.name,
         phone: `+91${formData.phone}`,
         email: formData.email || undefined,
-        password: formData.password,
-        cityCodeId: formData.cityCodeId,
       };
-      const response = await agentService.createAgentByAdmin(submitData);
-      if (response.success) {
-        toast.success('Agent created successfully!');
-        router.push('/dashboard/agents');
+      
+      const response = await userService.createByAdmin(submitData);
+      if (response?.success) {
+        toast.success('User created successfully!');
+        router.push('/dashboard/users');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create agent');
+      toast.error(error.response?.data?.message || 'Failed to create user');
     } finally {
       setIsLoading(false);
     }
@@ -71,25 +50,27 @@ export default function AdminCreateAgentPage() {
 
   return (
     <div className="max-w-xl mx-auto animate-fade-in">
-      <Link href="/dashboard/agents" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors mb-6 group text-sm">
+      <Link href="/dashboard/users" className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-800 transition-colors mb-6 group text-sm">
         <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-        Back to Agents
+        Back to Users
       </Link>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Create New Agent</h1>
-        <p className="text-sm text-gray-500 mt-1">Register a new operations agent</p>
+        <h1 className="text-2xl font-bold text-gray-800">Create New User</h1>
+        <p className="text-sm text-gray-500 mt-1">Register a new rider/user</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-[#E32222] uppercase tracking-wide mb-2">Agent Information</h3>
+          <h3 className="text-sm font-bold text-[#E32222] uppercase tracking-wide mb-2">User Information</h3>
+          
           <div>
             <label className={labelClass}>Full Name *</label>
             <input type="text" required value={formData.name}
               onChange={e => setFormData({...formData, name: e.target.value})}
-              className={inputClass} placeholder="Agent Name" />
+              className={inputClass} placeholder="User Name" />
           </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Phone *</label>
@@ -106,38 +87,18 @@ export default function AdminCreateAgentPage() {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Email</label>
+              <label className={labelClass}>Email (Optional)</label>
               <input type="email" value={formData.email}
                 onChange={e => setFormData({...formData, email: e.target.value})}
-                className={inputClass} placeholder="agent@aratravels.com" />
+                className={inputClass} placeholder="user@example.com" />
             </div>
-          </div>
-          <div>
-            <label className={labelClass}>Location Code *</label>
-            <select required value={formData.cityCodeId}
-              onChange={e => setFormData({...formData, cityCodeId: e.target.value})}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 bg-white focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/30 transition-all appearance-none"
-            >
-              <option value="" className="text-gray-400">Select City</option>
-              {cityCodes.map(city => (
-                <option key={city.id} value={city.id} className="text-gray-900">
-                  {city.cityName} ({city.code})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass}>Password *</label>
-            <input type="password" required value={formData.password}
-              onChange={e => setFormData({...formData, password: e.target.value})}
-              className={inputClass} placeholder="Create a password" />
           </div>
         </div>
 
         <button type="submit" disabled={isLoading}
           className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white font-semibold text-sm shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
           {isLoading ? <Loader2 size={20} className="animate-spin" /> : <UserPlus size={20} />}
-          <span>{isLoading ? 'Creating Agent...' : 'Create Agent'}</span>
+          <span>{isLoading ? 'Creating User...' : 'Create User'}</span>
         </button>
       </form>
     </div>

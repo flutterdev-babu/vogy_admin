@@ -97,6 +97,11 @@ export const corporateService = {
     return response.data;
   },
 
+  async createCorporateByAdmin(data: CorporateRegisterRequest): Promise<ApiResponse<Corporate>> {
+    const response = await adminApi.post('/corporates', data);
+    return response.data;
+  },
+
   async updateStatus(id: string, status: EntityStatus): Promise<ApiResponse<Corporate>> {
     const response = await adminApi.put(`/corporates/${id}/status`, { status });
     return response.data;

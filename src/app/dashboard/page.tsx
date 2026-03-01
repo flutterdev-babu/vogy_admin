@@ -18,13 +18,14 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { adminDashboardService } from '@/services/adminDashboardService';
-import { AdminDashboardData } from '@/types';
+import { AdminDashboardData, AdminRideAnalytics } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<AdminDashboardData | null>(null);
+  const [rideAnalytics, setRideAnalytics] = useState<AdminRideAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAutomating, setIsAutomating] = useState(false);
@@ -145,12 +146,19 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const statsRes = await adminDashboardService.getDashboard();
+        const [statsRes, rideAnalyticsRes] = await Promise.all([
+          adminDashboardService.getDashboard(),
+          adminDashboardService.getRideAnalytics()
+        ]);
 
         if (statsRes.success) {
           setStats(statsRes.data);
         } else {
           setError(statsRes.message || 'Failed to fetch dashboard statistics');
+        }
+        
+        if (rideAnalyticsRes.success) {
+          setRideAnalytics(rideAnalyticsRes.data);
         }
       } catch (err) {
         console.error('Dashboard error:', err);
@@ -251,6 +259,32 @@ export default function DashboardPage() {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* Ride Analytics Section */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-bold text-gray-800">Ride Analytics</h2>
+          <Link href="/dashboard/rides" className="text-sm font-semibold text-[#E32222] hover:underline">
+            View All Rides
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-center">
+             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total</p>
+             <p className="text-2xl font-black text-gray-900">{stats?.rides.total || 0}</p>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-center">
+             <p className="text-xs font-bold text-[#E32222] uppercase tracking-wider mb-1">Active</p>
+             <p className="text-2xl font-black text-gray-900">{stats?.rides.active || 0}</p>
+          </div>
+          {rideAnalytics?.statusDistribution?.map((stat) => (
+            <div key={stat.status} className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-center">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{stat.status}</p>
+              <p className="text-2xl font-black text-gray-900">{stat.count}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

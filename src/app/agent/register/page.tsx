@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, UserPlus, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
@@ -13,15 +13,37 @@ export default function AgentRegisterPage() {
     phone: '',
     email: '',
     password: '',
-    cityCode: ''
+    cityCodeId: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [cityCodes, setCityCodes] = useState<{ id: string; code: string; cityName: string }[]>([]);
   const router = useRouter();
+
+
+  useEffect(() => {
+    const loadCityCodes = async () => {
+      try {
+        const response = await agentService.getCityCodes();
+        if (response.success) {
+          setCityCodes(response.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to load city codes', error);
+      }
+    };
+    loadCityCodes();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    if (!formData.cityCodeId) {
+      toast.error('Please select a City Location');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const submitData = { ...formData, phone: `+91${formData.phone}` };
       const response = await agentService.register(submitData as any);
@@ -97,15 +119,20 @@ export default function AgentRegisterPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-neutral-300 ml-1">Location Code</label>
-                <input
-                  type="text"
+                <label className="text-sm font-medium text-neutral-300 ml-1">Location Code *</label>
+                <select
                   required
-                  value={formData.cityCode}
-                  onChange={(e) => setFormData({...formData, cityCode: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/50 transition-all"
-                  placeholder="BLR"
-                />
+                  value={formData.cityCodeId}
+                  onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/50 transition-all appearance-none"
+                >
+                  <option value="" className="text-gray-900">Select City</option>
+                  {cityCodes.map((city) => (
+                    <option key={city.id} value={city.id} className="text-gray-900">
+                      {city.cityName} ({city.code})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

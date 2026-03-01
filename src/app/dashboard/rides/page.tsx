@@ -267,6 +267,9 @@ export default function RidesPage() {
                     <td className="px-3 py-4">
                       <div className="flex flex-col gap-1 items-start">
                         <span className="text-[11px] font-black text-red-600">₹{ride.totalFare?.toFixed(2)}</span>
+                        {ride.discountAmount && ride.discountAmount > 0 ? (
+                          <span className="text-[9px] text-green-600 font-bold">-₹{ride.discountAmount.toFixed(2)} Off</span>
+                        ) : null}
                         <span className={`px-2 py-0.5 text-white text-[8px] font-bold rounded-sm uppercase tracking-tighter ${
                           ride.status === 'COMPLETED' ? 'bg-green-600' : 'bg-[#D32F2F]'
                         }`}>
@@ -290,7 +293,14 @@ export default function RidesPage() {
                         {ride.status === 'COMPLETED' ? 'Received' : 'Not Received'}
                       </span>
                     </td>
-                    <td className="px-3 py-4"><span className="text-[10px] font-bold text-gray-500 tracking-tighter">{ride.partner?.customId || '-'}</span></td>
+                    <td className="px-3 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-gray-800 tracking-tighter">{ride.couponCode || ride.agentCode || '-'}</span>
+                        {ride.couponCode && (
+                          <span className="text-[8px] text-blue-600 font-medium uppercase">Coupon</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-4 relative">
                       <div className="flex justify-center">
                         <button 
