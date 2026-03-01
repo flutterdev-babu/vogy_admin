@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, Search, Eye, Phone, Mail, Plus, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Briefcase, Search, Eye, Phone, Mail, Plus, ChevronLeft, ChevronRight, RotateCcw, Edit2, X, AlertCircle } from 'lucide-react';
 import { agentService } from '@/services/agentService';
 import { Agent } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -17,6 +17,16 @@ export default function AgentsPage() {
     email: '',
     agentCode: '',
   });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    couponCode: '',
+    cityCodeId: ''
+  });
+  const [cityCodes, setCityCodes] = useState<{ id: string; code: string; cityName: string }[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const fetchAgents = async () => {
     setIsLoading(true);
@@ -33,8 +43,20 @@ export default function AgentsPage() {
     }
   };
 
+  const fetchCityCodes = async () => {
+    try {
+      const response = await agentService.getCityCodes();
+      if (response.success) {
+        setCityCodes(response.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load city codes:', error);
+    }
+  };
+
   useEffect(() => {
     fetchAgents();
+    fetchCityCodes();
   }, []);
 
   const filteredAgents = agents.filter(agent => {
@@ -44,6 +66,44 @@ export default function AgentsPage() {
     const codeMatch = !filters.agentCode || agent.agentCode.toLowerCase().includes(filters.agentCode.toLowerCase());
     return nameMatch && phoneMatch && emailMatch && codeMatch;
   });
+
+  const handleEditClick = (agent: Agent) => {
+    setEditingAgent(agent);
+    const firstCoupon = agent.coupons?.[0];
+    setEditFormData({
+      name: agent.name,
+      couponCode: firstCoupon?.couponCode || '',
+      cityCodeId: ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateAgent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAgent) return;
+    setIsUpdating(true);
+    try {
+      const payload: any = { name: editFormData.name };
+      
+      if (editFormData.couponCode) {
+        payload.agentCode = editFormData.couponCode;
+      }
+      if (editFormData.cityCodeId) {
+        payload.cityCodeId = editFormData.cityCodeId;
+      }
+      
+      const response = await agentService.updateAgentByAdmin(editingAgent.id, payload);
+      if (response.success) {
+        toast.success('Agent updated successfully');
+        setIsEditModalOpen(false);
+        fetchAgents();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update agent');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (isLoading) return <PageLoader />;
 
@@ -125,7 +185,7 @@ export default function AgentsPage() {
                 filteredAgents.map((agent) => (
                   <tr key={agent.id} className="hover:bg-red-50/30 transition-colors">
                     <td className="px-3 py-3">
-                      <span className="text-[11px] font-bold text-violet-600 font-mono">{agent.customId}</span>
+                      <span className="text-[11px] font-bold text-violet-600 font-mono">{agent.customId || agent.id.slice(-6).toUpperCase()}</span>
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
@@ -148,9 +208,14 @@ export default function AgentsPage() {
                       <span className="text-[10px] font-medium text-gray-500">{new Date(agent.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </td>
                     <td className="px-3 py-3">
-                      <button className="flex items-center gap-1 text-violet-500 hover:text-violet-600 text-[10px] font-medium transition-colors">
-                        <Eye size={14} /> View
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleEditClick(agent)} className="flex items-center justify-center p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                          <Edit2 size={14} />
+                        </button>
+                        <button className="flex items-center justify-center p-1.5 bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors">
+                          <Eye size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -167,6 +232,108 @@ export default function AgentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Agent Modal */}
+      {isEditModalOpen && editingAgent && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Edit2 size={18} className="text-[#E32222]" /> Edit Agent
+              </h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateAgent} className="p-6">
+              <div className="space-y-6">
+                {/* Agent Info */}
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Agent Details</label>
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3">
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-gray-500 w-24">Custom ID:</span>
+                      <span className="font-bold text-gray-900">{editingAgent.customId}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-gray-500 w-24">Agent Code:</span>
+                      <span className="px-2 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-bold font-mono">{editingAgent.agentCode}</span>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Full Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={editFormData.name}
+                        onChange={e => setEditFormData({...editFormData, name: e.target.value})}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/30 outline-none transition-all bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Location Code (Set if missing)</label>
+                      <select 
+                        value={editFormData.cityCodeId}
+                        onChange={e => setEditFormData({...editFormData, cityCodeId: e.target.value})}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/30 outline-none transition-all bg-white appearance-none"
+                      >
+                        <option value="" className="text-gray-400">Select City to update</option>
+                        {cityCodes.map(city => (
+                          <option key={city.id} value={city.id} className="text-gray-900">
+                            {city.cityName} ({city.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Coupon Info */}
+                <div>
+                  <div className="flex flex-col mb-3">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Agent Coupon Binding</label>
+                    <span className="text-xs text-blue-600 flex items-center gap-1 mt-1">
+                      <AlertCircle size={12}/> Optional coupon string generated on the standalone coupon page
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Assigned Coupon Code</label>
+                      <input 
+                        type="text" 
+                        value={editFormData.couponCode}
+                        onChange={e => setEditFormData({...editFormData, couponCode: e.target.value.toUpperCase()})}
+                        placeholder="e.g. AGENTBLR50"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/30 outline-none transition-all bg-white font-mono uppercase"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isUpdating}
+                  className="px-6 py-2.5 text-sm font-bold text-white bg-[#E32222] hover:bg-[#cc1f1f] rounded-xl transition-colors shadow-lg shadow-red-500/20 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

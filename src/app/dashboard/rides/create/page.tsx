@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -25,7 +25,11 @@ import { adminRideService } from '@/services/adminRideService';
 import { cityCodeService } from '@/services/cityCodeService';
 import { vehicleTypeService } from '@/services/vehicleTypeService';
 import { corporateService } from '@/services/corporateService';
+import { rideBookingService } from '@/services/rideBookingService';
 import { CityCode, VehicleType, Corporate } from '@/types';
+import { useJsApiLoader } from '@react-google-maps/api';
+
+const LIBRARIES: ("places")[] = ['places'];
 
 type BookingType = 'AIRPORT' | 'LOCAL' | 'OUTSTATION' | 'RENTAL';
 
@@ -58,6 +62,29 @@ export default function CreateRidePage() {
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
   const [corporates, setCorporates] = useState<Corporate[]>([]);
 
+  const [couponCode, setCouponCode] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    couponId: string;
+    discountAmount: number;
+    couponCode: string;
+  } | null>(null);
+
+  // Google Maps Autocomplete refs
+  const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const dropAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const pickupInputRef = useRef<HTMLInputElement | null>(null);
+  const dropInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Distance calculation state
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  const [mapsDebugResult, setMapsDebugResult] = useState<string>('');
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries: LIBRARIES,
+  });
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -76,6 +103,109 @@ export default function CreateRidePage() {
       console.error('Failed to fetch data:', err);
     }
   };
+
+  // Manual test function for Places API
+  const testPlacesAPI = () => {
+    setMapsDebugResult('Testing...');
+    try {
+      if (!google?.maps?.places) {
+        setMapsDebugResult('❌ google.maps.places is NOT available');
+        return;
+      }
+      const svc = new google.maps.places.AutocompleteService();
+      svc.getPlacePredictions(
+        { input: 'Bangalore', componentRestrictions: { country: 'in' } },
+        (predictions, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+            setMapsDebugResult(`✅ Working! Got ${predictions.length} results: ${predictions.map(p => p.description).slice(0, 3).join(' | ')}`);
+          } else {
+            setMapsDebugResult(`❌ API returned status: ${status}. This means Places API is NOT enabled or billing is missing in Google Cloud Console.`);
+          }
+        }
+      );
+    } catch (err: any) {
+      setMapsDebugResult(`❌ Error: ${err.message}`);
+    }
+  };
+
+  // Attach Google Places Autocomplete AFTER maps is loaded
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    // Pickup Autocomplete
+    if (pickupInputRef.current && !pickupAutocompleteRef.current) {
+      const ac = new google.maps.places.Autocomplete(pickupInputRef.current, {
+        componentRestrictions: { country: 'in' },
+        fields: ['formatted_address', 'geometry', 'name'],
+      });
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (place?.geometry?.location) {
+          setFormData(prev => ({
+            ...prev,
+            pickupAddress: place.formatted_address || place.name || '',
+            pickupLat: place.geometry!.location!.lat(),
+            pickupLng: place.geometry!.location!.lng(),
+          }));
+        }
+      });
+      pickupAutocompleteRef.current = ac;
+    }
+
+    // Drop Autocomplete
+    if (dropInputRef.current && !dropAutocompleteRef.current) {
+      const ac = new google.maps.places.Autocomplete(dropInputRef.current, {
+        componentRestrictions: { country: 'in' },
+        fields: ['formatted_address', 'geometry', 'name'],
+      });
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (place?.geometry?.location) {
+          setFormData(prev => ({
+            ...prev,
+            dropAddress: place.formatted_address || place.name || '',
+            dropLat: place.geometry!.location!.lat(),
+            dropLng: place.geometry!.location!.lng(),
+          }));
+        }
+      });
+      dropAutocompleteRef.current = ac;
+    }
+  }, [isLoaded]);
+
+  // Distance calculation
+  const calculateDistance = useCallback(() => {
+    if (!formData.pickupLat || !formData.dropLat || !isLoaded) return;
+
+    setIsCalculatingDistance(true);
+    const service = new google.maps.DistanceMatrixService();
+    service.getDistanceMatrix(
+      {
+        origins: [{ lat: formData.pickupLat, lng: formData.pickupLng }],
+        destinations: [{ lat: formData.dropLat, lng: formData.dropLng }],
+        travelMode: google.maps.TravelMode.DRIVING,
+        unitSystem: google.maps.UnitSystem.METRIC,
+      },
+      (response, status) => {
+        setIsCalculatingDistance(false);
+        if (status === 'OK' && response) {
+          const result = response.rows[0]?.elements[0];
+          if (result?.status === 'OK') {
+            const distKm = parseFloat((result.distance!.value / 1000).toFixed(1));
+            setFormData(prev => ({ ...prev, distanceKm: distKm }));
+            toast.success(`Distance calculated: ${distKm} km · ${result.duration!.text}`);
+          }
+        }
+      }
+    );
+  }, [formData.pickupLat, formData.pickupLng, formData.dropLat, formData.dropLng, isLoaded]);
+
+  // Auto-trigger distance calculation
+  useEffect(() => {
+    if (formData.pickupLat && formData.dropLat) {
+      calculateDistance();
+    }
+  }, [formData.pickupLat, formData.dropLat, calculateDistance]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +236,8 @@ export default function CreateRidePage() {
         distanceKm: Number(formData.distanceKm),
         scheduledDateTime,
         bookingNotes: `Email: ${formData.email}, Alt: ${formData.altMobile}, Agent: ${formData.agentCode}, Corporate: ${formData.corporateId}`,
-        isManualBooking: true
+        isManualBooking: true,
+        couponCode: appliedCoupon ? appliedCoupon.couponCode : undefined
       });
       toast.success('Ride booked successfully!');
       router.push('/dashboard/rides');
@@ -115,6 +246,53 @@ export default function CreateRidePage() {
       toast.error(err.response?.data?.message || 'Failed to book ride');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode || !formData.cityCodeId) {
+      toast.error('Enter a coupon code and select a city first');
+      return;
+    }
+    setValidatingCoupon(true);
+    try {
+      // Calculate a more accurate fare based on selected vehicle if possible
+      const selectedVehicle = vehicleTypes.find(v => v.id === formData.vehicleTypeId);
+      const baseFare = selectedVehicle?.baseFare || 500;
+      const pricePerKm = selectedVehicle?.pricePerKm || 15;
+      const estimatedFare = formData.distanceKm > 0 
+        ? Math.round(baseFare + (formData.distanceKm * pricePerKm))
+        : 500;
+
+      const payload = {
+        couponCode: couponCode.trim(),
+        cityCodeId: formData.cityCodeId,
+        totalFare: estimatedFare
+      };
+
+      // 🔍 VERBOSE LOGGING FOR USER
+      console.log("-----------------------------------------");
+      console.log("🎟️ COUPON VALIDATION REQUEST");
+      console.log("Payload:", JSON.stringify(payload, null, 2));
+      console.log("Selected City ID:", formData.cityCodeId);
+      const selectedCity = cityCodes.find(c => c.id === formData.cityCodeId);
+      console.log("Selected City Name:", selectedCity?.cityName || "NOT FOUND");
+      console.log("All Available Cities:");
+      console.table(cityCodes.map(c => ({ id: c.id, name: c.cityName, code: c.code })));
+      console.log("-----------------------------------------");
+      
+      const response = await rideBookingService.validateCoupon(payload);
+      if (response.success && response.data) {
+        setAppliedCoupon(response.data);
+        toast.success(`Coupon applied! Discount: ₹${response.data.discountAmount}`);
+      }
+    } catch (err: any) {
+      console.error("❌ Coupon Validation Error:", err.response?.data || err.message);
+      console.error("Error Details:", JSON.stringify(err.response?.data || {}, null, 2));
+      toast.error(err.response?.data?.message || 'Invalid coupon');
+      setAppliedCoupon(null);
+    } finally {
+      setValidatingCoupon(false);
     }
   };
 
@@ -261,14 +439,33 @@ export default function CreateRidePage() {
             </div>
           </div>
 
+          {/* 🔧 DEBUG: Places API Test Strip */}
+          <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-black text-yellow-800 uppercase tracking-wider">🔧 API Diagnostic</p>
+                <p className="text-[9px] text-yellow-600">Key: {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? `✅ Set` : '❌ NOT SET'} | Maps Loaded: {isLoaded ? '✅' : '❌'}</p>
+              </div>
+              <button type="button" onClick={testPlacesAPI}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-yellow-600 transition-all">
+                Test Places API
+              </button>
+            </div>
+            {mapsDebugResult && (
+              <p className={`text-xs font-bold p-2 rounded-lg ${mapsDebugResult.startsWith('✅') ? 'bg-emerald-50 text-emerald-700' : mapsDebugResult === 'Testing...' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'}`}>
+                {mapsDebugResult}
+              </p>
+            )}
+          </div>
+
           {/* Pickup & Drop */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-4">
               <div className={inputGroupClass}>
                 <label className={labelSideClass}>Pickup</label>
-                <input type="text" required value={formData.pickupAddress}
+                <input ref={pickupInputRef} type="text" required value={formData.pickupAddress}
                   onChange={e => setFormData({...formData, pickupAddress: e.target.value})}
-                  className={fieldClass} placeholder="Pickup Location" />
+                  className={fieldClass} placeholder="Search pickup location..." />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className={inputGroupClass}>
@@ -288,9 +485,9 @@ export default function CreateRidePage() {
             <div className="space-y-4">
               <div className={inputGroupClass}>
                 <label className={labelSideClass}>Drop</label>
-                <input type="text" required value={formData.dropAddress}
+                <input ref={dropInputRef} type="text" required value={formData.dropAddress}
                   onChange={e => setFormData({...formData, dropAddress: e.target.value})}
-                  className={fieldClass} placeholder="Drop Location" />
+                  className={fieldClass} placeholder="Search drop location..." />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className={inputGroupClass}>
@@ -329,6 +526,63 @@ export default function CreateRidePage() {
                 <Clock size={18} className="text-gray-400" />
               </div>
             </div>
+            <div className={inputGroupClass}>
+              <label className={labelSideClass}>Distance (Km)</label>
+              <div className="flex-1 flex items-center pr-4">
+                <input type="number" step="0.1" value={formData.distanceKm}
+                  onChange={e => setFormData({...formData, distanceKm: parseFloat(e.target.value) || 0})}
+                  className={`${fieldClass} pr-0`} placeholder="15.5" />
+                {isCalculatingDistance && <Loader2 size={16} className="animate-spin text-[#E32222]" />}
+              </div>
+            </div>
+          </div>
+
+          {/* Coupon */}
+          <div className="grid grid-cols-1 gap-4 max-w-lg">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className={`${inputGroupClass} flex-1 w-full`}>
+                <label className={labelSideClass}>Coupon</label>
+                <input type="text" value={couponCode}
+                  onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                  disabled={!!appliedCoupon}
+                  className={fieldClass} placeholder="AGENTBLR50" />
+              </div>
+              {!appliedCoupon ? (
+                <button type="button" onClick={handleValidateCoupon} disabled={validatingCoupon}
+                  className="px-6 py-2.5 bg-gray-800 text-white rounded-xl font-bold text-sm uppercase shadow-sm hover:bg-gray-900 transition-colors disabled:opacity-50 h-[42px] w-full sm:w-auto">
+                  {validatingCoupon ? 'Wait' : 'Apply'}
+                </button>
+              ) : (
+                <button type="button" onClick={() => {
+                    setAppliedCoupon(null);
+                    setCouponCode('');
+                  }}
+                  className="px-6 py-2.5 bg-red-100 text-[#E32222] rounded-xl font-bold text-sm uppercase shadow-sm hover:bg-red-200 transition-colors h-[42px] w-full sm:w-auto">
+                  Remove
+                </button>
+              )}
+            </div>
+            
+            {/* 🔍 City ID Debug Info */}
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Active City ID:</span>
+              <span className="text-[9px] font-mono text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                {formData.cityCodeId || 'NONE SELECTED'}
+              </span>
+            </div>
+            
+            {appliedCoupon && (
+              <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex items-center justify-between text-green-800 transition-all">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={18} />
+                  <span className="text-sm font-semibold">Coupon <span className="font-mono">{appliedCoupon.couponCode}</span> applied!</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-green-600 block font-bold uppercase tracking-wide">Discount</span>
+                  <span className="text-xl font-black">-₹{appliedCoupon.discountAmount}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit */}

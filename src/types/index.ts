@@ -14,6 +14,27 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface Coupon {
+  id: string;
+  agentId: string;
+  couponCode: string;
+  discountValue: number;
+  minBookingAmount: number;
+  maxDiscountAmount: number;
+  validFrom: string;
+  validTo: string;
+  isActive: boolean;
+  agent?: Agent;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserRequest {
+  name: string;
+  phone: string;
+  email?: string;
+}
+
 // =====================================
 // City Code Types
 // =====================================
@@ -239,6 +260,7 @@ export interface Agent {
   phone: string;
   email?: string;
   agentCode: string;
+  coupons?: Coupon[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -248,6 +270,7 @@ export interface AgentRegisterRequest {
   phone: string;
   email?: string;
   password: string;
+  cityCodeId: string;
 }
 
 export interface AgentLoginRequest {
@@ -326,12 +349,51 @@ export interface Corporate {
   contactPerson: string;
   phone: string;
   email: string;
-  address?: string;
-  gstNumber?: string;
   status: EntityStatus;
   creditLimit: number;
   currentBalance: number;
   cityCode?: CityCode;
+  
+  // Basic & Location Info
+  state?: string;
+  area?: string;
+  
+  // Detailed Addresses
+  headOfficeAddress?: string;
+  branchOfficeAddress?: string;
+  address?: string; // Kept for backward compatibility
+  
+  // Tax & Legal
+  panNumber?: string;
+  gstNumber?: string;
+  comments?: string;
+  
+  // Owner Details
+  ownerName?: string;
+  ownerPhone?: string;
+  ownerEmail?: string;
+  ownerAadhaar?: string;
+  ownerPan?: string;
+
+  // Point of Contacts
+  primaryContactName?: string;
+  primaryContactEmail?: string;
+  primaryContactNumber?: string;
+  secondaryContactName?: string;
+  secondaryContactNumber?: string;
+  secondaryContactEmail?: string;
+  financeContactName?: string;
+  financeContactNumber?: string;
+  financeContactEmail?: string;
+  
+  // Bank Information 
+  accountHolderName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branchAddress?: string;
+  upiLinkedNumber?: string;
+
   createdAt: string;
   updatedAt?: string;
 }
@@ -341,10 +403,48 @@ export interface CorporateRegisterRequest {
   contactPerson: string;
   phone: string;
   email: string;
-  password: string;
-  address?: string;
-  gstNumber?: string;
+  password?: string;
   cityCodeId?: string;
+  
+  // Basic & Location Info
+  state?: string;
+  area?: string;
+  
+  // Detailed Addresses
+  headOfficeAddress?: string;
+  branchOfficeAddress?: string;
+  address?: string; // Kept for backward compatibility
+  
+  // Tax & Legal
+  panNumber?: string;
+  gstNumber?: string;
+  comments?: string;
+  
+  // Owner Details
+  ownerName?: string;
+  ownerPhone?: string;
+  ownerEmail?: string;
+  ownerAadhaar?: string;
+  ownerPan?: string;
+
+  // Point of Contacts
+  primaryContactName?: string;
+  primaryContactEmail?: string;
+  primaryContactNumber?: string;
+  secondaryContactName?: string;
+  secondaryContactNumber?: string;
+  secondaryContactEmail?: string;
+  financeContactName?: string;
+  financeContactNumber?: string;
+  financeContactEmail?: string;
+  
+  // Bank Information 
+  accountHolderName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branchAddress?: string;
+  upiLinkedNumber?: string;
 }
 
 export interface CorporateLoginRequest {
@@ -609,7 +709,23 @@ export interface Ride {
   corporate?: any; // New corporate reference support
   vehicle?: any; // Expanded full vehicle support
   vehicleType: VehicleTypeSummary;
+  couponCode?: string; // Agent discount code
+  agentCode?: string; // Original agent code reference
+  discountAmount?: number; // Calculated discount value
   createdAt: string;
+}
+
+
+export interface ValidateCouponRequest {
+  couponCode: string;
+  cityCodeId: string;
+  totalFare: number;
+}
+
+export interface ValidateCouponResponse {
+  couponId: string;
+  discountAmount: number;
+  couponCode: string;
 }
 
 export interface RideSummary {

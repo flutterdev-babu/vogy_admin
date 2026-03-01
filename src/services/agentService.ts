@@ -52,7 +52,7 @@ export const agentService = {
   },
 
   async getCityCodes(): Promise<ApiResponse<CityCode[]>> {
-    const response = await agentApi.get('/city-codes');
+    const response = await publicApi.get('/city-codes');
     return response.data;
   },
 
@@ -226,6 +226,11 @@ export const agentService = {
 
   async createAgentByAdmin(data: AgentRegisterRequest): Promise<ApiResponse<Agent>> {
     const response = await adminApi.post('/agents', data);
+    return response.data;
+  },
+
+  async updateAgentByAdmin(id: string, data: any): Promise<ApiResponse<Agent>> {
+    const response = await adminApi.put(`/agents/${id}`, data);
     return response.data;
   },
 };

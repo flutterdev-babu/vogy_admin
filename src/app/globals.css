@@ -125,3 +125,25 @@ input, select, textarea {
 input::placeholder {
   @apply text-gray-400;
 }
+
+/* Google Places Autocomplete dropdown */
+.pac-container {
+  z-index: 10000 !important;
+  border-radius: 1rem;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  margin-top: 4px;
+  font-family: var(--font-sans);
+}
+.pac-item {
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pac-item:hover {
+  background-color: #FEE2E2;
+}
+.pac-item-selected {
+  background-color: #FEE2E2;
+}
+

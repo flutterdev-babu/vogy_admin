@@ -23,7 +23,8 @@ import {
   Paperclip,
   Bell,
   FileVideo,
-  PlusCircle
+  PlusCircle,
+  Ticket
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -85,11 +86,30 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Users & Agents',
+    title: 'Users',
     items: [
-      { href: '/dashboard/users', label: 'Users', icon: Users },
-      { href: '/dashboard/agents', label: 'Agents', icon: Briefcase },
-      { href: '/dashboard/corporates', label: 'Corporates', icon: Building2 },
+      { href: '/dashboard/users/create', label: 'Add User', icon: PlusCircle },
+      { href: '/dashboard/users', label: 'Users List', icon: Users },
+    ],
+  },
+  {
+    title: 'Corporates',
+    items: [
+      { href: '/dashboard/corporates/create', label: 'Add Corporate', icon: PlusCircle },
+      { href: '/dashboard/corporates', label: 'Corporates List', icon: Building2 },
+    ],
+  },
+  {
+    title: 'Agents',
+    items: [
+      { href: '/dashboard/agents/create', label: 'Add Agent', icon: PlusCircle },
+      { href: '/dashboard/agents', label: 'Agents List', icon: Briefcase },
+    ],
+  },
+  {
+    title: 'Promotions',
+    items: [
+      { href: '/dashboard/coupons', label: 'Coupon Codes', icon: Ticket },
     ],
   },
   {
