@@ -664,6 +664,12 @@ export interface CreateUserRequest {
   profileImage?: string;
 }
 
+export interface UpdateUserRequest {
+  name?: string;
+  phone?: string;
+  email?: string;
+}
+
 // Rider alias for backward compatibility (merged into Partner)
 export type Rider = Partner;
 
