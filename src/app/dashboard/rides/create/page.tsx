@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
-  User, 
   MapPin, 
   Car, 
   CheckCircle, 
@@ -18,7 +17,8 @@ import {
   Phone,
   Mail,
   Calendar as CalendarIcon,
-  Loader2
+  Loader2,
+  UserPlus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminRideService } from '@/services/adminRideService';
@@ -26,7 +26,8 @@ import { cityCodeService } from '@/services/cityCodeService';
 import { vehicleTypeService } from '@/services/vehicleTypeService';
 import { corporateService } from '@/services/corporateService';
 import { rideBookingService } from '@/services/rideBookingService';
-import { CityCode, VehicleType, Corporate } from '@/types';
+import { userService } from '@/services/userService';
+import { CityCode, VehicleType, Corporate, User } from '@/types';
 import { useJsApiLoader } from '@react-google-maps/api';
 
 const LIBRARIES: ("places")[] = ['places'];
@@ -61,6 +62,13 @@ export default function CreateRidePage() {
   const [cityCodes, setCityCodes] = useState<CityCode[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
   const [corporates, setCorporates] = useState<Corporate[]>([]);
+
+  // User search state
+  const [isSearchingUser, setIsSearchingUser] = useState(false);
+  const [userSearchResults, setUserSearchResults] = useState<User[]>([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showUserNotFound, setShowUserNotFound] = useState(false);
+  const userSearchRef = useRef<HTMLDivElement | null>(null);
 
   const [couponCode, setCouponCode] = useState('');
   const [validatingCoupon, setValidatingCoupon] = useState(false);
@@ -103,6 +111,59 @@ export default function CreateRidePage() {
       console.error('Failed to fetch data:', err);
     }
   };
+
+  // Search users by phone number
+  const handleUserSearch = async () => {
+    if (formData.phone.length < 3) {
+      toast.error('Enter at least 3 digits to search');
+      return;
+    }
+    setIsSearchingUser(true);
+    setShowUserDropdown(false);
+    try {
+      const response = await userService.search(formData.phone);
+      const results = response.data || [];
+      setUserSearchResults(results);
+      if (results.length === 1) {
+        // Auto-fill directly if single match
+        selectUser(results[0]);
+        toast.success(`User found: ${results[0].name}`);
+      } else if (results.length > 1) {
+        setShowUserDropdown(true);
+        toast.success(`${results.length} users found, select one`);
+      } else {
+        setShowUserNotFound(true);
+      }
+    } catch (err: any) {
+      console.error('User search error:', err);
+      toast.error('Failed to search users');
+    } finally {
+      setIsSearchingUser(false);
+    }
+  };
+
+  const selectUser = (user: User) => {
+    const phoneWithout91 = user.phone?.startsWith('+91') ? user.phone.slice(3) : user.phone;
+    setFormData(prev => ({
+      ...prev,
+      customerName: user.name || '',
+      phone: phoneWithout91 || prev.phone,
+      email: user.email || '',
+    }));
+    setShowUserDropdown(false);
+    setUserSearchResults([]);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userSearchRef.current && !userSearchRef.current.contains(e.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Manual test function for Places API
   const testPlacesAPI = () => {
@@ -297,7 +358,8 @@ export default function CreateRidePage() {
   };
 
   const inputGroupClass = "flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#E32222] focus-within:ring-1 focus-within:ring-[#E32222]/30 transition-all bg-white shadow-sm";
-  const labelSideClass = "px-4 py-2 bg-gray-50 border-r border-gray-100 text-[10px] font-bold text-red-600 uppercase tracking-wide min-w-[100px] whitespace-nowrap";
+  const labelSideClass = "px-4 py-2 bg-gray-50 border-r border-gray-100 text-[10px] font-bold text-gray-500 uppercase tracking-wide min-w-[100px] whitespace-nowrap";
+  const labelRequiredClass = "px-5 py-2 bg-gray-50 border-r border-gray-100 text-[10px] font-bold text-red-600 uppercase tracking-wide min-w-[100px] whitespace-nowrap";
   const fieldClass = "flex-1 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none h-[42px]";
 
   const bookingTypes: { type: BookingType; label: string; icon: any }[] = [
@@ -320,11 +382,11 @@ export default function CreateRidePage() {
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-6">
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Row 1: Contact Info */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <div className="relative flex">
+          {/* Row 1: Mobile & Name */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="relative flex" ref={userSearchRef}>
               <div className={`${inputGroupClass} flex-1`}>
-                <label className={labelSideClass}>Mobile</label>
+                <label className={labelRequiredClass}>Mobile</label>
                 <div className="flex flex-1">
                   <span className="flex items-center pl-3 text-sm text-gray-400">+91</span>
                   <input type="tel" required value={formData.phone}
@@ -332,22 +394,71 @@ export default function CreateRidePage() {
                       let v = e.target.value.replace(/\D/g, '');
                       if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
                       setFormData({...formData, phone: v.slice(0, 10)});
+                      setShowUserNotFound(false);
                     }}
-                    className={fieldClass} placeholder="97569645049" maxLength={10} />
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleUserSearch(); } }}
+                    className={fieldClass} placeholder="9876543210" maxLength={10} />
                 </div>
               </div>
-              <button type="button" className="ml-2 bg-[#E32222] text-white p-2.5 rounded-lg hover:bg-red-700 transition-colors shadow-sm">
-                <Search size={20} />
+              <button type="button" onClick={handleUserSearch} disabled={isSearchingUser}
+                className="ml-2 bg-[#E32222] text-white p-2.5 rounded-lg hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50">
+                {isSearchingUser ? <Loader2 size={20} className="animate-spin" /> : <Search size={20} />}
               </button>
+
+              {/* User Search Results Dropdown */}
+              {showUserDropdown && userSearchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
+                  {userSearchResults.map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => selectUser(user)}
+                      className="w-full text-left px-4 py-3 hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-b-0"
+                    >
+                      <p className="text-sm font-semibold text-gray-800">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.phone} {user.email ? `· ${user.email}` : ''}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* User Not Found Popup */}
+              {showUserNotFound && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                      <Search size={18} className="text-red-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-800">User not found</p>
+                      <p className="text-xs text-gray-500">No user exists with this number. You can add a new user or enter details manually.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                    <Link href="/dashboard/users/create" target="_blank"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#E32222] text-white rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-red-700 transition-colors">
+                      <UserPlus size={14} />
+                      Add New User
+                    </Link>
+                    <button type="button" onClick={() => setShowUserNotFound(false)}
+                      className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-gray-200 transition-colors">
+                      Continue Manually
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className={inputGroupClass}>
-              <label className={labelSideClass}>Name</label>
+              <label className={labelRequiredClass}>Name</label>
               <input type="text" required value={formData.customerName}
                 onChange={e => setFormData({...formData, customerName: e.target.value})}
                 className={fieldClass} placeholder="Kiran Perepalle" />
             </div>
+          </div>
 
+          {/* Row 2: Email & Alt Mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className={inputGroupClass}>
               <label className={labelSideClass}>Email</label>
               <input type="email" value={formData.email}
