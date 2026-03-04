@@ -15,13 +15,34 @@ import {
   UserPlus,
   Zap,
   Loader2,
-  RotateCcw
+  RotateCcw,
+  CheckCircle2,
+  XCircle,
+  Navigation,
+  MapPin,
+  Calendar,
+  Activity
 } from 'lucide-react';
 import { adminDashboardService } from '@/services/adminDashboardService';
 import { AdminDashboardData, AdminRideAnalytics } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+
+const getStatusConfig = (status: string) => {
+  const s = status.toUpperCase();
+  switch (s) {
+    case 'COMPLETED': return { icon: CheckCircle2, bg: 'bg-emerald-500/10', color: 'text-emerald-500', border: 'border-emerald-100' };
+    case 'CANCELLED': return { icon: XCircle, bg: 'bg-red-500/10', color: 'text-red-500', border: 'border-red-100' };
+    case 'ONGOING': return { icon: Navigation, bg: 'bg-blue-500/10', color: 'text-blue-500', border: 'border-blue-100' };
+    case 'STARTED':
+    case 'ARRIVED': return { icon: MapPin, bg: 'bg-indigo-500/10', color: 'text-indigo-500', border: 'border-indigo-100' };
+    case 'ASSIGNED': return { icon: UserCheck, bg: 'bg-teal-500/10', color: 'text-teal-500', border: 'border-teal-100' };
+    case 'UPCOMING':
+    case 'REQUESTED': return { icon: Calendar, bg: 'bg-amber-500/10', color: 'text-amber-500', border: 'border-amber-100' };
+    default: return { icon: Activity, bg: 'bg-gray-500/10', color: 'text-gray-500', border: 'border-gray-200' };
+  }
+};
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<AdminDashboardData | null>(null);
@@ -262,28 +283,81 @@ export default function DashboardPage() {
       </div>
 
       {/* Ride Analytics Section */}
-      <div className="card p-6">
+      <div className="mt-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-gray-800">Ride Analytics</h2>
-          <Link href="/dashboard/rides" className="text-sm font-semibold text-[#E32222] hover:underline">
-            View All Rides
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 tracking-tight">Booking Analytics</h2>
+            <p className="text-sm text-gray-500 mt-1">Real-time status of all rides in the system</p>
+          </div>
+          <Link href="/dashboard/rides" className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-sm font-bold text-gray-700 rounded-xl hover:bg-gray-50 hover:text-[#E32222] transition-colors shadow-sm">
+            View All Bookings
+            <TrendingUp size={16} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-center">
-             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total</p>
-             <p className="text-2xl font-black text-gray-900">{stats?.rides.total || 0}</p>
-          </div>
-          <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-center">
-             <p className="text-xs font-bold text-[#E32222] uppercase tracking-wider mb-1">Active</p>
-             <p className="text-2xl font-black text-gray-900">{stats?.rides.active || 0}</p>
-          </div>
-          {rideAnalytics?.statusDistribution?.map((stat) => (
-            <div key={stat.status} className="p-4 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-center">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{stat.status}</p>
-              <p className="text-2xl font-black text-gray-900">{stat.count}</p>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+          {/* Total Rides */}
+          <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-gray-900 to-black border border-gray-800 group shadow-xl">
+            <div className="absolute -right-6 -top-6 text-white/5 group-hover:scale-110 transition-transform duration-500">
+              <Route size={120} />
             </div>
-          ))}
+            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
+                <Route className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Bookings</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-3xl font-black text-white">{stats?.rides.total || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Rides */}
+          <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-[#E32222] to-red-700 border border-red-800 group shadow-xl shadow-red-500/20">
+            <div className="absolute -right-6 -top-6 text-white/10 group-hover:scale-110 transition-transform duration-500">
+              <Zap size={120} />
+            </div>
+            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-red-100 uppercase tracking-wider mb-1">Active Now</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-3xl font-black text-white">{stats?.rides.active || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Statuses */}
+          {rideAnalytics?.statusDistribution?.map((stat) => {
+            const config = getStatusConfig(stat.status);
+            const Icon = config.icon;
+            return (
+              <div key={stat.status} className={`relative overflow-hidden p-6 rounded-2xl bg-white border ${config.border} hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group`}>
+                <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${config.bg} opacity-50 group-hover:scale-150 transition-transform duration-500`} />
+                <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+                  <div className={`w-10 h-10 rounded-xl ${config.bg} flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 ${config.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{stat.status}</p>
+                    <div className="flex items-baseline justify-between focus:ring-0">
+                      <p className="text-3xl font-black text-gray-900">{stat.count}</p>
+                      {stats?.rides.total && stats.rides.total > 0 ? (
+                        <span className={`text-[10px] font-bold ${config.color} bg-white px-2 py-0.5 rounded-full border ${config.border}`}>
+                          {Math.round((stat.count / stats.rides.total) * 100)}%
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
