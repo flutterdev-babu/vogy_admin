@@ -106,7 +106,7 @@ export default function AdminRideDetailsPage() {
     if (!newStatus) return;
     
     // Validate OTP for ONGOING status
-    if (newStatus === 'ONGOING') {
+    if (newStatus === 'ONGOING' && ride?.status !== 'ONGOING') {
       if (!userUniqueOtp || userUniqueOtp.length !== 4) {
         toast.error('Please enter a valid 4-digit User OTP to start the ride');
         return;
@@ -129,7 +129,7 @@ export default function AdminRideDetailsPage() {
     setIsUpdating(true);
     try {
       const options: any = {};
-      if (newStatus === 'ONGOING') {
+      if (newStatus === 'ONGOING' && ride?.status !== 'ONGOING') {
         options.userOtp = userUniqueOtp;
         if (ride?.serviceType === 'RENTAL') options.startingKm = Number(startingKm);
       }
@@ -255,15 +255,15 @@ export default function AdminRideDetailsPage() {
                 <option value="REQUESTED">Requested</option>
                 <option value="UPCOMING">Future</option>
                 <option value="ASSIGNED">Assigned</option>
-                <option value="ARRIVED">Arrived</option>
                 <option value="STARTED">Started</option>
+                <option value="ARRIVED">Arrived</option>
                 <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
                 <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
 
-            {newStatus === 'ONGOING' && (
+            {newStatus === 'ONGOING' && ride?.status !== 'ONGOING' && (
               <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Enter User OTP to Start</label>
