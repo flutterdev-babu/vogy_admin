@@ -550,24 +550,7 @@ export default function CreateRidePage() {
             </div>
           </div>
 
-          {/* 🔧 DEBUG: Places API Test Strip */}
-          <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-2xl space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <p className="text-[10px] font-black text-yellow-800 uppercase tracking-wider">🔧 API Diagnostic</p>
-                <p className="text-[9px] text-yellow-600">Key: {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? `✅ Set` : '❌ NOT SET'} | Maps Loaded: {isLoaded ? '✅' : '❌'}</p>
-              </div>
-              <button type="button" onClick={testPlacesAPI}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-yellow-600 transition-all">
-                Test Places API
-              </button>
-            </div>
-            {mapsDebugResult && (
-              <p className={`text-xs font-bold p-2 rounded-lg ${mapsDebugResult.startsWith('✅') ? 'bg-emerald-50 text-emerald-700' : mapsDebugResult === 'Testing...' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'}`}>
-                {mapsDebugResult}
-              </p>
-            )}
-          </div>
+
 
           {/* Pickup & Drop */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -578,20 +561,6 @@ export default function CreateRidePage() {
                   onChange={e => setFormData({...formData, pickupAddress: e.target.value})}
                   className={fieldClass} placeholder="Search pickup location..." />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className={inputGroupClass}>
-                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lat</label>
-                  <input type="number" step="0.000001" value={formData.pickupLat}
-                    onChange={e => setFormData({...formData, pickupLat: parseFloat(e.target.value) || 0})}
-                    className="flex-1 px-2 py-1 text-xs outline-none" />
-                </div>
-                <div className={inputGroupClass}>
-                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lng</label>
-                  <input type="number" step="0.000001" value={formData.pickupLng}
-                    onChange={e => setFormData({...formData, pickupLng: parseFloat(e.target.value) || 0})}
-                    className="flex-1 px-2 py-1 text-xs outline-none" />
-                </div>
-              </div>
             </div>
             <div className="space-y-4">
               <div className={inputGroupClass}>
@@ -599,20 +568,6 @@ export default function CreateRidePage() {
                 <input ref={dropInputRef} type="text" required value={formData.dropAddress}
                   onChange={e => setFormData({...formData, dropAddress: e.target.value})}
                   className={fieldClass} placeholder="Search drop location..." />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className={inputGroupClass}>
-                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lat</label>
-                  <input type="number" step="0.000001" value={formData.dropLat}
-                    onChange={e => setFormData({...formData, dropLat: parseFloat(e.target.value) || 0})}
-                    className="flex-1 px-2 py-1 text-xs outline-none" />
-                </div>
-                <div className={inputGroupClass}>
-                  <label className="px-2 py-1 bg-gray-50 border-r text-[8px] font-bold text-gray-500 uppercase tracking-wide">Lng</label>
-                  <input type="number" step="0.000001" value={formData.dropLng}
-                    onChange={e => setFormData({...formData, dropLng: parseFloat(e.target.value) || 0})}
-                    className="flex-1 px-2 py-1 text-xs outline-none" />
-                </div>
               </div>
             </div>
           </div>

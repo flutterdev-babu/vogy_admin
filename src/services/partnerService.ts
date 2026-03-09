@@ -132,6 +132,11 @@ export const partnerService = {
     return response.data;
   },
 
+  async getActivePartnerLocations(): Promise<ApiResponse<any[]>> {
+    const response = await adminApi.get('/partners/active-locations');
+    return response.data;
+  },
+
   async verify(id: string, status: EntityVerificationStatus): Promise<ApiResponse<Partner>> {
     const response = await adminApi.patch(`/partners/${id}/verify`, { verificationStatus: status });
     return response.data;
