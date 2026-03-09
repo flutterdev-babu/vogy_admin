@@ -60,6 +60,50 @@ export default function AdminCreateCorporatePage() {
     upiLinkedNumber: '',
   });
 
+  const fillTestData = () => {
+    setFormData({
+      companyName: 'Test Corporate ' + Math.floor(Math.random() * 1000),
+      contactPerson: 'John Doe',
+      phone: '98' + Math.floor(10000000 + Math.random() * 90000000), // Random 10 digit number starting with 98
+      email: `testcorp${Math.floor(Math.random() * 10000)}@example.com`,
+      password: 'password123',
+      cityCodeId: cityCodes.length > 0 ? cityCodes[0].id : '',
+
+      state: 'Maharashtra',
+      area: 'Andheri West',
+      headOfficeAddress: '123 Corporate Park, Andheri West, Mumbai',
+      branchOfficeAddress: '456 Business Hub, Wakad, Pune',
+      
+      panNumber: 'ABCDE1234F',
+      gstNumber: '27ABCDE1234F1Z5',
+      comments: 'Autofilled for testing purposes',
+
+      ownerName: 'Jane Smith',
+      ownerPhone: '99' + Math.floor(10000000 + Math.random() * 90000000),
+      ownerEmail: 'owner@testcorp.example.com',
+      ownerAadhaar: '123456789012',
+      ownerPan: 'ABCDE1234G',
+
+      primaryContactName: 'Primary POC',
+      primaryContactEmail: 'primary@testcorp.example.com',
+      primaryContactNumber: '97' + Math.floor(10000000 + Math.random() * 90000000),
+      secondaryContactName: 'Secondary POC',
+      secondaryContactNumber: '96' + Math.floor(10000000 + Math.random() * 90000000),
+      secondaryContactEmail: 'secondary@testcorp.example.com',
+      financeContactName: 'Finance POC',
+      financeContactNumber: '95' + Math.floor(10000000 + Math.random() * 90000000),
+      financeContactEmail: 'finance@testcorp.example.com',
+
+      accountHolderName: 'Test Corporate Pvt Ltd',
+      bankName: 'HDFC Bank',
+      accountNumber: Math.floor(100000000000 + Math.random() * 900000000000).toString(),
+      ifscCode: 'HDFC0001234',
+      branchAddress: 'Andheri West Branch',
+      upiLinkedNumber: '98' + Math.floor(10000000 + Math.random() * 90000000),
+    });
+    toast.success('Test data filled successfully!');
+  };
+
   useEffect(() => {
     fetchCityCodes();
   }, []);
@@ -67,8 +111,8 @@ export default function AdminCreateCorporatePage() {
   const fetchCityCodes = async () => {
     try {
       const response = await agentService.getCityCodes();
-      if (response.success && response.data) {
-        setCityCodes(response.data);
+      if (response.success) {
+        setCityCodes(response.data || []);
       }
     } catch (error) {
       console.error('Failed to load city codes:', error);
@@ -129,12 +173,19 @@ export default function AdminCreateCorporatePage() {
         upiLinkedNumber: formData.upiLinkedNumber ? `+91${formData.upiLinkedNumber}` : undefined,
       };
       
+      console.log('--- CORPORATE CREATION SUBMIT DATA ---', submitData);
       const response = await corporateService.createCorporateByAdmin(submitData);
+      console.log('--- CORPORATE CREATION RESPONSE ---', response);
+      
       if (response.success) {
         toast.success('Corporate created successfully!');
         router.push('/dashboard/corporates');
       }
     } catch (error: any) {
+      console.error('--- CORPORATE CREATION ERROR ---', error);
+      console.error('Error response data:', error.response?.data);
+      console.error('Validation errors:', error.response?.data?.errors || error.response?.data?.message);
+      
       toast.error(error.response?.data?.message || 'Failed to create corporate');
     } finally {
       setIsLoading(false);
@@ -151,9 +202,18 @@ export default function AdminCreateCorporatePage() {
         Back to Corporates
       </Link>
 
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Create New Corporate</h1>
-        <p className="text-sm text-gray-500 mt-1">Register a new corporate account</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Create New Corporate</h1>
+          <p className="text-sm text-gray-500 mt-1">Register a new corporate account</p>
+        </div>
+        <button
+          type="button"
+          onClick={fillTestData}
+          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors border border-gray-200"
+        >
+          Fill Test Data
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -207,7 +267,7 @@ export default function AdminCreateCorporatePage() {
                 onChange={e => setFormData({...formData, cityCodeId: e.target.value})}
                 className={inputClass}>
                 <option value="">Select City</option>
-                {cityCodes.map(city => (
+                {cityCodes.map((city: any) => (
                   <option key={city.id} value={city.id}>{city.cityName}</option>
                 ))}
               </select>

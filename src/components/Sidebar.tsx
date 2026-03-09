@@ -61,6 +61,7 @@ const navSections: NavSection[] = [
     items: [
       { href: '/dashboard/partners/create', label: 'Create Partner', icon: PlusCircle },
       { href: '/dashboard/partners', label: 'Partner List', icon: UserCheck },
+      { href: '/dashboard/partners/locations', label: 'Live Map', icon: MapPin },
     ],
   },
   {

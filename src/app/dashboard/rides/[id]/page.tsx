@@ -7,7 +7,7 @@ import {
   ArrowLeft, MapPin, Clock, User, Car, IndianRupee, 
   ShieldCheck, AlertCircle, CheckCircle2, XCircle,
   Key, Save, Loader2, RefreshCw, Smartphone, 
-  Search, MessageCircle, MoreHorizontal
+  Search, MessageCircle, MoreHorizontal, Copy
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminRideService } from '@/services/adminRideService';
@@ -150,6 +150,31 @@ export default function AdminRideDetailsPage() {
     }
   };
 
+  const handleCopyRideDetails = () => {
+    if (!ride) return;
+
+    const dateStr = new Date(ride.scheduledDateTime || ride.createdAt).toLocaleString('en-IN', {
+      day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true
+    });
+    
+    const pickupMapsLink = `https://www.google.com/maps/search/?api=1&query=${ride.pickupLat},${ride.pickupLng}`;
+    const dropMapsLink = `https://www.google.com/maps/search/?api=1&query=${ride.dropLat},${ride.dropLng}`;
+    
+    const driverPayment = (ride.riderEarnings || ride.partnerEarnings || 0).toFixed(2);
+    
+    const vehicleName = ride.vehicleType?.displayName || ride.vehicleType?.category || '-';
+    let vehicleText = vehicleName;
+    if (ride.partner?.vehicleModel || ride.partner?.vehicleNumber) {
+      const modelNum = [ride.partner?.vehicleModel, ride.partner?.vehicleNumber].filter(Boolean).join(' - ');
+      if (modelNum) vehicleText += `\n${modelNum}`;
+    }
+
+    const text = `*TRIP ALERT*\n\n*Pickup* - ${dateStr}\n\n${ride.pickupAddress}\n${pickupMapsLink}\n\n*Drop*\n${ride.dropAddress}\n${dropMapsLink}\n\n*Vehicle Details*\n${vehicleText}\n\n*Distance*\n${ride.distanceKm || 0} KM\n\n*Driver Payment*\n₹${driverPayment}\n\n*Driver Must Follow*\n• AC to be ON\n• Help passengers with luggage\n• Keep the car clean\n• Follow app route only\n• No extra charges or tips`;
+
+    navigator.clipboard.writeText(text);
+    toast.success('Ride details copied to clipboard');
+  };
+
   if (isLoading) return <PageLoader />;
   if (!ride) return (
     <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[400px]">
@@ -169,12 +194,21 @@ export default function AdminRideDetailsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-gray-800">Booking Details</h1>
-        <button 
-          onClick={fetchData} 
-          className="p-2 bg-[#D32F2F] text-white rounded-lg hover:bg-[#b71c1c] transition-colors shadow-sm"
-        >
-          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleCopyRideDetails} 
+            className="flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors shadow-sm text-xs font-bold uppercase tracking-wide"
+          >
+            <Copy size={16} />
+            Copy Details
+          </button>
+          <button 
+            onClick={fetchData} 
+            className="p-2 bg-[#D32F2F] text-white rounded-lg hover:bg-[#b71c1c] transition-colors shadow-sm"
+          >
+            <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       {/* Top Row: User, Ride, Status */}
