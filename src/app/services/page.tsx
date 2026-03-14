@@ -36,6 +36,43 @@ export default function ServicesPage() {
         </div>
       </section>
 
+      {/* Service Types */}
+      <section className="py-24 px-4 bg-white/[0.02] border-y border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Choose Your <span className="text-[#E32222]">Ride</span></h2>
+            <p className="text-neutral-400 max-w-2xl mx-auto">Flexible options for all your travel requirements.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <ServiceCard 
+              icon={<Plane size={32} />} 
+              title="Airport Rides" 
+              desc="Reliable and timely airport transfers to ensure you never miss a flight."
+              features={["On-Time Guarantee", "Flight Tracking", "Comfortable Seating"]}
+            />
+            <ServiceCard 
+              icon={<MapPin size={32} />} 
+              title="Local Rides" 
+              desc="Book a ride for your daily commute within the city. Fast, reliable, and always on time."
+              features={["Point-to-point", "Live Tracking", "Affordable Fares"]}
+            />
+            <ServiceCard 
+              icon={<Car size={32} />} 
+              title="Outstation" 
+              desc="Planning a trip outside the city? Our outstation services offer comfortable long-distance travel."
+              features={["One-way/Round trip", "Experienced Drivers", "Inter-city safety"]}
+            />
+            <ServiceCard 
+              icon={<Clock size={32} />} 
+              title="Rentals" 
+              desc="Need a cab for several hours? Book our rental service for flexible hourly packages."
+              features={["Flexible Hours", "Multiple Stops", "Professional Chauffeurs"]}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Unique Selling Points */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8">
@@ -69,43 +106,6 @@ export default function ServicesPage() {
               Experience edge-to-edge comfort and impeccable service. We maintain a fleet of highly well-kept vehicles and partner with professional drivers to ensure every ride meets premium standards.
             </p>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Service Types */}
-      <section className="py-24 px-4 bg-white/[0.02] border-y border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Choose Your <span className="text-[#E32222]">Ride</span></h2>
-            <p className="text-neutral-400 max-w-2xl mx-auto">Flexible options for all your travel requirements.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <ServiceCard 
-              icon={<MapPin size={32} />} 
-              title="Local Rides" 
-              desc="Book a ride for your daily commute within the city. Fast, reliable, and always on time."
-              features={["Point-to-point", "Live Tracking", "Affordable Fares"]}
-            />
-            <ServiceCard 
-              icon={<Car size={32} />} 
-              title="Outstation" 
-              desc="Planning a trip outside the city? Our outstation services offer comfortable long-distance travel."
-              features={["One-way/Round trip", "Experienced Drivers", "Inter-city safety"]}
-            />
-            <ServiceCard 
-              icon={<Clock size={32} />} 
-              title="Rentals" 
-              desc="Need a cab for several hours? Book our rental service for flexible hourly packages."
-              features={["Flexible Hours", "Multiple Stops", "Professional Chauffeurs"]}
-            />
-            <ServiceCard 
-              icon={<Plane size={32} />} 
-              title="Airport Rides" 
-              desc="Reliable and timely airport transfers to ensure you never miss a flight."
-              features={["On-Time Guarantee", "Flight Tracking", "Comfortable Seating"]}
-            />
-          </div>
         </div>
       </section>
 

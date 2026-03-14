@@ -642,6 +642,43 @@ export interface UpdatePricingConfigRequest {
 }
 
 // =====================================
+// Vehicle Pricing Group Types
+// =====================================
+
+export interface VehiclePricingGroup {
+  id: string;
+  vehicleTypeId: string;
+  vehicleType?: VehicleType;
+  name?: string;
+  baseKm: number;
+  baseFare: number;
+  perKmPrice: number;
+  cityCodeIds: string[];
+  cityCodes?: CityCode[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateVehiclePricingGroupRequest {
+  vehicleTypeId: string;
+  name?: string;
+  baseKm?: number;
+  baseFare?: number;
+  perKmPrice: number;
+  cityCodeIds: string[];
+}
+
+export interface UpdateVehiclePricingGroupRequest {
+  name?: string;
+  baseKm?: number;
+  baseFare?: number;
+  perKmPrice?: number;
+  cityCodeIds?: string[];
+  isActive?: boolean;
+}
+
+// =====================================
 // User Types
 // =====================================
 

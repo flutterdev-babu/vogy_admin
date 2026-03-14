@@ -18,6 +18,27 @@ export default function CityCodesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({ code: '', cityName: '' });
 
+  const cityMappings = [
+    { cityName: 'Delhi', code: 'DEL' },
+    { cityName: 'Chennai', code: 'MAA' },
+    { cityName: 'Kolkata', code: 'CCU' },
+    { cityName: 'Ahmedabad', code: 'AMD' },
+    { cityName: 'Pune', code: 'PNQ' },
+    { cityName: 'Surat', code: 'STV' },
+    { cityName: 'Jaipur', code: 'JAI' },
+    { cityName: 'Lucknow', code: 'LKO' },
+    { cityName: 'Kanpur', code: 'KNU' },
+    { cityName: 'Nagpur', code: 'NAG' },
+    { cityName: 'Visakhapatnam', code: 'VTZ' },
+    { cityName: 'Vijayawada', code: 'VGA' },
+    { cityName: 'Bhopal', code: 'BHO' },
+    { cityName: 'Patna', code: 'PAT' },
+    { cityName: 'Chandigarh', code: 'IXC' },
+    { cityName: 'Coimbatore', code: 'CJB' },
+    { cityName: 'Kochi', code: 'COK' },
+    { cityName: 'Tirupati', code: 'TIR' },
+  ];
+
   const fetchCityCodes = async () => {
     try {
       setIsLoading(true);
@@ -66,6 +87,53 @@ export default function CityCodesPage() {
     } catch (error) {
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} city code:`, error);
       toast.error('Something went wrong');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAutoAdd = async () => {
+    if (!window.confirm(`Are you sure you want to add ${cityMappings.length} cities automatically?`)) return;
+
+    setIsSubmitting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    const toastId = toast.loading('Starting bulk city addition...');
+
+    try {
+      for (let i = 0; i < cityMappings.length; i++) {
+        const city = cityMappings[i];
+        toast.loading(`Adding ${city.cityName} (${i + 1}/${cityMappings.length})...`, { id: toastId });
+        
+        try {
+          // Check if already exists in local state to avoid redundant calls if possible
+          const exists = cityCodes.some(c => c.code.toUpperCase() === city.code.toUpperCase());
+          if (exists) {
+            failCount++;
+            continue;
+          }
+
+          const response = await cityCodeService.create(city.code, city.cityName);
+          if (response.success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (err) {
+          console.error(`Failed to add ${city.cityName}:`, err);
+          failCount++;
+        }
+        
+        // Small delay to prevent rate limiting or UI freezing
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      toast.success(`Completed: ${successCount} added, ${failCount} skipped/failed`, { id: toastId });
+      fetchCityCodes();
+    } catch (error) {
+      console.error('Bulk add failed:', error);
+      toast.error('Bulk addition encountered an error', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -120,6 +188,14 @@ export default function CityCodesPage() {
           >
             <Plus size={16} />
             Add City Code
+          </button>
+          <button
+            onClick={handleAutoAdd}
+            disabled={isSubmitting}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 text-sm font-semibold transition-all disabled:opacity-50"
+          >
+            <Globe size={16} />
+            Auto Add Cities
           </button>
           <button 
             onClick={fetchCityCodes}

@@ -34,7 +34,8 @@ export const adminRideService = {
   },
 
   async createManualRide(data: any): Promise<ApiResponse<Ride>> {
-    const response = await api.post('/rides', data);
+    const { rideApi } = await import('@/lib/api');
+    const response = await rideApi.post('/create-manual', data);
     console.log("Manual Ride API Response:", response);
     return response.data;
   },

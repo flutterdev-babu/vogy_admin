@@ -59,7 +59,7 @@ export const rideBookingService = {
     cityCodeId: string;
     couponCode?: string;
   }): Promise<ApiResponse<FareEstimateResponse>> {
-    const response = await rideApi.post('/estimate-fare', data);
+    const response = await rideApi.get('/fare-estimate', { params: data });
     return response.data;
   },
 
@@ -75,7 +75,7 @@ export const rideBookingService = {
 
   // Step 3: Confirm booking with price lock
   async newRide(data: NewRideRequest): Promise<ApiResponse<any>> {
-    const response = await rideApi.post('/new-ride', data);
+    const response = await rideApi.post('/create', data);
     return response.data;
   },
 };
