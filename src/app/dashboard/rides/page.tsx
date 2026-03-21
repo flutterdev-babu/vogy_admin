@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   RefreshCw, ChevronLeft, ChevronRight, Search,
-  RotateCcw, Plus, MoreHorizontal, X, Filter
+  RotateCcw, Plus, MoreHorizontal, X, Filter, Download
 } from 'lucide-react';
 import { adminRideService } from '@/services/adminRideService';
 import { Ride, RideStatus, RideFilters } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { exportToCSV } from '@/utils/csvExport';
 
 const STATUS_TABS: { label: string; value: RideStatus | 'ALL' }[] = [
   { label: 'Requested', value: 'REQUESTED' },
@@ -69,6 +70,25 @@ export default function RidesPage() {
     return statusMatch && reqIdMatch && nameMatch && mobileMatch && driverMatch && vehicleMatch;
   });
 
+  const handleExport = () => {
+    const dataToExport = filteredRides.map(ride => ({
+      'Req ID': ride.customId || 'N/A',
+      'Source': ride.pickupAddress || 'N/A',
+      'Destination': ride.dropAddress || 'N/A',
+      'Date': new Date(ride.createdAt).toLocaleDateString(),
+      'Name': ride.user?.name || 'N/A',
+      'Mobile': ride.user?.phone || 'N/A',
+      'Service': ride.serviceType || 'City To Airport',
+      'Payment Mode': ride.paymentMode || 'Cash',
+      'Vehicle': ride.vehicleType?.displayName || 'SEDAN',
+      'Distance (km)': ride.distanceKm?.toFixed(1) || '0',
+      'Driver': ride.partner?.name || 'N/A',
+      'Cost': ride.totalFare?.toFixed(2) || '0',
+      'Status': ride.status
+    }));
+    exportToCSV(dataToExport, `Rides_Export_${new Date().toISOString().slice(0, 10)}`);
+  };
+
   if (isLoading) return <PageLoader />;
 
   return (
@@ -77,6 +97,13 @@ export default function RidesPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-bold text-gray-800">Booking List</h1>
         <div className="flex gap-3">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-green-100 border border-green-200 transition-all active:scale-[0.98]"
+            title="Download currently filtered rides as CSV"
+          >
+            <Download size={16} /> Export CSV
+          </button>
           <Link
             href="/dashboard/rides/create"
             className="flex items-center gap-2 px-4 py-2 bg-[#E32222] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#cc1f1f] shadow-sm transition-all active:scale-[0.98]"

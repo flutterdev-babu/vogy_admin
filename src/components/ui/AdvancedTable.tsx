@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Filter, Download } from 'lucide-react';
 
 interface Column<T> {
   header: string;
@@ -22,6 +22,7 @@ interface AdvancedTableProps<T> {
     options: { label: string; value: string }[];
     onFilterChange: (value: string) => void;
   }[];
+  onExport?: () => void;
 }
 
 export function AdvancedTable<T extends { id?: string | number }>({
@@ -33,6 +34,7 @@ export function AdvancedTable<T extends { id?: string | number }>({
   isLoading = false,
   searchPlaceholder = "Search...",
   filters = [],
+  onExport,
 }: AdvancedTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,28 +86,38 @@ export function AdvancedTable<T extends { id?: string | number }>({
           </div>
         )}
 
-        {/* Filters Placeholder - customizable via props */}
-        {filters.length > 0 && (
-          <div className="flex gap-2">
-            {filters.map((filter, index) => (
-              <select
-                key={index}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                onChange={(e) => {
-                    filter.onFilterChange(e.target.value);
-                    setCurrentPage(1);
-                }}
-              >
-                <option value="">{filter.label}</option>
-                {filter.options.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            ))}
-          </div>
-        )}
+        {/* Filters and Actions */}
+        <div className="flex gap-2 items-center flex-wrap">
+          {filters.length > 0 && (
+            <div className="flex gap-2">
+              {filters.map((filter, index) => (
+                <select
+                  key={index}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                  onChange={(e) => {
+                      filter.onFilterChange(e.target.value);
+                      setCurrentPage(1);
+                  }}
+                >
+                  <option value="">{filter.label}</option>
+                  {filter.options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              ))}
+            </div>
+          )}
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="px-4 py-2 flex items-center gap-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"
+            >
+              <Download size={16} /> Export CSV
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table */}

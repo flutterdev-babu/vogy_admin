@@ -28,7 +28,10 @@ import {
   Ticket,
   Shield,
   Headphones,
-  MessageSquare
+  MessageSquare,
+  AlertTriangle,
+  Megaphone,
+  Banknote
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -63,6 +66,7 @@ const navSections: NavSection[] = [
       { href: '/dashboard/rides', label: 'All Rides', icon: Route },
       { href: '/dashboard/rides/scheduled', label: 'Scheduled Rides', icon: Calendar },
       { href: '/dashboard/rides/create', label: 'Manual Booking', icon: PlusCircle },
+      { href: '/dashboard/fraud-alerts', label: 'Fraud Alerts', icon: AlertTriangle },
     ],
   },
   {
@@ -153,6 +157,14 @@ const navSections: NavSection[] = [
     permission: 'billing',
     items: [
       { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+      { href: '/dashboard/settlements', label: 'Settlements', icon: Banknote },
+    ],
+  },
+  {
+    title: 'Marketing',
+    permission: 'config',
+    items: [
+      { href: '/dashboard/broadcast', label: 'Broadcast', icon: Megaphone },
     ],
   },
 ];
