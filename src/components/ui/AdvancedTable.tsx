@@ -15,6 +15,8 @@ interface AdvancedTableProps<T> {
   searchable?: boolean;
   searchKeys?: (keyof T)[];
   itemsPerPage?: number;
+  isLoading?: boolean;
+  searchPlaceholder?: string;
   filters?: {
     label: string;
     options: { label: string; value: string }[];
@@ -28,13 +30,15 @@ export function AdvancedTable<T extends { id?: string | number }>({
   searchable = true,
   searchKeys = [],
   itemsPerPage = 10,
+  isLoading = false,
+  searchPlaceholder = "Search...",
   filters = [],
 }: AdvancedTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filter data based on search term
-  const filteredData = data.filter((item) => {
+  const filteredData = Array.isArray(data) ? data.filter((item) => {
     if (!searchable || !searchTerm) return true;
     
     // If no specific keys provided, search all string/number values
@@ -47,7 +51,7 @@ export function AdvancedTable<T extends { id?: string | number }>({
     return searchKeys.some((key) =>
       String(item[key]).toLowerCase().includes(searchTerm.toLowerCase())
     );
-  });
+  }) : [];
 
   // Simple Pagination
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -69,7 +73,7 @@ export function AdvancedTable<T extends { id?: string | number }>({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={searchPlaceholder}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 text-sm w-full sm:w-64"
               value={searchTerm}
               onChange={(e) => {
@@ -121,7 +125,16 @@ export function AdvancedTable<T extends { id?: string | number }>({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {currentData.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={columns.length} className="py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
+                        <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Loading Records...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : currentData.length > 0 ? (
                 currentData.map((item, rowIndex) => (
                   <tr key={item.id || rowIndex} className="hover:bg-gray-50/50 transition-colors">
                     {columns.map((col, colIndex) => (

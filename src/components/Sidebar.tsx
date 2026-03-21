@@ -10,6 +10,7 @@ import {
   Route,
   Users,
   UserCheck,
+  TrendingUp,
   Calendar,
   LogOut,
   Menu,
@@ -24,7 +25,10 @@ import {
   Bell,
   FileVideo,
   PlusCircle,
-  Ticket
+  Ticket,
+  Shield,
+  Headphones,
+  MessageSquare
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -33,23 +37,28 @@ import { ThemeToggle } from './ThemeToggle';
 interface NavSection {
   title: string;
   items: NavItem[];
+  permission?: string;
 }
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
+  permission?: string;
 }
 
 const navSections: NavSection[] = [
   {
     title: 'Overview',
+    permission: 'dashboard',
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/dashboard/analytics', label: 'Insights', icon: TrendingUp },
     ],
   },
   {
     title: 'Operations',
+    permission: 'rides',
     items: [
       { href: '/dashboard/rides', label: 'All Rides', icon: Route },
       { href: '/dashboard/rides/scheduled', label: 'Scheduled Rides', icon: Calendar },
@@ -57,7 +66,15 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: 'Support',
+    permission: 'support_tickets',
+    items: [
+      { href: '/dashboard/support-tickets', label: 'Support Tickets', icon: MessageSquare },
+    ],
+  },
+  {
     title: 'Partners',
+    permission: 'partners',
     items: [
       { href: '/dashboard/partners/create', label: 'Create Partner', icon: PlusCircle },
       { href: '/dashboard/partners', label: 'Partner List', icon: UserCheck },
@@ -66,6 +83,7 @@ const navSections: NavSection[] = [
   },
   {
     title: 'Vehicles',
+    permission: 'vehicles',
     items: [
       { href: '/dashboard/vehicles/create', label: 'Create Vehicle', icon: PlusCircle },
       { href: '/dashboard/vehicles', label: 'Vehicle List', icon: Truck },
@@ -74,6 +92,7 @@ const navSections: NavSection[] = [
   },
   {
     title: 'Vendors',
+    permission: 'vendors',
     items: [
       { href: '/dashboard/vendors/create', label: 'Create Vendor', icon: PlusCircle },
       { href: '/dashboard/vendors', label: 'Vendor List', icon: Car },
@@ -81,6 +100,7 @@ const navSections: NavSection[] = [
   },
   {
     title: 'Attachments',
+    permission: 'attachments',
     items: [
       { href: '/dashboard/attachments/create', label: 'Create Attachment', icon: PlusCircle },
       { href: '/dashboard/attachments', label: 'Attachment List', icon: Paperclip },
@@ -88,6 +108,7 @@ const navSections: NavSection[] = [
   },
   {
     title: 'Users',
+    permission: 'users',
     items: [
       { href: '/dashboard/users/create', label: 'Add User', icon: PlusCircle },
       { href: '/dashboard/users', label: 'Users List', icon: Users },
@@ -95,6 +116,7 @@ const navSections: NavSection[] = [
   },
   {
     title: 'Corporates',
+    permission: 'corporates',
     items: [
       { href: '/dashboard/corporates/create', label: 'Add Corporate', icon: PlusCircle },
       { href: '/dashboard/corporates', label: 'Corporates List', icon: Building2 },
@@ -102,6 +124,7 @@ const navSections: NavSection[] = [
   },
   {
     title: 'Agents',
+    permission: 'agents',
     items: [
       { href: '/dashboard/agents/create', label: 'Add Agent', icon: PlusCircle },
       { href: '/dashboard/agents', label: 'Agents List', icon: Briefcase },
@@ -109,22 +132,25 @@ const navSections: NavSection[] = [
   },
   {
     title: 'Promotions',
+    permission: 'promotions',
     items: [
       { href: '/dashboard/coupons', label: 'Coupon Codes', icon: Ticket },
     ],
   },
   {
     title: 'Configuration',
+    permission: 'config',
     items: [
       { href: '/dashboard/city-codes', label: 'City Codes', icon: MapPin },
       { href: '/dashboard/pricing', label: 'Pricing Config', icon: DollarSign },
-      { href: '/dashboard/permissions', label: 'Permissions', icon: UserCheck },
+      { href: '/dashboard/permissions', label: 'Admins & Permissions', icon: UserCheck },
       { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
-      { href: '/dashboard/audit-logs', label: 'Audit Logs', icon: FileVideo },
+      { href: '/dashboard/audit-logs', label: 'Audit Logs', icon: Shield, permission: 'audit_logs' },
     ],
   },
   {
     title: 'Finance',
+    permission: 'billing',
     items: [
       { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
     ],
@@ -133,7 +159,7 @@ const navSections: NavSection[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { admin, logout } = useAuth();
+  const { admin, logout, hasPermission } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
@@ -195,46 +221,53 @@ export default function Sidebar() {
         {/* Navigation - Scrollable */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <div className="space-y-1">
-            {navSections.map((section) => (
-              <div key={section.title} className="mb-4">
-                {/* Section Header */}
-                <button
-                  onClick={() => toggleSection(section.title)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors"
-                >
-                  <span>{section.title}</span>
-                  <ChevronDown
-                    size={14}
-                    className={`transform transition-transform ${collapsedSections.has(section.title) ? '-rotate-90' : ''}`}
-                  />
-                </button>
+            {navSections.filter(section => !section.permission || hasPermission(section.permission)).map((section) => {
+              // Filter items within the section too
+              const filteredItems = section.items.filter(item => !item.permission || hasPermission(item.permission));
+              
+              if (filteredItems.length === 0) return null;
 
-                {/* Section Items */}
-                {!collapsedSections.has(section.title) && (
-                  <div className="mt-1 space-y-1">
-                    {section.items.map((item) => {
-                      const Icon = item.icon;
-                      const active = isActive(item.href);
+              return (
+                <div key={section.title} className="mb-4">
+                  {/* Section Header */}
+                  <button
+                    onClick={() => toggleSection(section.title)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors"
+                  >
+                    <span>{section.title}</span>
+                    <ChevronDown
+                      size={14}
+                      className={`transform transition-transform ${collapsedSections.has(section.title) ? '-rotate-90' : ''}`}
+                    />
+                  </button>
 
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setIsMobileOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${active
-                            ? 'bg-[#E32222] text-white shadow-md shadow-red-500/30'
-                            : 'text-gray-500 hover:bg-red-50 hover:text-red-600'
-                            }`}
-                        >
-                          <Icon size={18} />
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+                  {/* Section Items */}
+                  {!collapsedSections.has(section.title) && (
+                    <div className="mt-1 space-y-1">
+                      {filteredItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.href);
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setIsMobileOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${active
+                              ? 'bg-[#E32222] text-white shadow-md shadow-red-500/30'
+                              : 'text-gray-500 hover:bg-red-50 hover:text-red-600'
+                              }`}
+                          >
+                            <Icon size={18} />
+                            <span>{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </nav>
 

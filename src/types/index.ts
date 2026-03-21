@@ -49,11 +49,17 @@ export interface CityCode {
 // Admin Types
 // =====================================
 
+export interface PermissionOption {
+  code: string;
+  label: string;
+}
+
 export interface Admin {
   id: string;
   name: string;
   email: string;
   role: 'SUPERADMIN' | 'SUBADMIN';
+  permissions: string[];
   createdAt: string;
 }
 
@@ -986,6 +992,22 @@ export interface AdminRecentActivity {
   recentVendors: Array<{ id: string; customId: string; name: string; companyName: string; status: string; createdAt: string }>;
   recentPartners: Array<{ id: string; customId: string; name: string; status: string; createdAt: string }>;
   recentUsers: Array<{ id: string; name: string; phone: string; createdAt: string }>;
+}
+
+export interface CancellationAnalytics {
+  date: string;
+  count: number;
+  byType: Record<string, number>;
+}
+
+export interface AuditTimelineItem {
+  id: string;
+  userName: string;
+  userRole: string;
+  action: string;
+  module: string;
+  description: string;
+  createdAt: string;
 }
 
 // --- Attachment Governance ---

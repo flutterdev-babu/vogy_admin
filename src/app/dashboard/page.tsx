@@ -24,8 +24,9 @@ import {
   Activity
 } from 'lucide-react';
 import { adminDashboardService } from '@/services/adminDashboardService';
-import { AdminDashboardData, AdminRideAnalytics } from '@/types';
+import { AdminDashboardData, AdminRideAnalytics, CancellationAnalytics, AuditTimelineItem } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -220,7 +221,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="animate-fade-in space-y-8">
+    <div className="animate-fade-in space-y-8 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-6">
@@ -362,4 +363,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-}
+}
