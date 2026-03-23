@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Car,
   MapPin,
@@ -17,9 +17,93 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { useJsApiLoader } from '@react-google-maps/api';
+import { enquiryService } from '@/services/enquiryService';
+
+const LIBRARIES: ("places")[] = ['places'];
 
 export default function LandingPage() {
   const [bookingTab, setBookingTab] = useState<'local' | 'rental' | 'outstation' | 'airport'>('local');
+  const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const pickupInputRef = useRef<HTMLInputElement | null>(null);
+  const dropInputRef = useRef<HTMLInputElement | null>(null);
+  const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const dropAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries: LIBRARIES,
+  });
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (pickupInputRef.current && !pickupAutocompleteRef.current) {
+      const ac = new google.maps.places.Autocomplete(pickupInputRef.current, {
+        componentRestrictions: { country: 'in' },
+        fields: ['formatted_address', 'geometry', 'name'],
+      });
+      pickupAutocompleteRef.current = ac;
+    }
+
+    if (dropInputRef.current && !dropAutocompleteRef.current) {
+      const ac = new google.maps.places.Autocomplete(dropInputRef.current, {
+        componentRestrictions: { country: 'in' },
+        fields: ['formatted_address', 'geometry', 'name'],
+      });
+      dropAutocompleteRef.current = ac;
+    }
+  }, [isLoaded]);
+
+  const handleEnquireNow = async () => {
+    const pickup = pickupInputRef.current?.value;
+    const drop = dropInputRef.current?.value;
+
+    if (!pickup) {
+      alert("Please enter a pickup location.");
+      return;
+    }
+
+    if (!phone) {
+      alert("Please enter your phone number.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // 1. Send enquiry to backend to store in Audit Logs
+      await enquiryService.submitEnquiry({
+        phone,
+        pickup,
+        drop: drop || undefined,
+        rideType: bookingTab.toUpperCase()
+      });
+
+      // 2. Format message for WhatsApp
+      let whatsappMessage = `*New Ride Enquiry*\n`;
+      whatsappMessage += `*Ride Type:* ${bookingTab.toUpperCase()}\n`;
+      whatsappMessage += `*Pickup:* ${pickup}\n`;
+      if (drop) whatsappMessage += `*Drop:* ${drop}\n`;
+      whatsappMessage += `*Customer Phone:* ${phone}`;
+
+      const encodedMessage = encodeURIComponent(whatsappMessage);
+      const ownerWhatsAppPhone = '917569645049';
+      const whatsappUrl = `https://wa.me/${ownerWhatsAppPhone}?text=${encodedMessage}`;
+
+      // Open WhatsApp in a new tab
+      window.open(whatsappUrl, '_blank');
+      
+    } catch (error) {
+      console.error('Failed to submit enquiry:', error);
+      alert("There was an error submitting your enquiry. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] font-sans text-white overflow-x-hidden selection:bg-[#E32222] selection:text-white">
@@ -96,6 +180,8 @@ export default function LandingPage() {
                 <input
                   type="tel"
                   placeholder="Phone Number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
                 />
               </div>
@@ -103,6 +189,7 @@ export default function LandingPage() {
               <div className="relative group">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
                 <input
+                  ref={pickupInputRef}
                   type="text"
                   placeholder="Pickup Location"
                   className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
@@ -112,14 +199,18 @@ export default function LandingPage() {
               <div className="relative group">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
                 <input
+                  ref={dropInputRef}
                   type="text"
                   placeholder="Drop Location"
                   className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
                 />
               </div>
 
-              <button className="w-full py-4 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white font-bold text-lg shadow-lg shadow-red-900/30 hover:shadow-red-900/50 transition-all transform hover:-translate-y-0.5 mt-2">
-                Enquire Now
+              <button 
+                onClick={handleEnquireNow}
+                disabled={isLoading}
+                className="w-full py-4 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white font-bold text-lg shadow-lg shadow-red-900/30 hover:shadow-red-900/50 transition-all transform hover:-translate-y-0.5 mt-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                {isLoading ? 'Processing...' : 'Enquire Now'}
               </button>
             </div>
           </motion.div>

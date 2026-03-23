@@ -49,7 +49,7 @@ export default function ContactPage() {
             <ContactInfoCard 
               icon={<Mail size={24} className="text-[#E32222]" />}
               title="Email Us"
-              content="support@aratravels.in"
+              content="bookings.aratravels@gmail.com / info@aratravels.in"
               subContent="We'll respond within 24 hours"
             />
             <ContactInfoCard 
