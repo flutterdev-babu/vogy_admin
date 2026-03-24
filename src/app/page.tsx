@@ -13,7 +13,8 @@ import {
   Shield,
   Smartphone,
   ChevronRight,
-  Briefcase
+  Briefcase,
+  User
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -24,7 +25,11 @@ const LIBRARIES: ("places")[] = ['places'];
 
 export default function LandingPage() {
   const [bookingTab, setBookingTab] = useState<'local' | 'rental' | 'outstation' | 'airport'>('local');
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [vehicleType, setVehicleType] = useState('Any');
+  const [pickupDateTime, setPickupDateTime] = useState('');
+  const [passengers, setPassengers] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const pickupInputRef = useRef<HTMLInputElement | null>(null);
@@ -62,8 +67,8 @@ export default function LandingPage() {
     const pickup = pickupInputRef.current?.value;
     const drop = dropInputRef.current?.value;
 
-    if (!pickup) {
-      alert("Please enter a pickup location.");
+    if (!name) {
+      alert("Please enter your name.");
       return;
     }
 
@@ -72,23 +77,41 @@ export default function LandingPage() {
       return;
     }
 
+    if (!pickup) {
+      alert("Please enter a pickup location.");
+      return;
+    }
+
+    if (!pickupDateTime) {
+      alert("Please select a pickup date and time.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       // 1. Send enquiry to backend to store in Audit Logs
       await enquiryService.submitEnquiry({
+        name,
         phone,
         pickup,
         drop: drop || undefined,
-        rideType: bookingTab.toUpperCase()
+        rideType: bookingTab.toUpperCase(),
+        vehicleType,
+        pickupDateTime,
+        passengers: passengers || undefined,
       });
 
       // 2. Format message for WhatsApp
       let whatsappMessage = `*New Ride Enquiry*\n`;
+      whatsappMessage += `*Name:* ${name}\n`;
+      whatsappMessage += `*Phone:* ${phone}\n`;
       whatsappMessage += `*Ride Type:* ${bookingTab.toUpperCase()}\n`;
+      whatsappMessage += `*Vehicle:* ${vehicleType}\n`;
+      whatsappMessage += `*Date & Time:* ${pickupDateTime}\n`;
       whatsappMessage += `*Pickup:* ${pickup}\n`;
       if (drop) whatsappMessage += `*Drop:* ${drop}\n`;
-      whatsappMessage += `*Customer Phone:* ${phone}`;
+      if (passengers) whatsappMessage += `*Passengers:* ${passengers}`;
 
       const encodedMessage = encodeURIComponent(whatsappMessage);
       const ownerWhatsAppPhone = '917569645049';
@@ -176,6 +199,17 @@ export default function LandingPage() {
             {/* Form */}
             <div className="space-y-4">
               <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
+                />
+              </div>
+
+              <div className="relative group">
                 <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
                 <input
                   type="tel"
@@ -183,6 +217,46 @@ export default function LandingPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative group">
+                  <Car className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
+                  <select
+                    value={vehicleType}
+                    onChange={(e) => setVehicleType(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="Any" className="bg-neutral-900">Any Vehicle</option>
+                    <option value="Hatchback" className="bg-neutral-900">Hatchback</option>
+                    <option value="Sedan" className="bg-neutral-900">Sedan</option>
+                    <option value="SUV" className="bg-neutral-900">SUV</option>
+                    <option value="Innova/Ertiga" className="bg-neutral-900">Innova/Ertiga</option>
+                    <option value="Tempo Traveller" className="bg-neutral-900">Tempo Traveller</option>
+                  </select>
+                </div>
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
+                  <input
+                    type="number"
+                    placeholder="Passengers"
+                    min="1"
+                    value={passengers}
+                    onChange={(e) => setPassengers(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
+                  />
+                </div>
+              </div>
+
+              <div className="relative group">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
+                <input
+                  type="datetime-local"
+                  value={pickupDateTime}
+                  onChange={(e) => setPickupDateTime(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none"
+                  style={{ colorScheme: 'dark' }}
                 />
               </div>
 
