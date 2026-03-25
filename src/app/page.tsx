@@ -20,6 +20,8 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { enquiryService } from '@/services/enquiryService';
+import { publicRideService } from '@/services/publicRideService';
+import { toast, Toaster } from 'react-hot-toast';
 
 const LIBRARIES: ("places")[] = ['places'];
 
@@ -28,9 +30,17 @@ export default function LandingPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [vehicleType, setVehicleType] = useState('Any');
+  const [vehicleTypesData, setVehicleTypesData] = useState<any[]>([]);
+  const [selectedVehicleTypeId, setSelectedVehicleTypeId] = useState('');
+  const [cityCodes, setCityCodes] = useState<any[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState('');
   const [pickupDateTime, setPickupDateTime] = useState('');
   const [passengers, setPassengers] = useState('');
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [dropCoords, setDropCoords] = useState<{lat: number, lng: number} | null>(null);
 
   const pickupInputRef = useRef<HTMLInputElement | null>(null);
   const dropInputRef = useRef<HTMLInputElement | null>(null);
@@ -44,12 +54,50 @@ export default function LandingPage() {
   });
 
   useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      const [vtRes, ccRes] = await Promise.all([
+        publicRideService.getVehicleTypes(),
+        publicRideService.getCityCodes()
+      ]);
+      if (vtRes.success) setVehicleTypesData(vtRes.data || []);
+      if (ccRes.success) setCityCodes(ccRes.data || []);
+    } catch (err) {
+      console.error("Error fetching initial landing page data:", err);
+    }
+  };
+
+  useEffect(() => {
     if (!isLoaded) return;
 
     if (pickupInputRef.current && !pickupAutocompleteRef.current) {
       const ac = new google.maps.places.Autocomplete(pickupInputRef.current, {
         componentRestrictions: { country: 'in' },
-        fields: ['formatted_address', 'geometry', 'name'],
+        fields: ['formatted_address', 'geometry', 'address_components', 'name'],
+      });
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (place.geometry?.location) {
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          setPickupCoords({ lat, lng });
+          
+          // Try to determine city from address components
+          const cityComp = place.address_components?.find(c => 
+            c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+          );
+          if (cityComp) {
+            const cityName = cityComp.long_name;
+            const matchedCity = cityCodes.find(c => 
+              c.cityName.toLowerCase() === cityName.toLowerCase() ||
+              cityName.toLowerCase().includes(c.cityName.toLowerCase())
+            );
+            if (matchedCity) setSelectedCityId(matchedCity.id);
+          }
+        }
       });
       pickupAutocompleteRef.current = ac;
     }
@@ -59,11 +107,95 @@ export default function LandingPage() {
         componentRestrictions: { country: 'in' },
         fields: ['formatted_address', 'geometry', 'name'],
       });
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (place.geometry?.location) {
+          setDropCoords({
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          });
+        }
+      });
       dropAutocompleteRef.current = ac;
     }
-  }, [isLoaded]);
+  }, [isLoaded, cityCodes]);
 
-  const handleEnquireNow = async () => {
+  // Handle distance and price calculation
+  useEffect(() => {
+    if (pickupCoords && dropCoords) {
+      calculateDistance();
+    }
+  }, [pickupCoords, dropCoords]);
+
+  useEffect(() => {
+    if (distanceKm) {
+      updatePriceEstimate();
+    }
+  }, [distanceKm, selectedVehicleTypeId, selectedCityId, cityCodes]);
+
+  const calculateDistance = async () => {
+    if (!pickupCoords || !dropCoords || !isLoaded) return;
+
+    const service = new google.maps.DistanceMatrixService();
+    service.getDistanceMatrix({
+      origins: [new google.maps.LatLng(pickupCoords.lat, pickupCoords.lng)],
+      destinations: [new google.maps.LatLng(dropCoords.lat, dropCoords.lng)],
+      travelMode: google.maps.TravelMode.DRIVING,
+    }, (response, status) => {
+      if (status === 'OK' && response?.rows[0]?.elements[0]?.distance) {
+        const dist = response.rows[0].elements[0].distance.value / 1000;
+        setDistanceKm(Number(dist.toFixed(1)));
+      }
+    });
+  };
+
+  const updatePriceEstimate = async () => {
+    if (!distanceKm) return;
+    
+    // We need a city ID. If matching failed, use the first active city.
+    let cityId = selectedCityId;
+    if (!cityId && cityCodes && cityCodes.length > 0) {
+      cityId = cityCodes[0].id;
+    }
+    
+    if (!cityId) {
+      console.log("No city found for pricing yet");
+      return;
+    }
+
+    try {
+      const res = await publicRideService.estimateFare({
+        distanceKm,
+        cityCodeId: cityId,
+        pickupLat: pickupCoords?.lat,
+        pickupLng: pickupCoords?.lng
+      });
+
+      if (res.success && res.data?.fareEstimates) {
+        // Find by selected ID or fallback to first one if none selected
+        let estimate = null;
+        if (selectedVehicleTypeId) {
+          estimate = res.data.fareEstimates.find((f: any) => f.vehicleTypeId === selectedVehicleTypeId);
+        }
+        
+        if (estimate) {
+          setEstimatedPrice(estimate.estimatedFare);
+        } else if (res.data.fareEstimates.length > 0) {
+          setEstimatedPrice(res.data.fareEstimates[0].estimatedFare);
+          // If no type was selected, auto-select the first one for the user
+          if (!selectedVehicleTypeId) {
+            const firstVt = res.data.fareEstimates[0];
+            setSelectedVehicleTypeId(firstVt.vehicleTypeId);
+            setVehicleType(firstVt.vehicleTypeName || firstVt.name);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error estimating fare:", err);
+    }
+  };
+
+  const handleBookNow = async () => {
     const pickup = pickupInputRef.current?.value;
     const drop = dropInputRef.current?.value;
 
@@ -78,32 +210,63 @@ export default function LandingPage() {
     }
 
     if (!pickup) {
-      alert("Please enter a pickup location.");
+      toast.error("Please enter a pickup location.");
       return;
     }
 
     if (!pickupDateTime) {
-      alert("Please select a pickup date and time.");
+      toast.error("Please select a pickup date and time.");
+      return;
+    }
+
+    // Use local variables to avoid state race conditions
+    let cityId = selectedCityId;
+    if (!cityId) {
+      if (cityCodes.length > 0) {
+        cityId = cityCodes[0].id;
+        setSelectedCityId(cityId);
+      } else {
+        toast.error("City not detected. Please select city or confirm locations.");
+        return;
+      }
+    }
+
+    const vehicleId = selectedVehicleTypeId;
+    if (!vehicleId) {
+      toast.error("Please select a vehicle type.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Send enquiry to backend to store in Audit Logs
-      await enquiryService.submitEnquiry({
-        name,
-        phone,
-        pickup,
-        drop: drop || undefined,
+      // 1. Create actual Ride in backend
+      const bookingPayload = {
+        userName: name,
+        userPhone: phone,
+        pickupAddress: pickup,
+        dropAddress: drop || "Not specified",
+        pickupLat: pickupCoords?.lat || 0,
+        pickupLng: pickupCoords?.lng || 0,
+        dropLat: dropCoords?.lat || 0,
+        dropLng: dropCoords?.lng || 0,
+        distanceKm: distanceKm || 0,
+        scheduledDateTime: new Date(pickupDateTime).toISOString(),
         rideType: bookingTab.toUpperCase(),
-        vehicleType,
-        pickupDateTime,
+        vehicleTypeId: vehicleId,
+        cityCodeId: cityId,
         passengers: passengers || undefined,
-      });
+      };
+
+      const res = await publicRideService.bookRide(bookingPayload);
+
+      if (!res.success) {
+        throw new Error(res.message || "Failed to book ride");
+      }
 
       // 2. Format message for WhatsApp
-      let whatsappMessage = `*New Ride Enquiry*\n`;
+      let whatsappMessage = `*New Ride Booking*\n`;
+      whatsappMessage += `*Booking ID:* ${res.data?.customId || 'PENDING'}\n`;
       whatsappMessage += `*Name:* ${name}\n`;
       whatsappMessage += `*Phone:* ${phone}\n`;
       whatsappMessage += `*Ride Type:* ${bookingTab.toUpperCase()}\n`;
@@ -111,26 +274,32 @@ export default function LandingPage() {
       whatsappMessage += `*Date & Time:* ${pickupDateTime}\n`;
       whatsappMessage += `*Pickup:* ${pickup}\n`;
       if (drop) whatsappMessage += `*Drop:* ${drop}\n`;
+      if (distanceKm) whatsappMessage += `*Distance:* ${distanceKm} KM\n`;
+      if (estimatedPrice) whatsappMessage += `*Est. Fare:* ₹${estimatedPrice}\n`;
       if (passengers) whatsappMessage += `*Passengers:* ${passengers}`;
 
       const encodedMessage = encodeURIComponent(whatsappMessage);
       const ownerWhatsAppPhone = '917569645049';
       const whatsappUrl = `https://wa.me/${ownerWhatsAppPhone}?text=${encodedMessage}`;
 
-      // Open WhatsApp in a new tab
-      window.open(whatsappUrl, '_blank');
+      toast.success("Ride booked! Redirecting to WhatsApp...");
       
-    } catch (error) {
-      console.error('Failed to submit enquiry:', error);
-      alert("There was an error submitting your enquiry. Please try again.");
-    } finally {
+      // Delay slightly for toast visibility
+      setTimeout(() => {
+        window.open(whatsappUrl, '_blank');
+        setIsLoading(false);
+      }, 1500);
+      
+    } catch (error: any) {
+      console.error('Failed to book ride:', error);
+      toast.error(error.message || "There was an error booking your ride. Please try again.");
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] font-sans text-white overflow-x-hidden selection:bg-[#E32222] selection:text-white">
-
+      <Toaster position="top-center" />
       <Navbar />
 
       {/* Hero Section */}
@@ -224,16 +393,21 @@ export default function LandingPage() {
                 <div className="relative group">
                   <Car className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#E32222] transition-colors" size={20} />
                   <select
-                    value={vehicleType}
-                    onChange={(e) => setVehicleType(e.target.value)}
+                    value={selectedVehicleTypeId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedVehicleTypeId(id);
+                      const vt = vehicleTypesData.find(v => v.id === id);
+                      if (vt) setVehicleType(vt.displayName || vt.name);
+                    }}
                     className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-neutral-500 focus:outline-none focus:border-[#E32222] transition-colors appearance-none cursor-pointer"
                   >
-                    <option value="Any" className="bg-neutral-900">Any Vehicle</option>
-                    <option value="Hatchback" className="bg-neutral-900">Hatchback</option>
-                    <option value="Sedan" className="bg-neutral-900">Sedan</option>
-                    <option value="SUV" className="bg-neutral-900">SUV</option>
-                    <option value="Innova/Ertiga" className="bg-neutral-900">Innova/Ertiga</option>
-                    <option value="Tempo Traveller" className="bg-neutral-900">Tempo Traveller</option>
+                    <option value="" className="bg-neutral-900">Any Vehicle</option>
+                    {vehicleTypesData.map((vt) => (
+                      <option key={vt.id} value={vt.id} className="bg-neutral-900">
+                        {vt.displayName || vt.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="relative group">
@@ -280,11 +454,44 @@ export default function LandingPage() {
                 />
               </div>
 
+              {selectedVehicleTypeId && (
+                <div className="mt-4 p-4 bg-black/40 border border-white/5 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between text-xs font-medium uppercase tracking-widest text-neutral-500">
+                    <span>Trip Summary</span>
+                    {distanceKm ? (
+                      <span className="text-white/80">{distanceKm} KM</span>
+                    ) : (
+                      <span className="animate-pulse">Awaiting Locations...</span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-end justify-between pt-2 border-t border-white/5">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-neutral-500 font-bold uppercase">Estimated Fare</span>
+                      <span className="text-sm text-white/40 italic">Incl. all taxes</span>
+                    </div>
+                    <div className="text-right">
+                      {estimatedPrice !== null ? (
+                        <motion.span 
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="text-3xl font-black text-[#E32222] tabular-nums drop-shadow-[0_0_15px_rgba(227,34,34,0.3)]"
+                        >
+                          ₹{estimatedPrice}
+                        </motion.span>
+                      ) : (
+                        <span className="text-xl font-bold text-neutral-600 italic">Calculating...</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <button 
-                onClick={handleEnquireNow}
+                onClick={handleBookNow}
                 disabled={isLoading}
                 className="w-full py-4 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white font-bold text-lg shadow-lg shadow-red-900/30 hover:shadow-red-900/50 transition-all transform hover:-translate-y-0.5 mt-2 disabled:opacity-70 disabled:cursor-not-allowed">
-                {isLoading ? 'Processing...' : 'Enquire Now'}
+                {isLoading ? 'Processing...' : 'Book Now'}
               </button>
             </div>
           </motion.div>
