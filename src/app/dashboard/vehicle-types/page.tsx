@@ -1,9 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Loader2, DollarSign, MapPin, X, Save } from 'lucide-react';
+import { 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Loader2, 
+  DollarSign, 
+  MapPin, 
+  X, 
+  Save, 
+  ChevronDown, 
+  Clock,
+  Car,
+  Settings,
+  RefreshCw,
+  PlusCircle,
+  Globe,
+  ArrowLeft,
+  ChevronRight
+} from 'lucide-react';
 import { vehicleTypeService } from '@/services/vehicleTypeService';
 import { vehiclePricingGroupService } from '@/services/vehiclePricingGroupService';
+import { peakHourChargeService } from '@/services/peakHourChargeService';
 import { cityCodeService } from '@/services/cityCodeService';
 import { 
   VehicleType, 
@@ -12,12 +31,23 @@ import {
   VehiclePricingGroup,
   CityCode,
   CreateVehiclePricingGroupRequest,
-  UpdateVehiclePricingGroupRequest
+  UpdateVehiclePricingGroupRequest,
+  PeakHourCharge,
+  PeakHourSlot,
+  DayOfWeek,
+  ServiceType
 } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { CategoryBadge, ActiveBadge } from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
+import SegmentSetupWizard from '@/components/pricing/SegmentSetupWizard';
 import toast from 'react-hot-toast';
+
+const DAYS_OF_WEEK: DayOfWeek[] = [
+  'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'
+];
+
+type PricingModalView = 'LIST_CLUSTERS' | 'EDIT_CLUSTER';
 
 export default function VehicleTypesPage() {
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
@@ -26,24 +56,39 @@ export default function VehicleTypesPage() {
   const [editingType, setEditingType] = useState<VehicleType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
-  // Pricing Group Logic State
+  // Pricing Cluster Logic
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [pricingModalView, setPricingModalView] = useState<PricingModalView>('LIST_CLUSTERS');
   const [selectedTypeForPricing, setSelectedTypeForPricing] = useState<VehicleType | null>(null);
   const [pricingGroups, setPricingGroups] = useState<VehiclePricingGroup[]>([]);
+  const [activeServiceTab, setActiveServiceTab] = useState<ServiceType | 'ALL'>('ALL');
   const [cities, setCities] = useState<CityCode[]>([]);
   const [isPricingLoading, setIsPricingLoading] = useState(false);
-  const [isPricingGroupModalOpen, setIsPricingGroupModalOpen] = useState(false);
-  const [editingPricingGroup, setEditingPricingGroup] = useState<VehiclePricingGroup | null>(null);
   const [isPricingSubmitting, setIsPricingSubmitting] = useState(false);
-  const [pricingFormData, setPricingFormData] = useState<CreateVehiclePricingGroupRequest>({
-    vehicleTypeId: '',
-    name: '',
-    baseKm: 2,
-    baseFare: 50,
-    perKmPrice: 15,
+  
+  // Active Group within Pricing Modal
+  const [activeGroupId, setActiveGroupId] = useState<string>('');
+  const [pricingFormData, setPricingFormData] = useState<any>({
+    baseKm: 20,
+    baseFare: 600,
+    perKmPrice: 22,
+    driverBaseKm: 20,
+    driverBasePrice: 510,
+    driverExtraPricePerKm: 18.7,
+    commissionPercentage: 15,
+    tollRate: 120,
+    parkingRate: 0,
+    gstRate: 5,
     cityCodeIds: [],
+    serviceType: 'LOCAL' as ServiceType,
+    bookingType: 'AIRPORT_TO_CITY'
   });
+
+  // Peak Hour State for ACTIVE Group
+  const [peakCharges, setPeakCharges] = useState<PeakHourCharge[]>([]);
+  const [isPeakLoading, setIsPeakLoading] = useState(false);
 
   // Form state for Vehicle Type
   const [formData, setFormData] = useState<CreateVehicleTypeRequest>({
@@ -59,7 +104,6 @@ export default function VehicleTypesPage() {
       const response = await vehicleTypeService.getAll();
       setVehicleTypes(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch vehicle types:', error);
       toast.error('Failed to load vehicle types');
     } finally {
       setIsLoading(false);
@@ -91,11 +135,6 @@ export default function VehicleTypesPage() {
     setEditingType(null);
   };
 
-  const openCreateModal = () => {
-    resetForm();
-    setIsModalOpen(true);
-  };
-
   const openEditModal = (type: VehicleType) => {
     setEditingType(type);
     setFormData({
@@ -110,494 +149,545 @@ export default function VehicleTypesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.displayName || formData.pricePerKm <= 0) {
+    if (!formData.name || !formData.displayName) {
       toast.error('Please fill in all required fields');
       return;
     }
-
     setIsSubmitting(true);
     try {
       if (editingType) {
-        const updateData: UpdateVehicleTypeRequest = {
+        await vehicleTypeService.update(editingType.id, {
           displayName: formData.displayName,
           pricePerKm: formData.pricePerKm,
           baseFare: formData.baseFare,
-        };
-        await vehicleTypeService.update(editingType.id, updateData);
-        toast.success('Vehicle type updated successfully');
+        });
+        toast.success('Vehicle type updated');
       } else {
         await vehicleTypeService.create(formData);
-        toast.success('Vehicle type created successfully');
+        toast.success('Vehicle type created');
       }
       setIsModalOpen(false);
-      resetForm();
       fetchVehicleTypes();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Operation failed');
+    } catch (error) {
+      toast.error('Operation failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Pricing Group Handlers
+  // Pricing Group Handlers (Cluster Based)
   const fetchPricingGroups = async (typeId: string) => {
     setIsPricingLoading(true);
     try {
       const response = await vehiclePricingGroupService.getAll(typeId);
       setPricingGroups(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch pricing groups:', error);
       toast.error('Failed to load pricing groups');
     } finally {
       setIsPricingLoading(false);
     }
   };
 
-  const openPricingManager = (type: VehicleType) => {
-    setSelectedTypeForPricing(type);
-    fetchPricingGroups(type.id);
-    setIsPricingModalOpen(true);
-  };
-
-  const resetPricingForm = (typeId: string) => {
+  const loadGroupForEdit = async (group: VehiclePricingGroup) => {
+    setActiveGroupId(group.id);
     setPricingFormData({
-      vehicleTypeId: typeId,
-      name: '',
-      baseKm: 2,
-      baseFare: 50,
-      perKmPrice: 15,
-      cityCodeIds: [],
+      baseKm: group.baseKm,
+      baseFare: group.baseFare,
+      perKmPrice: group.perKmPrice,
+      driverBaseKm: group.driverBaseKm || 0,
+      driverBasePrice: group.driverBasePrice || 0,
+      driverExtraPricePerKm: group.driverExtraPricePerKm || 0,
+      commissionPercentage: group.commissionPercentage || 0,
+      tollRate: group.tollRate || 0,
+      parkingRate: group.parkingRate || 0,
+      gstRate: group.gstRate || 0,
+      cityCodeIds: group.cityCodeIds,
+      serviceType: group.serviceType || 'LOCAL',
+      bookingType: group.bookingType || 'AIRPORT_TO_CITY'
     });
-    setEditingPricingGroup(null);
+    
+    setIsPeakLoading(true);
+    try {
+      const peakRes = await peakHourChargeService.getAll(selectedTypeForPricing?.id);
+      setPeakCharges(peakRes.data || []);
+    } catch (e) {
+      console.error('Peak fetch error', e);
+    } finally {
+      setIsPeakLoading(false);
+    }
+    setPricingModalView('EDIT_CLUSTER');
   };
 
-  const openPricingGroupForm = (group?: VehiclePricingGroup) => {
-    if (group) {
-      setEditingPricingGroup(group);
-      setPricingFormData({
-        vehicleTypeId: group.vehicleTypeId,
-        name: group.name || '',
-        baseKm: group.baseKm,
-        baseFare: group.baseFare,
-        perKmPrice: group.perKmPrice,
-        cityCodeIds: group.cityCodeIds,
-      });
-    } else {
-      resetPricingForm(selectedTypeForPricing!.id);
-    }
-    setIsPricingGroupModalOpen(true);
-  };
-
-  const handlePricingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pricingFormData.cityCodeIds.length === 0) {
-      toast.error('Select at least one city');
-      return;
-    }
-
+  const createNewCluster = async () => {
+    if (!selectedTypeForPricing) return;
     setIsPricingSubmitting(true);
     try {
-      if (editingPricingGroup) {
-        await vehiclePricingGroupService.update(editingPricingGroup.id, pricingFormData as UpdateVehiclePricingGroupRequest);
-        toast.success('Pricing group updated');
-      } else {
-        await vehiclePricingGroupService.create(pricingFormData);
-        toast.success('Pricing group created');
-      }
-      setIsPricingGroupModalOpen(false);
-      fetchPricingGroups(selectedTypeForPricing!.id);
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Failed to save pricing group');
+      const newGroupReq: CreateVehiclePricingGroupRequest = {
+        name: `New Cluster - ${cities.find(c => !pricingGroups.some(g => g.cityCodeIds.includes(c.id)))?.cityName || 'General'}`,
+        vehicleTypeId: selectedTypeForPricing.id,
+        cityCodeIds: [],
+        baseKm: 20,
+        baseFare: 600,
+        perKmPrice: 22,
+        driverBaseKm: 20,
+        driverBasePrice: 510,
+        driverExtraPricePerKm: 18.7,
+        commissionPercentage: 15,
+        tollRate: 120,
+        parkingRate: 0,
+        gstRate: 5,
+        serviceType: 'LOCAL',
+        bookingType: 'AIRPORT_TO_CITY'
+      };
+      await vehiclePricingGroupService.create(newGroupReq);
+      toast.success('New city cluster created');
+      fetchPricingGroups(selectedTypeForPricing.id);
+    } catch (error) {
+      toast.error('Failed to create cluster');
     } finally {
       setIsPricingSubmitting(false);
     }
   };
 
-  const handleDeletePricingGroup = async (id: string) => {
-    if (!confirm('Are you sure?')) return;
+  const openPricingManager = (type: VehicleType) => {
+    setSelectedTypeForPricing(type);
+    setPricingModalView('LIST_CLUSTERS');
+    setActiveServiceTab('ALL');
+    fetchPricingGroups(type.id);
+    setIsPricingModalOpen(true);
+  };
+
+  const handlePricingUpdate = async () => {
+    if (!activeGroupId) return;
+    setIsPricingSubmitting(true);
     try {
-      await vehiclePricingGroupService.delete(id);
-      toast.success('Pricing group deleted');
+      await vehiclePricingGroupService.update(activeGroupId, pricingFormData);
+      toast.success('Pricing details updated successfully');
       fetchPricingGroups(selectedTypeForPricing!.id);
     } catch (error) {
-      toast.error('Delete failed');
+      toast.error('Failed to update cluster rates');
+    } finally {
+      setIsPricingSubmitting(false);
+    }
+  };
+
+  const handlePeakUpdate = async (peakId: string, slots: PeakHourSlot[]) => {
+    try {
+      await peakHourChargeService.update(peakId, { slots });
+      toast.success('Peak timing updated');
+    } catch (error) {
+      toast.error('Failed to update peak timings');
     }
   };
 
   const toggleCityInForm = (cityId: string) => {
-    setPricingFormData(prev => ({
-      ...prev,
-      cityCodeIds: prev.cityCodeIds.includes(cityId)
-        ? prev.cityCodeIds.filter(id => id !== cityId)
-        : [...prev.cityCodeIds, cityId]
-    }));
-  };
-
-  const handleDeleteType = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this vehicle type?')) return;
-    setDeleteId(id);
-    try {
-      await vehicleTypeService.delete(id);
-      toast.success('Vehicle type deleted successfully');
-      fetchVehicleTypes();
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Delete failed');
-    } finally {
-      setDeleteId(null);
-    }
+    setPricingFormData((prev: any) => {
+      const cityCodeIds = prev.cityCodeIds.includes(cityId)
+        ? prev.cityCodeIds.filter((id: string) => id !== cityId)
+        : [...prev.cityCodeIds, cityId];
+      return { ...prev, cityCodeIds };
+    });
   };
 
   const toggleActive = async (type: VehicleType) => {
     try {
       await vehicleTypeService.update(type.id, { isActive: !type.isActive });
-      toast.success(`Vehicle type ${!type.isActive ? 'activated' : 'deactivated'}`);
       fetchVehicleTypes();
     } catch (error) {
-      console.error('Failed to toggle active state:', error);
-      toast.error('Failed to update status');
+      toast.error('Status update failed');
     }
   };
 
-  if (isLoading) {
-    return <PageLoader />;
-  }
+  if (isLoading) return <PageLoader />;
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in space-y-8 p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 lg:mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Vehicle Types</h1>
-          <p className="text-gray-500 mt-1 text-sm sm:text-base">Manage categories and city-based pricing</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
+             Vehicle Management
+          </h1>
+          <p className="text-gray-500 mt-1 font-medium italic">Define segments and city-based pricing clusters</p>
         </div>
-        <button onClick={openCreateModal} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
-          <Plus size={20} />
-          <span>Add Vehicle Type</span>
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button 
+            onClick={() => setIsWizardOpen(true)}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-red-100 transition-all font-bold flex items-center justify-center gap-2 group text-sm"
+          >
+            <Plus size={18} />
+            <span>Quick Setup: New Segment</span>
+          </button>
+        </div>
       </div>
 
-      {/* Content */}
-      {vehicleTypes.length === 0 ? (
-        <div className="card p-8 sm:p-12 text-center">
-          <p className="text-gray-500">No vehicle types found. Create your first one!</p>
-        </div>
-      ) : (
-        <>
-          {/* Mobile Card View */}
-          <div className="lg:hidden space-y-4">
-            {vehicleTypes.map((type) => (
-              <div key={type.id} className="card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CategoryBadge category={type.category} />
+      <SegmentSetupWizard 
+        isOpen={isWizardOpen} 
+        onClose={() => setIsWizardOpen(false)} 
+        cities={cities}
+        onComplete={() => fetchVehicleTypes()}
+      />
+
+      {/* Table View */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Category</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Display Name</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Base Price</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Price/KM</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Status</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {vehicleTypes.map((type) => (
+                <tr key={type.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="px-6 py-4 text-center"><CategoryBadge category={type.category} /></td>
+                  <td className="px-6 py-4 font-bold text-gray-800">{type.displayName}</td>
+                  <td className="px-6 py-4 text-center font-bold text-gray-700">₹{type.baseFare || '-'}</td>
+                  <td className="px-6 py-4 text-center font-bold text-green-600">₹{type.pricePerKm}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-center">
                       <button onClick={() => toggleActive(type)}>
                         <ActiveBadge isActive={type.isActive} />
                       </button>
                     </div>
-                    <h3 className="font-semibold text-gray-800 truncate">{type.displayName}</h3>
-                    <p className="text-xs text-gray-500 font-mono">{type.name}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => openPricingManager(type)}
-                      className="p-2 hover:bg-orange-50 rounded-lg text-orange-600"
-                      title="Manage Pricing Groups"
-                    >
-                      <DollarSign size={18} />
-                    </button>
-                    <button
-                      onClick={() => openEditModal(type)}
-                      className="p-2 hover:bg-orange-50 rounded-lg text-orange-500"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteType(type.id)}
-                      disabled={deleteId === type.id}
-                      className="p-2 hover:bg-red-50 rounded-lg text-red-500 disabled:opacity-50"
-                    >
-                      {deleteId === type.id ? (
-                        <Loader2 size={18} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={18} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-                  <div>
-                    <p className="text-xs text-gray-500">Default Price/KM</p>
-                    <p className="font-semibold text-green-600">₹{type.pricePerKm}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Default Base Fare</p>
-                    <p className="font-semibold text-gray-600">{type.baseFare ? `₹${type.baseFare}` : '-'}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden lg:block table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Name</th>
-                  <th>Display Name</th>
-                  <th>Default Price/KM</th>
-                  <th>Default Base Fare</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vehicleTypes.map((type) => (
-                  <tr key={type.id}>
-                    <td><CategoryBadge category={type.category} /></td>
-                    <td className="font-mono text-sm text-gray-600">{type.name}</td>
-                    <td className="font-semibold text-gray-800">{type.displayName}</td>
-                    <td className="font-semibold text-green-600">₹{type.pricePerKm}</td>
-                    <td className="text-gray-600">{type.baseFare ? `₹${type.baseFare}` : '-'}</td>
-                    <td>
-                      <button onClick={() => toggleActive(type)}>
-                        <ActiveBadge isActive={type.isActive} />
-                      </button>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <button
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       <button 
                           onClick={() => openPricingManager(type)}
-                          className="p-2 hover:bg-orange-100 rounded-lg text-orange-600 transition-colors"
-                          title="Manage Pricing Groups"
-                        >
-                          <DollarSign size={18} />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(type)}
-                          className="p-2 hover:bg-orange-50 rounded-lg text-orange-500 transition-colors"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteType(type.id)}
-                          disabled={deleteId === type.id}
-                          className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-colors disabled:opacity-50"
-                        >
-                          {deleteId === type.id ? (
-                            <Loader2 size={18} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={18} />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                          className="bg-white border border-gray-200 text-gray-700 p-2 rounded-lg hover:text-red-600 hover:border-red-200 shadow-sm transition-all"
+                          title="Edit Pricing Clusters"
+                       >
+                         <DollarSign size={16} />
+                       </button>
+                       <button onClick={() => openEditModal(type)} className="bg-white border border-gray-200 text-gray-700 p-2 rounded-lg hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"><Edit2 size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* Main Vehicle Type Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); resetForm(); }}
-        title={editingType ? 'Edit Vehicle Type' : 'Create Vehicle Type'}
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value as 'BIKE' | 'AUTO' | 'CAR' })}
-              className="input"
-              disabled={!!editingType}
-            >
-              <option value="BIKE">BIKE</option>
-              <option value="AUTO">AUTO</option>
-              <option value="CAR">CAR</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Name (Identifier)</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase().replace(/\s/g, '_') })}
-              className="input font-mono"
-              placeholder="e.g., SEDAN"
-              disabled={!!editingType}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Display Name</label>
-            <input
-              type="text"
-              value={formData.displayName}
-              onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-              className="input"
-              placeholder="e.g., Sedan"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Default Price per KM (₹)</label>
-            <input
-              type="number"
-              value={formData.pricePerKm}
-              onChange={(e) => setFormData({ ...formData, pricePerKm: Number(e.target.value) })}
-              className="input"
-              min="0"
-              step="0.5"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Default Base Fare (₹) - Optional</label>
-            <input
-              type="number"
-              value={formData.baseFare || ''}
-              onChange={(e) => setFormData({ ...formData, baseFare: e.target.value ? Number(e.target.value) : undefined })}
-              className="input"
-              placeholder="Global default"
-              min="0"
-            />
-          </div>
-          <div className="flex gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
-              {isSubmitting && <Loader2 size={18} className="animate-spin" />}
-              <span>{editingType ? 'Update' : 'Create'}</span>
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* PRICING GROUPS MANAGER MODAL */}
+      {/* CLUSTER BASED PRICING MODAL */}
       <Modal
         isOpen={isPricingModalOpen}
         onClose={() => setIsPricingModalOpen(false)}
-        title={`Pricing Groups: ${selectedTypeForPricing?.displayName}`}
-        size="lg"
+        title={pricingModalView === 'LIST_CLUSTERS' ? 'Pricing Clusters' : 'Edit Price'}
+        size="xl"
       >
-        <div className="space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-            <p className="text-sm text-gray-500">Manage city-specific pricing for this vehicle type.</p>
-            <button 
-              onClick={() => openPricingGroupForm()} 
-              className="btn-primary py-2 px-4 text-sm flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Add Group
-            </button>
-          </div>
+        <div className="min-h-[400px]">
+           {pricingModalView === 'LIST_CLUSTERS' ? (
+            <div className="space-y-6 animate-in fade-in duration-300">
+               <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-red-50 p-2 rounded-lg text-red-600"><Globe size={20} /></div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">Active Rate Groups</h3>
+                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">Grouping: {selectedTypeForPricing?.displayName}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={createNewCluster}
+                    disabled={isPricingSubmitting}
+                    className="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-gray-200"
+                  >
+                    {isPricingSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                    <span>Add New Cluster</span>
+                  </button>
+               </div>
 
-          {isPricingLoading ? (
-            <div className="flex justify-center py-12"><Loader2 className="animate-spin text-orange-500" size={32} /></div>
-          ) : pricingGroups.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-              <p className="text-gray-400 text-sm">No special pricing groups for this vehicle type.</p>
+               <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                 {['ALL', 'LOCAL', 'AIRPORT', 'OUTSTATION', 'RENTAL'].map(tab => (
+                   <button
+                     key={tab}
+                     onClick={() => setActiveServiceTab(tab as ServiceType | 'ALL')}
+                     className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${activeServiceTab === tab ? 'bg-red-100 text-red-700 shadow-sm border border-red-200' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'}`}
+                   >
+                     {tab}
+                   </button>
+                 ))}
+               </div>
+
+               <div className="grid grid-cols-1 gap-4">
+                  {pricingGroups.filter(g => activeServiceTab === 'ALL' || g.serviceType === activeServiceTab).length === 0 && !isPricingLoading && (
+                    <div className="py-12 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
+                       <p className="text-gray-400 font-bold">No city clusters defined for this criteria.</p>
+                    </div>
+                  )}
+                  {pricingGroups.filter(g => activeServiceTab === 'ALL' || g.serviceType === activeServiceTab).map((group, idx) => (
+                    <div key={group.id} className="bg-white border border-gray-100 rounded-2xl p-5 hover:border-red-200 transition-all shadow-sm flex items-center justify-between group">
+                       <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-xs font-black text-gray-400 border border-gray-100">{idx + 1}</div>
+                             <h4 className="font-bold text-gray-800">{group.name}</h4>
+                             {group.serviceType && (
+                               <span className="px-2 py-0.5 bg-blue-50 text-[10px] font-black text-blue-600 rounded border border-blue-100 uppercase tracking-tight ml-2">
+                                 {group.serviceType}
+                               </span>
+                             )}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                             {group.cityCodeIds.map(cityId => (
+                               <span key={cityId} className="px-2 py-0.5 bg-gray-50 text-[10px] font-bold text-gray-500 rounded border border-gray-100 uppercase tracking-tight">
+                                  {cities.find(c => c.id === cityId)?.cityName || cityId}
+                               </span>
+                             ))}
+                             {group.cityCodeIds.length === 0 && <span className="text-[10px] text-gray-300 font-bold uppercase">No cities assigned</span>}
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2">
+                         <button 
+                           onClick={async () => {
+                             if(confirm('Are you sure you want to delete this cluster?')) {
+                               try {
+                                 await vehiclePricingGroupService.delete(group.id);
+                                 toast.success('Cluster deleted');
+                                 fetchPricingGroups(selectedTypeForPricing!.id);
+                               } catch (err) {
+                                 toast.error('Failed to delete cluster');
+                               }
+                             }
+                           }}
+                           className="bg-white border text-gray-400 p-2.5 rounded-xl border-gray-100 hover:bg-red-50 hover:border-red-100 hover:text-red-500 transition-all"
+                           title="Delete Cluster"
+                         >
+                           <Trash2 size={16} />
+                         </button>
+                         <button 
+                           onClick={() => loadGroupForEdit(group)}
+                           className="bg-white border border-gray-100 text-gray-400 p-2.5 rounded-xl group-hover:bg-blue-50 group-hover:border-blue-100 group-hover:text-blue-500 transition-all flex items-center gap-2 font-bold text-xs"
+                         >
+                           <span>Edit Rates</span>
+                           <ChevronRight size={16} />
+                         </button>
+                       </div>
+                    </div>
+                  ))}
+               </div>
             </div>
           ) : (
-            <div className="grid gap-4 max-h-[50vh] overflow-y-auto pr-2">
-              {pricingGroups.map(group => (
-                <div key={group.id} className="p-4 bg-white border border-gray-200 rounded-2xl flex items-center justify-between group hover:border-orange-200 transition-colors shadow-sm">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-gray-800">{group.name || 'Unnamed Group'}</h4>
-                      <div className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
-                        ₹{group.perKmPrice}/km
+            <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+              {/* Toolbar in Edit mode as seen in mockup */}
+              <div className="flex items-center justify-between bg-white sticky top-0 z-10 pb-4 border-b border-gray-100">
+                 <button 
+                   onClick={() => setPricingModalView('LIST_CLUSTERS')}
+                   className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-red-500 transition-colors"
+                 >
+                   <ArrowLeft size={16} />
+                   <span>Back to Clusters</span>
+                 </button>
+                 <button className="bg-red-600 p-2 rounded-lg text-white hover:bg-red-700 transition-all shadow-md shadow-red-100">
+                    <RefreshCw size={18} />
+                 </button>
+              </div>
+
+              {/* Price Details Section (High-Fidelity Mockup) */}
+              <div className="space-y-6">
+                <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                   <div className="bg-gray-50/50 px-6 py-3 border-b border-gray-100">
+                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Price Details</h3>
+                   </div>
+                   <div className="p-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                         {/* Row 1 */}
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">City Code</label>
+                           <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50/50 rounded-xl border border-gray-100 max-h-32 overflow-y-auto custom-scrollbar">
+                              {cities.map(city => (
+                                 <label key={city.id} className="flex items-center gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-transparent cursor-pointer hover:border-red-100 transition-all shadow-sm">
+                                   <input 
+                                     type="checkbox" 
+                                     checked={pricingFormData.cityCodeIds.includes(city.id)}
+                                     onChange={() => toggleCityInForm(city.id)}
+                                     className="w-3.5 h-3.5 rounded text-red-600 focus:ring-red-500"
+                                   />
+                                   <span className="text-[11px] font-bold text-gray-700">{city.cityName}</span>
+                                 </label>
+                              ))}
+                           </div>
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">Service Type</label>
+                           <select 
+                             value={pricingFormData.serviceType}
+                             onChange={e => setPricingFormData({...pricingFormData, serviceType: e.target.value as ServiceType})}
+                             className="w-full h-11 bg-white border border-gray-200 rounded-xl px-4 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-100 transition-all"
+                           >
+                              <option value="LOCAL">📍 Local Hourly</option>
+                              <option value="AIRPORT">✈ Airport Transfers</option>
+                              <option value="OUTSTATION">🛣 Outstation Trips</option>
+                              <option value="RENTAL">📅 Long-Term Rental</option>
+                           </select>
+                         </div>
+
+                         {/* Row 2 */}
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">Vehicle Category</label>
+                           <div className="w-full h-11 bg-white border border-gray-200 rounded-xl px-4 flex items-center text-xs font-bold text-gray-600">
+                             {selectedTypeForPricing?.displayName || 'N/A'}
+                           </div>
+                         </div>
+                         <MockInput label="Base KM" value={pricingFormData.baseKm} onChange={v => setPricingFormData({...pricingFormData, baseKm: v})} />
+
+                         {/* Row 3 */}
+                         <MockInput label="Base Price" value={pricingFormData.baseFare} onChange={v => setPricingFormData({...pricingFormData, baseFare: v})} />
+                         <MockInput label="Extra Price/KM" value={pricingFormData.perKmPrice} onChange={v => setPricingFormData({...pricingFormData, perKmPrice: v})} />
+
+                         {/* Row 4 */}
+                         <MockInput label="Driver Base KM" value={pricingFormData.driverBaseKm} onChange={v => setPricingFormData({...pricingFormData, driverBaseKm: v})} />
+                         <MockInput label="Driver Base Price" value={pricingFormData.driverBasePrice} onChange={v => setPricingFormData({...pricingFormData, driverBasePrice: v})} />
+
+                         {/* Row 5 */}
+                         <MockInput label="Driver Extra Price/KM" value={pricingFormData.driverExtraPricePerKm} onChange={v => setPricingFormData({...pricingFormData, driverExtraPricePerKm: v})} />
+                         <MockInput label="Commission Percentage" value={pricingFormData.commissionPercentage} onChange={v => setPricingFormData({...pricingFormData, commissionPercentage: v})} />
+
+                         {/* Row 6 */}
+                         <MockInput label="Toll Rate" value={pricingFormData.tollRate} onChange={v => setPricingFormData({...pricingFormData, tollRate: v})} />
+                         <MockInput label="Parking Rate" value={pricingFormData.parkingRate} onChange={v => setPricingFormData({...pricingFormData, parkingRate: v})} />
+
+                         {/* Row 7 */}
+                         <MockInput label="gstRate" value={pricingFormData.gstRate} onChange={v => setPricingFormData({...pricingFormData, gstRate: v})} />
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-red-500 uppercase tracking-widest">Vehicle Status</label>
+                            <select className="w-full h-11 bg-white border border-gray-200 rounded-xl px-4 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-100 transition-all">
+                               <option>Active</option>
+                               <option>Inactive</option>
+                            </select>
+                         </div>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {group.cityCodes?.map(c => (
-                        <span key={c.id} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md border border-gray-200">
-                          {c.cityName}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 ml-4">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase">Base</p>
-                      <p className="text-sm font-bold text-gray-700">₹{group.baseFare} · {group.baseKm}km</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => openPricingGroupForm(group)} className="p-2 hover:bg-orange-50 text-orange-500 rounded-lg"><Edit2 size={16} /></button>
-                      <button onClick={() => handleDeletePricingGroup(group.id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg"><Trash2 size={16} /></button>
-                    </div>
-                  </div>
+
+                      <div className="flex justify-end pt-4">
+                        <button 
+                          onClick={handlePricingUpdate}
+                          disabled={isPricingSubmitting}
+                          className="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-green-100 transition-all flex items-center gap-2"
+                        >
+                          {isPricingSubmitting && <Loader2 size={14} className="animate-spin" />}
+                          <span>Update</span>
+                        </button>
+                      </div>
+                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Peak Hr Section (High-Fidelity Mockup) */}
+              <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                 <div className="bg-gray-50/50 px-6 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Peak Hr</h3>
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md shadow-blue-50">
+                       Add Peak Hour
+                    </button>
+                 </div>
+                 <div className="p-6">
+                    <div className="overflow-x-auto pb-4 custom-scrollbar">
+                       <div className="flex gap-4 min-w-max pr-6">
+                          {peakCharges.map((charge, cIdx) => (
+                            <div key={charge.id} className="flex gap-4">
+                               {charge.slots.map((slot, sIdx) => (
+                                 <div key={sIdx} className="w-[380px] border border-gray-100 rounded-2xl overflow-hidden bg-gray-50/30">
+                                    <div className="bg-gray-50/80 py-3 text-center border-b border-gray-100">
+                                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Section {sIdx + 1}</span>
+                                    </div>
+                                    <div className="p-4 space-y-4">
+                                       <div className="flex items-center justify-center gap-4 bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                                          <input type="time" value={slot.startTime} className="bg-transparent text-xs font-bold focus:outline-none" onChange={() => {}} />
+                                          <ChevronDown size={14} className="text-gray-300" />
+                                          <input type="time" value={slot.endTime} className="bg-transparent text-xs font-bold focus:outline-none" onChange={() => {}} />
+                                       </div>
+                                       <div className="bg-white border border-gray-100 rounded-xl overflow-hidden text-[11px] ring-1 ring-gray-100">
+                                          <table className="w-full text-left">
+                                             <tbody className="divide-y divide-gray-50">
+                                                {DAYS_OF_WEEK.map(day => (
+                                                   <tr key={day} className="hover:bg-gray-50/50">
+                                                      <td className="px-4 py-2.5 font-black text-gray-500 uppercase tracking-widest border-r border-gray-50 w-24 bg-gray-50/30">{day.slice(0, 3)}</td>
+                                                      <td className="px-4 py-2.5 text-right font-bold text-gray-700">
+                                                         <div className="flex items-center justify-end gap-1">
+                                                            <input 
+                                                              type="number" 
+                                                              value={slot.dayAdjustments[day]} 
+                                                              className="w-10 text-right bg-transparent focus:outline-none"
+                                                              onChange={() => {}} 
+                                                            />
+                                                            <span className="text-gray-300 font-medium">%</span>
+                                                         </div>
+                                                      </td>
+                                                   </tr>
+                                                ))}
+                                                <tr className="bg-gray-50/80">
+                                                   <td className="px-4 py-3 font-black text-gray-900 uppercase tracking-widest">Actions</td>
+                                                   <td className="px-4 py-3 text-right">
+                                                      <button 
+                                                        onClick={() => handlePeakUpdate(charge.id, charge.slots)}
+                                                        className="w-full h-8 bg-[#9ea7ad] hover:bg-[#8d969b] text-white rounded font-black text-[10px] uppercase tracking-widest shadow-sm shadow-gray-200 transition-all"
+                                                      >
+                                                         UPDATE
+                                                      </button>
+                                                   </td>
+                                                </tr>
+                                             </tbody>
+                                          </table>
+                                       </div>
+                                    </div>
+                                 </div>
+                               ))}
+                            </div>
+                          ))}
+                          {peakCharges.length === 0 && (
+                            <div className="w-[300px] h-[300px] flex items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 text-[10px] font-black text-gray-300 uppercase italic">
+                               No slots configured
+                            </div>
+                          )}
+                       </div>
+                    </div>
+                 </div>
+              </div>
             </div>
           )}
         </div>
       </Modal>
 
-      {/* PRICING GROUP EDIT/CREATE MODAL */}
+      {/* Basic Meta Modal */}
       <Modal
-        isOpen={isPricingGroupModalOpen}
-        onClose={() => setIsPricingGroupModalOpen(false)}
-        title={editingPricingGroup ? 'Edit Pricing Group' : 'New Pricing Group'}
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); resetForm(); }}
+        title={editingType ? 'Edit Vehicle Type' : 'Create Vehicle Type'}
       >
-        <form onSubmit={handlePricingSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Group Name</label>
-            <input 
-              type="text" 
-              className="input" 
-              value={pricingFormData.name} 
-              onChange={e => setPricingFormData({...pricingFormData, name: e.target.value})}
-              placeholder="e.g. Metro Cities"
-            />
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="space-y-4">
+             <div className="grid grid-cols-3 gap-3">
+               {['CAR', 'AUTO', 'BIKE'].map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setFormData({...formData, category: c as any})}
+                    className={`py-3 rounded-xl border-2 transition-all font-black text-xs tracking-widest ${formData.category === c ? 'bg-red-50 border-red-500 text-red-600' : 'bg-white border-gray-100 text-gray-400'}`}
+                  >
+                    {c}
+                  </button>
+               ))}
+             </div>
+             <div>
+               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Display Name</label>
+               <input
+                 type="text"
+                 value={formData.displayName}
+                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                 className="w-full h-11 bg-white border border-gray-200 rounded-xl px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-100"
+                 placeholder="e.g., Sedan"
+               />
+             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1 font-required">Price/KM (₹)</label>
-              <input type="number" className="input" step="0.5" required
-                value={pricingFormData.perKmPrice} onChange={e => setPricingFormData({...pricingFormData, perKmPrice: Number(e.target.value)})} />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1 font-required">Base Fare (₹)</label>
-              <input type="number" className="input" required
-                value={pricingFormData.baseFare} onChange={e => setPricingFormData({...pricingFormData, baseFare: Number(e.target.value)})} />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1 font-required">Base distance (KM)</label>
-            <input type="number" className="input" required
-              value={pricingFormData.baseKm} onChange={e => setPricingFormData({...pricingFormData, baseKm: Number(e.target.value)})} />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 font-required">Apply to Cities</label>
-            <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100 max-h-40 overflow-y-auto">
-              {cities.map(city => (
-                <button
-                  key={city.id}
-                  type="button"
-                  onClick={() => toggleCityInForm(city.id)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
-                    pricingFormData.cityCodeIds.includes(city.id)
-                      ? 'bg-orange-500 text-white border-orange-500'
-                      : 'bg-white text-gray-500 border-gray-200'
-                  }`}
-                >
-                  {city.cityName}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex gap-3 pt-4">
-            <button type="button" onClick={() => setIsPricingGroupModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
-            <button type="submit" disabled={isPricingSubmitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
-              {isPricingSubmitting && <Loader2 size={16} className="animate-spin" />}
-              <span>{editingPricingGroup ? 'Update' : 'Create'}</span>
+          <div className="flex gap-3 pt-6">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-12 rounded-xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="flex-1 h-12 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all">
+              {editingType ? 'Save Changes' : 'Create Type'}
             </button>
           </div>
         </form>
@@ -606,3 +696,20 @@ export default function VehicleTypesPage() {
   );
 }
 
+function MockInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="space-y-2">
+       <div className="flex h-11 ring-1 ring-gray-100 rounded-xl overflow-hidden focus-within:ring-red-100 transition-all">
+          <div className="w-[140px] bg-red-50/50 flex items-center px-4 border-r border-gray-50">
+             <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{label}</span>
+          </div>
+          <input 
+            type="number" 
+            value={value} 
+            onChange={e => onChange(Number(e.target.value))}
+            className="flex-1 bg-white px-4 text-xs font-bold text-gray-700 focus:outline-none"
+          />
+       </div>
+    </div>
+  );
+}

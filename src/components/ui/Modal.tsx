@@ -8,7 +8,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
@@ -18,6 +18,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
+    xl: 'max-w-5xl',
   };
 
   return (
@@ -29,9 +30,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
       />
       
       {/* Modal */}
-      <div className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl animate-fade-in`}>
+      <div className={`relative w-full ${sizeClasses[size]} bg-white rounded-2xl shadow-2xl animate-fade-in max-h-[90vh] flex flex-col`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-orange-100">
+        <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-orange-100">
           <h2 className="text-xl font-bold text-gray-800">{title}</h2>
           <button
             onClick={onClose}
@@ -42,7 +43,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
         </div>
         
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
           {children}
         </div>
       </div>

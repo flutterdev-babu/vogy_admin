@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Loader2, DollarSign, Percent, Info } from 'lucide-react';
+import { Save, Loader2, DollarSign, Percent, Info, Clock, Plus } from 'lucide-react';
+import Link from 'next/link';
 import { pricingService } from '@/services/pricingService';
 import { PricingConfig } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -217,6 +218,24 @@ export default function PricingPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Helpful Link */}
+      <div className="mt-8 p-4 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-between gap-4">
+        <div>
+          <h4 className="font-bold text-gray-800 flex items-center gap-2">
+            <Clock size={18} className="text-orange-500" />
+            Peak Hour Charges
+          </h4>
+          <p className="text-sm text-gray-600 mt-1">Configure temporary price increases for high-demand periods and specific cities.</p>
+        </div>
+        <Link 
+          href="/dashboard/peak-hour-charges" 
+          className="btn-primary py-2 px-4 text-sm flex items-center gap-2 whitespace-nowrap"
+        >
+          Manage Peak Charges
+          <Plus size={16} />
+        </Link>
       </div>
 
       {/* Current Config Info */}

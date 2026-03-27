@@ -2,25 +2,25 @@ import { adminApi } from '@/lib/api';
 import { ApiResponse, VehiclePricingGroup, CreateVehiclePricingGroupRequest, UpdateVehiclePricingGroupRequest } from '@/types';
 
 export const vehiclePricingGroupService = {
-  async getAll(vehicleTypeId?: string): Promise<ApiResponse<VehiclePricingGroup[]>> {
-    const response = await adminApi.get('/admin/vehicle-pricing-groups', {
-      params: { vehicleTypeId },
+  async getAll(vehicleTypeId?: string, serviceType?: string): Promise<ApiResponse<VehiclePricingGroup[]>> {
+    const response = await adminApi.get('/vehicle-pricing-groups', {
+      params: { vehicleTypeId, serviceType },
     });
     return response.data;
   },
 
   async create(data: CreateVehiclePricingGroupRequest): Promise<ApiResponse<VehiclePricingGroup>> {
-    const response = await adminApi.post('/admin/vehicle-pricing-groups', data);
+    const response = await adminApi.post('/vehicle-pricing-groups', data);
     return response.data;
   },
 
   async update(id: string, data: UpdateVehiclePricingGroupRequest): Promise<ApiResponse<VehiclePricingGroup>> {
-    const response = await adminApi.put(`/admin/vehicle-pricing-groups/${id}`, data);
+    const response = await adminApi.put(`/vehicle-pricing-groups/${id}`, data);
     return response.data;
   },
 
   async delete(id: string): Promise<ApiResponse<void>> {
-    const response = await adminApi.delete(`/admin/vehicle-pricing-groups/${id}`);
+    const response = await adminApi.delete(`/vehicle-pricing-groups/${id}`);
     return response.data;
   },
 };

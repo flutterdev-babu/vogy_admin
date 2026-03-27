@@ -11,6 +11,7 @@ import {
   Users,
   UserCheck,
   Calendar,
+  Clock,
   LogOut,
   Menu,
   X,
@@ -117,7 +118,6 @@ const navSections: NavSection[] = [
     title: 'Configuration',
     items: [
       { href: '/dashboard/city-codes', label: 'City Codes', icon: MapPin },
-      { href: '/dashboard/pricing', label: 'Pricing Config', icon: DollarSign },
       { href: '/dashboard/permissions', label: 'Permissions', icon: UserCheck },
       { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
       { href: '/dashboard/audit-logs', label: 'Audit Logs', icon: FileVideo },
