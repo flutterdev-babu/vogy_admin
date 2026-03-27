@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Filter, Download } from 'lucide-react';
 
 interface Column<T> {
   header: string;
@@ -15,11 +15,14 @@ interface AdvancedTableProps<T> {
   searchable?: boolean;
   searchKeys?: (keyof T)[];
   itemsPerPage?: number;
+  isLoading?: boolean;
+  searchPlaceholder?: string;
   filters?: {
     label: string;
     options: { label: string; value: string }[];
     onFilterChange: (value: string) => void;
   }[];
+  onExport?: () => void;
 }
 
 export function AdvancedTable<T extends { id?: string | number }>({
@@ -28,13 +31,16 @@ export function AdvancedTable<T extends { id?: string | number }>({
   searchable = true,
   searchKeys = [],
   itemsPerPage = 10,
+  isLoading = false,
+  searchPlaceholder = "Search...",
   filters = [],
+  onExport,
 }: AdvancedTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filter data based on search term
-  const filteredData = data.filter((item) => {
+  const filteredData = Array.isArray(data) ? data.filter((item) => {
     if (!searchable || !searchTerm) return true;
     
     // If no specific keys provided, search all string/number values
@@ -47,7 +53,7 @@ export function AdvancedTable<T extends { id?: string | number }>({
     return searchKeys.some((key) =>
       String(item[key]).toLowerCase().includes(searchTerm.toLowerCase())
     );
-  });
+  }) : [];
 
   // Simple Pagination
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -69,7 +75,7 @@ export function AdvancedTable<T extends { id?: string | number }>({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={searchPlaceholder}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 text-sm w-full sm:w-64"
               value={searchTerm}
               onChange={(e) => {
@@ -80,28 +86,38 @@ export function AdvancedTable<T extends { id?: string | number }>({
           </div>
         )}
 
-        {/* Filters Placeholder - customizable via props */}
-        {filters.length > 0 && (
-          <div className="flex gap-2">
-            {filters.map((filter, index) => (
-              <select
-                key={index}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                onChange={(e) => {
-                    filter.onFilterChange(e.target.value);
-                    setCurrentPage(1);
-                }}
-              >
-                <option value="">{filter.label}</option>
-                {filter.options.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            ))}
-          </div>
-        )}
+        {/* Filters and Actions */}
+        <div className="flex gap-2 items-center flex-wrap">
+          {filters.length > 0 && (
+            <div className="flex gap-2">
+              {filters.map((filter, index) => (
+                <select
+                  key={index}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                  onChange={(e) => {
+                      filter.onFilterChange(e.target.value);
+                      setCurrentPage(1);
+                  }}
+                >
+                  <option value="">{filter.label}</option>
+                  {filter.options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              ))}
+            </div>
+          )}
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="px-4 py-2 flex items-center gap-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors"
+            >
+              <Download size={16} /> Export CSV
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -121,7 +137,16 @@ export function AdvancedTable<T extends { id?: string | number }>({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {currentData.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={columns.length} className="py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-4 border-red-500/30 border-t-red-500 rounded-full animate-spin"></div>
+                        <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Loading Records...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : currentData.length > 0 ? (
                 currentData.map((item, rowIndex) => (
                   <tr key={item.id || rowIndex} className="hover:bg-gray-50/50 transition-colors">
                     {columns.map((col, colIndex) => (

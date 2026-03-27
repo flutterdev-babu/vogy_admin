@@ -1,6 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const isDev = process.env.NODE_ENV === 'development';
+const fallbackUrl = isDev ? 'http://localhost:5000/api' : 'https://vogy-backend.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || fallbackUrl;
 
 // Create axios instance with common config
 const createApiInstance = (baseURL: string): AxiosInstance => {

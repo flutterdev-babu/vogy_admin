@@ -43,19 +43,19 @@ export default function ContactPage() {
             <ContactInfoCard 
               icon={<Phone size={24} className="text-[#E32222]" />}
               title="Call Us"
-              content="+91 98765 43210"
+              content="+91 7569645049"
               subContent="Mon-Sun, 24/7"
             />
             <ContactInfoCard 
               icon={<Mail size={24} className="text-[#E32222]" />}
               title="Email Us"
-              content="support@aratravels.in"
+              content="bookings.aratravels@gmail.com / info@aratravels.in"
               subContent="We'll respond within 24 hours"
             />
             <ContactInfoCard 
               icon={<MapPin size={24} className="text-[#E32222]" />}
               title="Visit Us"
-              content="Bangalore, Pune, Mumbai, Hyderabad"
+              content="63, 5th cross, Manjunatha Layout, Munnekollal, Bengaluru 560037"
               subContent="Multiple city operations"
             />
           </div>

@@ -58,10 +58,10 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-50 bg-[#0D0D0D]/80 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-24">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
-            <div className="relative w-12 h-12">
+            <div className="relative w-14 h-14">
               <Image 
                 src="/logo_image.png" 
                 alt="Ara Travels Logo" 
@@ -69,7 +69,7 @@ export default function Navbar() {
                 className="object-contain rounded-xl"
               />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white">ARA <span className="text-[#E32222]">TRAVELS</span></span>
+            <span className="text-3xl font-bold tracking-tight text-white">ARA <span className="text-[#E32222]">TRAVELS</span></span>
           </Link>
 
           {/* Desktop Menu */}

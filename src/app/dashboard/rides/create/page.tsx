@@ -56,6 +56,11 @@ export default function CreateRidePage() {
     pickupLng: 0,
     dropLat: 0,
     dropLng: 0,
+    flightNumber: '',
+    isRoundTrip: false,
+    returnDate: '',
+    packageHours: '',
+    packageKms: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -282,6 +287,17 @@ export default function CreateRidePage() {
         ? new Date(`${formData.bookingDate}T${formData.bookingTime}:00`).toISOString() 
         : new Date().toISOString();
 
+      let finalNotes = `Email: ${formData.email}, Alt: ${formData.altMobile}, Agent: ${formData.agentCode}, Corporate: ${formData.corporateId}`;
+      if (formData.rideType === 'AIRPORT' && formData.flightNumber) {
+        finalNotes += `, Flight: ${formData.flightNumber}`;
+      } else if (formData.rideType === 'OUTSTATION') {
+        finalNotes += `, RoundTrip: ${formData.isRoundTrip ? 'Yes' : 'No'}`;
+        if (formData.isRoundTrip && formData.returnDate) finalNotes += `, ReturnDate: ${formData.returnDate}`;
+      } else if (formData.rideType === 'RENTAL') {
+        if (formData.packageHours) finalNotes += `, PkgHours: ${formData.packageHours}`;
+        if (formData.packageKms) finalNotes += `, PkgKMs: ${formData.packageKms}`;
+      }
+
       await adminRideService.createManualRide({
         userName: formData.customerName,
         userPhone: `+91${formData.phone}`,
@@ -297,7 +313,7 @@ export default function CreateRidePage() {
         dropLng: formData.dropLng || 77.6245,
         distanceKm: Number(formData.distanceKm),
         scheduledDateTime,
-        bookingNotes: `Email: ${formData.email}, Alt: ${formData.altMobile}, Agent: ${formData.agentCode}, Corporate: ${formData.corporateId}`,
+        bookingNotes: finalNotes,
         isManualBooking: true,
         couponCode: appliedCoupon ? appliedCoupon.couponCode : undefined
       });
@@ -503,6 +519,57 @@ export default function CreateRidePage() {
               })}
             </div>
           </div>
+
+          {/* Conditional Fields based on Booking Type */}
+          {formData.rideType === 'AIRPORT' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+              <div className={inputGroupClass}>
+                <label className={labelSideClass}>Flight Number</label>
+                <input type="text" value={formData.flightNumber}
+                  onChange={e => setFormData({...formData, flightNumber: e.target.value})}
+                  className={fieldClass} placeholder="e.g. AI 404" />
+              </div>
+            </div>
+          )}
+
+          {formData.rideType === 'OUTSTATION' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-orange-50/50 rounded-xl border border-orange-100 items-center">
+              <div className="flex items-center gap-3 px-2">
+                <input type="checkbox" id="roundTrip" checked={formData.isRoundTrip}
+                  onChange={e => setFormData({...formData, isRoundTrip: e.target.checked})}
+                  className="w-5 h-5 rounded border-gray-300 text-[#E32222] focus:ring-[#E32222]" />
+                <label htmlFor="roundTrip" className="text-sm font-semibold text-gray-700 cursor-pointer">Return Trip Required?</label>
+              </div>
+              {formData.isRoundTrip && (
+                <div className={inputGroupClass}>
+                  <label className={labelSideClass}>Return Date</label>
+                  <div className="flex-1 flex items-center pr-4">
+                    <input type="date" value={formData.returnDate}
+                      onChange={e => setFormData({...formData, returnDate: e.target.value})}
+                      className={`${fieldClass} pr-0`} />
+                    <CalendarIcon size={18} className="text-gray-400" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {formData.rideType === 'RENTAL' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-purple-50/50 rounded-xl border border-purple-100">
+              <div className={inputGroupClass}>
+                <label className={labelSideClass}>Package Hours</label>
+                <input type="number" min="1" value={formData.packageHours}
+                  onChange={e => setFormData({...formData, packageHours: e.target.value})}
+                  className={fieldClass} placeholder="e.g. 8" />
+              </div>
+              <div className={inputGroupClass}>
+                <label className={labelSideClass}>Package KMs</label>
+                <input type="number" min="1" value={formData.packageKms}
+                  onChange={e => setFormData({...formData, packageKms: e.target.value})}
+                  className={fieldClass} placeholder="e.g. 80" />
+              </div>
+            </div>
+          )}
 
           {/* Agent Code */}
           <div className="max-w-md">

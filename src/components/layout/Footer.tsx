@@ -47,9 +47,10 @@ export default function Footer() {
         <div>
            <h4 className="font-bold text-lg mb-6 text-white">Contact</h4>
           <ul className="space-y-4 text-neutral-500 text-sm">
-            <li className="flex items-center gap-3"><Phone size={18} className="text-[#E32222]" /> +91 7569645049</li>
-            <li className="flex items-center gap-3"><Mail size={18} className="text-[#E32222]" /> support@aratravels.in</li>
-             <li className="flex items-center gap-3">< MapPin size={29} className="text-[#E32222]" /> 63,5th cross, Manjunatha Layout, Munnekolala, Marathahalli Bangalore 560037</li>
+             <li className="flex items-center gap-3"><Phone size={18} className="text-[#E32222]" /> +91 7569645049</li>
+             <li className="flex items-center gap-3"><Mail size={18} className="text-[#E32222]" /> bookings.aratravels@gmail.com</li>
+            <li className="flex items-center gap-3"><Mail size={18} className="text-[#E32222]" /> info@aratravels.in</li>
+             <li className="flex items-center gap-3">< MapPin size={29} className="text-[#E32222]" /> 63,5th cross, Manjunatha Layout, Munnekollal, Bengaluru 560037</li>
           </ul>
         </div>
       </div>

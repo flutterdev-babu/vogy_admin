@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,8 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('admin_user');
   };
 
+  const hasPermission = (permission: string): boolean => {
+    if (!admin) return false;
+    if (admin.role === 'SUPERADMIN') return true;
+    return admin.permissions?.includes(permission) || false;
+  };
+
   return (
-    <AuthContext.Provider value={{ admin, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ admin, token, isLoading, login, logout, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

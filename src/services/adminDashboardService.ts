@@ -5,7 +5,9 @@ import {
   AdminRevenueAnalytics, 
   AdminRideAnalytics, 
   AdminEntityAnalytics, 
-  AdminRecentActivity 
+  AdminRecentActivity,
+  CancellationAnalytics,
+  AuditTimelineItem
 } from '@/types';
 
 export const adminDashboardService = {
@@ -29,5 +31,13 @@ export const adminDashboardService = {
     return response.data;
   },
 
+  async getCancellationAnalytics(): Promise<ApiResponse<CancellationAnalytics[]>> {
+    const response = await api.get('/analytics/cancellations');
+    return response.data;
+  },
 
+  async getAuditTimeline(): Promise<ApiResponse<AuditTimelineItem[]>> {
+    const response = await api.get('/audit-timeline');
+    return response.data;
+  },
 };

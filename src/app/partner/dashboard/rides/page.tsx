@@ -6,6 +6,8 @@ import { ExportButton } from '@/components/ui/ExportButton';
 import { StatusBadge } from '@/components/ui/Badge';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { partnerService } from '@/services/partnerService';
+import { socketService } from '@/services/socketService';
+import { TOKEN_KEYS } from '@/lib/api';
 import { Ride } from '@/types';
 import { Eye, X, MapPin, User, Car as CarIcon, CreditCard } from 'lucide-react';
 
@@ -29,6 +31,32 @@ export default function PartnerRidesPage() {
             }
         };
         fetchRides();
+
+        // Connect socket for real-time updates
+        socketService.connect(TOKEN_KEYS.partner);
+
+        const handleRideEvent = (data: { ride: Ride }) => {
+            if (data?.ride) {
+                setRides(prev => {
+                    const exists = prev.some(r => r.id === data.ride.id);
+                    if (exists) {
+                        return prev.map(r => r.id === data.ride.id ? { ...r, ...data.ride } : r);
+                    }
+                    return [data.ride, ...prev];
+                });
+            }
+        };
+
+        socketService.on('ride:new_request', handleRideEvent);
+        socketService.on('ride:status_changed', handleRideEvent);
+        socketService.on('ride:assigned', handleRideEvent);
+
+        return () => {
+            socketService.off('ride:new_request', handleRideEvent);
+            socketService.off('ride:status_changed', handleRideEvent);
+            socketService.off('ride:assigned', handleRideEvent);
+            // Optional: socketService.disconnect(); if we want to drop connection on unmount
+        };
     }, []);
 
     const columns = [
@@ -43,7 +71,7 @@ export default function PartnerRidesPage() {
                 </div>
             )
         },
-        { 
+        {
             header: 'Vehicle & Vendor', accessor: (ride: Ride) => (
                 <div className="flex flex-col text-xs">
                     <span className="font-semibold text-gray-800">{ride.vehicle?.registrationNumber || 'N/A'}</span>
@@ -51,7 +79,7 @@ export default function PartnerRidesPage() {
                 </div>
             )
         },
-        { 
+        {
             header: 'Fare Breakup', accessor: (ride: Ride) => (
                 <div className="flex flex-col text-xs">
                     <span className="font-bold text-gray-800">₹{ride.totalFare}</span>
@@ -59,7 +87,7 @@ export default function PartnerRidesPage() {
                 </div>
             )
         },
-        { 
+        {
             header: 'Payment', accessor: (ride: Ride) => (
                 <div className="flex flex-col text-xs">
                     <span className="font-bold text-gray-800">{ride.paymentMode || 'N/A'}</span>
@@ -69,13 +97,13 @@ export default function PartnerRidesPage() {
         },
         { header: 'My Earnings', accessor: (ride: Ride) => <span className="font-bold text-green-600">₹{ride.riderEarnings ?? ride.partnerEarnings ?? 0}</span> },
         { header: 'Status', accessor: (ride: Ride) => <StatusBadge status={ride.status} /> },
-        { 
+        {
             header: 'Actions', accessor: (ride: Ride) => (
-                <button 
-                  onClick={() => setSelectedRide(ride)}
-                  className="px-3 py-1.5 bg-emerald-50 text-emerald-600 font-bold text-xs rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
+                <button
+                    onClick={() => setSelectedRide(ride)}
+                    className="px-3 py-1.5 bg-emerald-50 text-emerald-600 font-bold text-xs rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1"
                 >
-                  <Eye size={14} /> Details
+                    <Eye size={14} /> Details
                 </button>
             )
         },
@@ -151,7 +179,7 @@ function RideDetailsModal({ ride, onClose }: { ride: Ride; onClose: () => void }
                         </h3>
                         <div className="relative pl-6 space-y-6">
                             <div className="absolute left-2.5 top-2 bottom-2 w-0.5 bg-gray-200"></div>
-                            
+
                             <div className="relative">
                                 <div className="absolute -left-[27px] w-4 h-4 rounded-full bg-emerald-100 border-2 border-emerald-500 z-10"></div>
                                 <p className="text-xs font-bold text-gray-400 uppercase mb-1">Pickup</p>

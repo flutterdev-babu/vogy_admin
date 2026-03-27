@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { 
-  RefreshCw, ChevronLeft, ChevronRight, Search, 
-  RotateCcw, Plus, MoreHorizontal, X, Filter 
+import {
+  RefreshCw, ChevronLeft, ChevronRight, Search,
+  RotateCcw, Plus, MoreHorizontal, X, Filter, Download
 } from 'lucide-react';
 import { adminRideService } from '@/services/adminRideService';
 import { Ride, RideStatus, RideFilters } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { exportToCSV } from '@/utils/csvExport';
 
 const STATUS_TABS: { label: string; value: RideStatus | 'ALL' }[] = [
   { label: 'Requested', value: 'REQUESTED' },
@@ -45,7 +46,7 @@ export default function RidesPage() {
   const fetchRides = async () => {
     setIsLoading(true);
     try {
-      const response = await adminRideService.getAllRides(); 
+      const response = await adminRideService.getAllRides();
       setRides(response.data || []);
     } catch (error) {
       console.error('Failed to fetch rides:', error);
@@ -65,9 +66,28 @@ export default function RidesPage() {
     const mobileMatch = !filters.mobile || ride.user?.phone?.includes(filters.mobile);
     const driverMatch = !filters.driver || ride.partner?.name?.toLowerCase().includes(filters.driver.toLowerCase());
     const vehicleMatch = !filters.vehicle || ride.vehicleType?.displayName?.toLowerCase().includes(filters.vehicle.toLowerCase());
-    
+
     return statusMatch && reqIdMatch && nameMatch && mobileMatch && driverMatch && vehicleMatch;
   });
+
+  const handleExport = () => {
+    const dataToExport = filteredRides.map(ride => ({
+      'Req ID': ride.customId || 'N/A',
+      'Source': ride.pickupAddress || 'N/A',
+      'Destination': ride.dropAddress || 'N/A',
+      'Date': new Date(ride.createdAt).toLocaleDateString(),
+      'Name': ride.user?.name || 'N/A',
+      'Mobile': ride.user?.phone || 'N/A',
+      'Service': ride.serviceType || 'City To Airport',
+      'Payment Mode': ride.paymentMode || 'Cash',
+      'Vehicle': ride.vehicleType?.displayName || 'SEDAN',
+      'Distance (km)': ride.distanceKm?.toFixed(1) || '0',
+      'Driver': ride.partner?.name || 'N/A',
+      'Cost': ride.totalFare?.toFixed(2) || '0',
+      'Status': ride.status
+    }));
+    exportToCSV(dataToExport, `Rides_Export_${new Date().toISOString().slice(0, 10)}`);
+  };
 
   if (isLoading) return <PageLoader />;
 
@@ -77,14 +97,21 @@ export default function RidesPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-bold text-gray-800">Booking List</h1>
         <div className="flex gap-3">
-          <Link 
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-green-100 border border-green-200 transition-all active:scale-[0.98]"
+            title="Download currently filtered rides as CSV"
+          >
+            <Download size={16} /> Export CSV
+          </button>
+          <Link
             href="/dashboard/rides/create"
             className="flex items-center gap-2 px-4 py-2 bg-[#E32222] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#cc1f1f] shadow-sm transition-all active:scale-[0.98]"
           >
             <Plus size={16} />
             Add New Booking
           </Link>
-          <button 
+          <button
             onClick={fetchRides}
             className="p-2 bg-[#D32F2F] text-white rounded-lg hover:bg-[#b71c1c] transition-colors shadow-sm"
           >
@@ -100,11 +127,10 @@ export default function RidesPage() {
             <button
               key={tab.label}
               onClick={() => setActiveTab(tab.value)}
-              className={`px-4 py-3 text-[13px] font-bold transition-all relative whitespace-nowrap ${
-                activeTab === tab.value 
-                  ? 'text-[#E32222] border-b-2 border-[#E32222]' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`px-4 py-3 text-[13px] font-bold transition-all relative whitespace-nowrap ${activeTab === tab.value
+                ? 'text-[#E32222] border-b-2 border-[#E32222]'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               {tab.label}
             </button>
@@ -113,8 +139,8 @@ export default function RidesPage() {
         <div className="hidden lg:flex items-center gap-4 px-6 text-[11px] font-bold text-gray-500">
           <span className="text-[#E32222]">1-{filteredRides.length}</span> of {filteredRides.length}
           <div className="flex gap-1">
-            <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft size={14}/></button>
-            <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight size={14}/></button>
+            <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft size={14} /></button>
+            <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight size={14} /></button>
           </div>
         </div>
       </div>
@@ -144,15 +170,15 @@ export default function RidesPage() {
                 <th className="px-3 py-4 text-[11px] font-black uppercase tracking-wider w-[60px] text-center">Action</th>
               </tr>
             </thead>
-            
+
             {/* Filter Input Row */}
             <tbody className="bg-[#FFF5F5] border-b border-gray-200">
               <tr className="divide-x divide-red-50">
                 <td className="px-2 py-2">
-                  <input 
-                    type="text" placeholder="Search" 
+                  <input
+                    type="text" placeholder="Search"
                     className="w-full text-[10px] p-1.5 border border-red-200 rounded outline-none focus:border-red-500"
-                    value={filters.reqId} onChange={e => setFilters({...filters, reqId: e.target.value})}
+                    value={filters.reqId} onChange={e => setFilters({ ...filters, reqId: e.target.value })}
                   />
                 </td>
                 <td className="px-2 py-2"></td>
@@ -161,17 +187,17 @@ export default function RidesPage() {
                   <input type="date" className="w-full text-[10px] p-1.5 border border-gray-200 rounded outline-none" />
                 </td>
                 <td className="px-2 py-2">
-                  <input 
-                    type="text" placeholder="Search" 
+                  <input
+                    type="text" placeholder="Search"
                     className="w-full text-[10px] p-1.5 border border-gray-200 rounded outline-none"
-                    value={filters.name} onChange={e => setFilters({...filters, name: e.target.value})}
+                    value={filters.name} onChange={e => setFilters({ ...filters, name: e.target.value })}
                   />
                 </td>
                 <td className="px-2 py-2">
-                  <input 
-                    type="text" placeholder="Search" 
+                  <input
+                    type="text" placeholder="Search"
                     className="w-full text-[10px] p-1.5 border border-gray-200 rounded outline-none"
-                    value={filters.mobile} onChange={e => setFilters({...filters, mobile: e.target.value})}
+                    value={filters.mobile} onChange={e => setFilters({ ...filters, mobile: e.target.value })}
                   />
                 </td>
                 <td className="px-2 py-2">
@@ -185,18 +211,18 @@ export default function RidesPage() {
                   </select>
                 </td>
                 <td className="px-2 py-2">
-                  <input 
-                    type="text" placeholder="Search" 
+                  <input
+                    type="text" placeholder="Search"
                     className="w-full text-[10px] p-1.5 border border-gray-200 rounded outline-none"
-                    value={filters.vehicle} onChange={e => setFilters({...filters, vehicle: e.target.value})}
+                    value={filters.vehicle} onChange={e => setFilters({ ...filters, vehicle: e.target.value })}
                   />
                 </td>
                 <td className="px-2 py-2"></td>
                 <td className="px-2 py-2">
-                  <input 
-                    type="text" placeholder="Search" 
+                  <input
+                    type="text" placeholder="Search"
                     className="w-full text-[10px] p-1.5 border border-gray-200 rounded outline-none"
-                    value={filters.driver} onChange={e => setFilters({...filters, driver: e.target.value})}
+                    value={filters.driver} onChange={e => setFilters({ ...filters, driver: e.target.value })}
                   />
                 </td>
                 <td className="px-2 py-2">
@@ -211,14 +237,14 @@ export default function RidesPage() {
                   </select>
                 </td>
                 <td className="px-2 py-2">
-                  <input 
-                    type="text" placeholder="Search" 
+                  <input
+                    type="text" placeholder="Search"
                     className="w-full text-[10px] p-1.5 border border-gray-200 rounded outline-none"
                   />
                 </td>
                 <td className="px-2 py-2 flex gap-1 justify-center">
-                  <button className="p-1.5 bg-gray-200 text-gray-500 rounded"><Search size={12}/></button>
-                  <button onClick={() => setFilters({reqId:'', name:'', mobile:'', service:'', payment:'', driver:'', status:'', date:'', vehicle:'', agentCode:''})} className="p-1.5 bg-gray-200 text-gray-500 rounded"><X size={12}/></button>
+                  <button className="p-1.5 bg-gray-200 text-gray-500 rounded"><Search size={12} /></button>
+                  <button onClick={() => setFilters({ reqId: '', name: '', mobile: '', service: '', payment: '', driver: '', status: '', date: '', vehicle: '', agentCode: '' })} className="p-1.5 bg-gray-200 text-gray-500 rounded"><X size={12} /></button>
                 </td>
               </tr>
             </tbody>
@@ -263,33 +289,38 @@ export default function RidesPage() {
                       </div>
                     </td>
                     <td className="px-3 py-4"><span className="text-[11px] font-bold text-gray-700">{ride.distanceKm?.toFixed(1) || '0'} km</span></td>
-                    <td className="px-3 py-4"><span className="text-[11px] font-medium text-gray-700">{ride.partner?.name || '-'}</span></td>
+                    <td className="px-3 py-4">
+                      {ride.partner ? (
+                        <Link href={`/dashboard/partners/${ride.partner?.id || ''}/view`} className="text-[11px] font-bold text-blue-600 hover:underline">
+                          {ride.partner.name || '-'}
+                        </Link>
+                      ) : (
+                        <span className="text-[11px] font-medium text-gray-700">-</span>
+                      )}
+                    </td>
                     <td className="px-3 py-4">
                       <div className="flex flex-col gap-1 items-start">
                         <span className="text-[11px] font-black text-red-600">₹{ride.totalFare?.toFixed(2)}</span>
                         {ride.discountAmount && ride.discountAmount > 0 ? (
                           <span className="text-[9px] text-green-600 font-bold">-₹{ride.discountAmount.toFixed(2)} Off</span>
                         ) : null}
-                        <span className={`px-2 py-0.5 text-white text-[8px] font-bold rounded-sm uppercase tracking-tighter ${
-                          ride.status === 'COMPLETED' ? 'bg-green-600' : 'bg-[#D32F2F]'
-                        }`}>
+                        <span className={`px-2 py-0.5 text-white text-[8px] font-bold rounded-sm uppercase tracking-tighter ${ride.status === 'COMPLETED' ? 'bg-green-600' : 'bg-[#D32F2F]'
+                          }`}>
                           {ride.status === 'COMPLETED' ? 'Paid' : 'Not Paid'}
                         </span>
                       </div>
                     </td>
                     <td className="px-3 py-4">
-                      <span className={`px-3 py-1 text-white text-[9px] font-bold rounded-md uppercase ${
-                        ride.status === 'CANCELLED' ? 'bg-red-600' : 
-                        ride.status === 'COMPLETED' ? 'bg-green-600' : 
-                        'bg-orange-500'
-                      }`}>
+                      <span className={`px-3 py-1 text-white text-[9px] font-bold rounded-md uppercase ${ride.status === 'CANCELLED' ? 'bg-red-600' :
+                        ride.status === 'COMPLETED' ? 'bg-green-600' :
+                          'bg-orange-500'
+                        }`}>
                         {ride.status === 'UPCOMING' ? 'Confirmed' : ride.status}
                       </span>
                     </td>
                     <td className="px-3 py-4">
-                      <span className={`px-2 py-1 text-white text-[9px] font-bold rounded-md uppercase whitespace-nowrap ${
-                        ride.status === 'COMPLETED' ? 'bg-green-600' : 'bg-[#D32F2F]'
-                      }`}>
+                      <span className={`px-2 py-1 text-white text-[9px] font-bold rounded-md uppercase whitespace-nowrap ${ride.status === 'COMPLETED' ? 'bg-green-600' : 'bg-[#D32F2F]'
+                        }`}>
                         {ride.status === 'COMPLETED' ? 'Received' : 'Not Received'}
                       </span>
                     </td>
@@ -303,20 +334,20 @@ export default function RidesPage() {
                     </td>
                     <td className="px-3 py-4 relative">
                       <div className="flex justify-center">
-                        <button 
+                        <button
                           onClick={() => setOpenMenuId(openMenuId === ride.id ? null : ride.id)}
                           className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
                         >
                           <MoreHorizontal size={18} />
                         </button>
                       </div>
-                      
+
                       {/* Action Menu Dropdown */}
                       {openMenuId === ride.id && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
                           <div className="absolute right-full mr-2 top-0 w-32 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-150">
-                            <Link 
+                            <Link
                               href={`/dashboard/rides/${ride.id}`}
                               className="flex items-center gap-2 px-4 py-3 text-[11px] font-bold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors border-b last:border-0"
                             >
