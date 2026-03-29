@@ -92,7 +92,8 @@ export default function PartnerLocationsMap() {
 
     // 2. Setup Socket.IO for Live Updates
     const token = localStorage.getItem(TOKEN_KEYS.admin);
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '');
+    if (!backendUrl) throw new Error("CRITICAL: NEXT_PUBLIC_API_URL is not defined");
 
     if (token) {
       socketRef.current = io(backendUrl, {

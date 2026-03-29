@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { UserCheck, Search, Filter, CheckCircle, XCircle, Clock, Eye, Phone, Wifi, WifiOff, Plus, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { partnerService } from '@/services/partnerService';
 import { Partner, EntityActiveStatus, EntityVerificationStatus } from '@/types';
-import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { TableSkeleton } from '@/components/ui/Skeletons';
 import toast from 'react-hot-toast';
 import { Trash2, ShieldCheck, ShieldAlert } from 'lucide-react';
 
@@ -37,6 +37,9 @@ export default function PartnersPage() {
     customId: '',
     vendorSearch: '',
   });
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
   const fetchPartners = async () => {
     setIsLoading(true);
@@ -91,6 +94,41 @@ export default function PartnersPage() {
     }
   };
 
+  const handleBulkAction = async (action: 'APPROVE' | 'SUSPEND') => {
+    if (!window.confirm(`Are you sure you want to bulk ${action.toLowerCase()} ${selectedIds.length} partners?`)) return;
+    
+    setIsBulkProcessing(true);
+    const newStatus: EntityActiveStatus = action === 'APPROVE' ? 'ACTIVE' : 'SUSPENDED';
+
+    let successCount = 0;
+    let failCount = 0;
+
+    // Use allSettled for safe scaling without blocking other requests on a single failure
+    const promises = selectedIds.map(id => partnerService.updateStatus(id, newStatus));
+    const results = await Promise.allSettled(promises);
+
+    results.forEach((res, index) => {
+      const pid = selectedIds[index];
+      if (res.status === 'fulfilled' && (res.value as any)?.success !== false) {
+        successCount++;
+        console.log(`[BULK ${action}] SUCCESS: Partner ${pid}`);
+      } else {
+        failCount++;
+        console.error(`[BULK ${action}] FAILED: Partner ${pid}`, res.status === 'rejected' ? res.reason : res.value);
+      }
+    });
+
+    if (failCount === 0) {
+      toast.success(`Successfully updated ${successCount} partners!`);
+    } else {
+      toast.error(`${successCount} updated, ${failCount} failed.`);
+    }
+
+    setSelectedIds([]);
+    setIsBulkProcessing(false);
+    fetchPartners();
+  };
+
   const filteredPartners = partners.filter(p => {
     const nameMatch = !filters.name || p.name.toLowerCase().includes(filters.name.toLowerCase());
     const phoneMatch = !filters.phone || p.phone.includes(filters.phone);
@@ -110,7 +148,16 @@ export default function PartnersPage() {
     return nameMatch && phoneMatch && emailMatch && cityMatch && customIdMatch && vendorMatch;
   });
 
-  if (isLoading) return <PageLoader />;
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) setSelectedIds(filteredPartners.map(p => p.id));
+    else setSelectedIds([]);
+  };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  if (isLoading) return <div className="p-4"><TableSkeleton rows={10} /></div>;
 
   const onlineCount = partners.filter(p => p.isOnline).length;
 
@@ -144,6 +191,29 @@ export default function PartnersPage() {
           </button>
         </div>
       </div>
+
+      {/* Floating Action Bar (Bulk Actions) */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-8">
+          <span className="text-sm font-bold bg-white/20 px-3 py-1 rounded-full">{selectedIds.length} Selected</span>
+          <div className="flex items-center gap-3 border-l border-white/20 pl-6">
+            <button 
+              onClick={() => handleBulkAction('APPROVE')} 
+              disabled={isBulkProcessing}
+              className="px-4 py-2 bg-green-500 rounded-full text-xs font-bold hover:bg-green-400 transition-colors disabled:opacity-50"
+            >
+              Bulk Activate
+            </button>
+            <button 
+              onClick={() => handleBulkAction('SUSPEND')} 
+              disabled={isBulkProcessing}
+              className="px-4 py-2 bg-yellow-500 rounded-full text-xs font-bold hover:bg-yellow-400 transition-colors disabled:opacity-50 text-yellow-950"
+            >
+              Bulk Suspend
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Quick Filters */}
       <div className="flex gap-2">
@@ -187,6 +257,14 @@ export default function PartnersPage() {
             {/* Header */}
             <thead className="bg-[#E32222] text-white">
               <tr>
+                <th className="px-3 py-3 w-[40px] text-center">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-white/30 bg-white/10 text-white focus:ring-red-500" 
+                    checked={selectedIds.length === filteredPartners.length && filteredPartners.length > 0}
+                    onChange={handleSelectAll}
+                  />
+                </th>
                 <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[120px]">Partner ID</th>
                 <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Name</th>
                 <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Contact</th>
@@ -200,6 +278,7 @@ export default function PartnersPage() {
             {/* Filter Row */}
             <tbody className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <td className="px-2 py-2"></td>
                 <td className="px-2 py-2"></td>
                 <td className="px-2 py-2">
                   <input type="text" placeholder="Search Name" className="w-full text-[11px] p-1 border border-red-200 rounded outline-none focus:border-red-400"
@@ -230,7 +309,15 @@ export default function PartnersPage() {
                 </tr>
               ) : (
                 filteredPartners.map((partner) => (
-                  <tr key={partner.id} className="hover:bg-red-50/30 transition-colors">
+                  <tr key={partner.id} className={`transition-colors ${selectedIds.includes(partner.id) ? 'bg-red-50/50' : 'hover:bg-red-50/20'}`}>
+                    <td className="px-3 py-3 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500" 
+                        checked={selectedIds.includes(partner.id)}
+                        onChange={() => handleSelectRow(partner.id)}
+                      />
+                    </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-col">
                         <span className="text-[11px] font-bold text-emerald-600 font-mono">

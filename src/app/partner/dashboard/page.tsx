@@ -160,8 +160,8 @@ export default function PartnerDashboard() {
       } else {
         toast.error(res.message || 'Update failed');
       }
-    } catch (err) {
-      toast.error('Failed to update status');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update status');
     } finally {
       setIsSubmitting(false);
     }
@@ -188,8 +188,8 @@ export default function PartnerDashboard() {
       } else {
         toast.error(res.message || 'Completion failed');
       }
-    } catch (err) {
-      toast.error('Failed to complete ride');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to complete ride');
     } finally {
       setIsSubmitting(false);
     }

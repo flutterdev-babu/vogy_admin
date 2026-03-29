@@ -1,24 +1,55 @@
 import axios, { AxiosInstance } from 'axios';
 
-const isDev = process.env.NODE_ENV === 'development';
-const fallbackUrl = isDev ? 'http://localhost:5000/api' : 'https://vogy-backend.onrender.com/api';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || fallbackUrl;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_BASE_URL) {
+  throw new Error("CRITICAL: API base URL not configured");
+}
 
 // Create axios instance with common config
 const createApiInstance = (baseURL: string): AxiosInstance => {
-  return axios.create({
+  const instance = axios.create({
     baseURL,
     headers: {
       'Content-Type': 'application/json',
     },
   });
+
+  instance.interceptors.request.use((config) => {
+    // Validate if request URL hits base URL
+    if (config.baseURL && !config.baseURL.includes(API_BASE_URL as string)) {
+       throw new Error(`CRITICAL: Request URL does not include base URL. Unauthorized external call blocked.`);
+    }
+    console.log(`[API REQUEST] ${config.method?.toUpperCase()} ${config.baseURL}${config.url || ''}`);
+    return config;
+  }, (error) => Promise.reject(error));
+
+  instance.interceptors.response.use((response) => {
+    console.log(`[API RESPONSE] ${response.status} ${response.config.baseURL}${response.config.url || ''}`);
+    return response;
+  }, (error) => {
+    const status = error.response?.status || 'UNKNOWN';
+    const message = error.response?.data?.message || error.message;
+    if (status === 503) {
+      console.warn(`[API WARMUP] 503 - Server is waking up.`);
+    } else {
+      const url = `${error.config?.baseURL || ''}${error.config?.url || ''}`;
+      const fullMessage = `[${status}] ${message} at ${url}`;
+      console.error(`[API ERROR] ${fullMessage}`);
+      // If we are on the landing page or anywhere with toast, show the real message
+      error.message = message || `API Error ${status}: ${url}`;
+    }
+    return Promise.reject(error);
+  });
+
+  return instance;
 };
 
 // Admin API instance
 export const adminApi = createApiInstance(`${API_BASE_URL}/admin`);
 
 // Vendor API instance
-export const vendorApi = createApiInstance(`${API_BASE_URL}/vendors`);
+export const vendorApi = createApiInstance(`${API_BASE_URL}/vendor`);
 
 // Partner API instance
 export const partnerApi = createApiInstance(`${API_BASE_URL}/partner`);

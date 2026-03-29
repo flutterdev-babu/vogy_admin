@@ -75,7 +75,7 @@ export const rideBookingService = {
 
   // Step 3: Confirm booking with price lock
   async newRide(data: NewRideRequest): Promise<ApiResponse<any>> {
-    const response = await rideApi.post('/create', data);
+    const response = await rideApi.post('/create-manual', data);
     return response.data;
   },
 };

@@ -258,15 +258,20 @@ export default function LandingPage() {
         passengers: passengers || undefined,
       };
 
-      const res = await publicRideService.bookRide(bookingPayload);
-
-      if (!res.success) {
-        throw new Error(res.message || "Failed to book ride");
+      let bookingId = 'PENDING';
+      try {
+        const res = await publicRideService.bookRide(bookingPayload);
+        if (res.success) {
+          bookingId = res.data?.customId || 'PENDING';
+        }
+      } catch (apiErr) {
+        // Backend failed — log it but DON'T block the customer
+        console.error('Backend booking API failed, proceeding to WhatsApp:', apiErr);
       }
 
-      // 2. Format message for WhatsApp
+      // 2. Format message for WhatsApp — ALWAYS runs
       let whatsappMessage = `*New Ride Booking*\n`;
-      whatsappMessage += `*Booking ID:* ${res.data?.customId || 'PENDING'}\n`;
+      whatsappMessage += `*Booking ID:* ${bookingId}\n`;
       whatsappMessage += `*Name:* ${name}\n`;
       whatsappMessage += `*Phone:* ${phone}\n`;
       whatsappMessage += `*Ride Type:* ${bookingTab.toUpperCase()}\n`;
@@ -512,28 +517,28 @@ export default function LandingPage() {
               title="Partner"
               subtitle="Drive & Earn"
               icon={<Car size={32} />}
-              href="/partner/login"
+              href="/partner/register"
               delay={0}
             />
             <RoleCard
               title="Vendor"
               subtitle="Manage Fleet"
               icon={<Shield size={32} />}
-              href="/vendor/login"
+              href="/vendor/register"
               delay={0.1}
             />
             <RoleCard
               title="Agent"
               subtitle="City Operations"
               icon={<MapPin size={32} />}
-              href="/agent/login"
+              href="/agent/register"
               delay={0.2}
             />
             <RoleCard
               title="Corporate"
               subtitle="Business Travel"
               icon={<Briefcase size={32} />}
-              href="/corporate/login"
+              href="/corporate/register"
               delay={0.3}
             />
           </div>
@@ -600,7 +605,7 @@ function RoleCard({ title, subtitle, icon, href, delay }: { title: string, subti
           <h3 className="text-xl font-bold mb-2 text-white">{title}</h3>
           <p className="text-neutral-400 group-hover:text-neutral-300 transition-colors text-sm">{subtitle}</p>
           <div className="mt-6 flex items-center gap-2 text-[#E32222] font-semibold text-sm">
-            <span>Login / Register</span>
+            <span>Get Started</span>
             <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
