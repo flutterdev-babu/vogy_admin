@@ -258,15 +258,20 @@ export default function LandingPage() {
         passengers: passengers || undefined,
       };
 
-      const res = await publicRideService.bookRide(bookingPayload);
-
-      if (!res.success) {
-        throw new Error(res.message || "Failed to book ride");
+      let bookingId = 'PENDING';
+      try {
+        const res = await publicRideService.bookRide(bookingPayload);
+        if (res.success) {
+          bookingId = res.data?.customId || 'PENDING';
+        }
+      } catch (apiErr) {
+        // Backend failed — log it but DON'T block the customer
+        console.error('Backend booking API failed, proceeding to WhatsApp:', apiErr);
       }
 
-      // 2. Format message for WhatsApp
+      // 2. Format message for WhatsApp — ALWAYS runs
       let whatsappMessage = `*New Ride Booking*\n`;
-      whatsappMessage += `*Booking ID:* ${res.data?.customId || 'PENDING'}\n`;
+      whatsappMessage += `*Booking ID:* ${bookingId}\n`;
       whatsappMessage += `*Name:* ${name}\n`;
       whatsappMessage += `*Phone:* ${phone}\n`;
       whatsappMessage += `*Ride Type:* ${bookingTab.toUpperCase()}\n`;
