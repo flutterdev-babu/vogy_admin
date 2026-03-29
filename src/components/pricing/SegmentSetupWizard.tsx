@@ -294,7 +294,7 @@ export default function SegmentSetupWizard({ isOpen, onClose, cities, onComplete
                                           <div className="flex items-center justify-end gap-1">
                                              <input 
                                                type="number" 
-                                               value={slot.dayAdjustments[day] || 0}
+                                               value={slot.dayAdjustments?.[day] || 0}
                                                onChange={(e) => updatePeakAdjust(sIdx, day, Number(e.target.value))}
                                                className="w-10 text-right font-bold text-gray-700 bg-transparent focus:outline-none"
                                              />

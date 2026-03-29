@@ -294,12 +294,12 @@ export default function PeakHourChargesPage() {
                                          <span>{slot.startTime} - {slot.endTime}</span>
                                      </div>
                                      <div className="flex items-center gap-3">
-                                         {slot.fixedExtra > 0 && (
+                                         {(slot.fixedExtra ?? 0) > 0 && (
                                              <div className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">
                                                  +₹{slot.fixedExtra}
                                              </div>
                                          )}
-                                         {slot.percentageExtra > 0 && (
+                                         {(slot.percentageExtra ?? 0) > 0 && (
                                              <div className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
                                                  +{slot.percentageExtra}%
                                              </div>

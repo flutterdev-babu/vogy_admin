@@ -723,7 +723,9 @@ export interface UpdateVehiclePricingGroupRequest {
 export interface PeakHourSlot {
   startTime: string; // "HH:mm"
   endTime: string;   // "HH:mm"
-  dayAdjustments: {
+  fixedExtra?: number;
+  percentageExtra?: number;
+  dayAdjustments?: {
     [key in DayOfWeek]?: number; // percentage adjustment for this day
   };
 }

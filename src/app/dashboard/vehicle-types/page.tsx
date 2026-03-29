@@ -611,7 +611,7 @@ export default function VehicleTypesPage() {
                                                          <div className="flex items-center justify-end gap-1">
                                                             <input 
                                                               type="number" 
-                                                              value={slot.dayAdjustments[day]} 
+                                                              value={slot.dayAdjustments?.[day] || 0} 
                                                               className="w-10 text-right bg-transparent focus:outline-none"
                                                               onChange={() => {}} 
                                                             />
