@@ -651,14 +651,28 @@ export interface UpdatePricingConfigRequest {
 // Vehicle Pricing Group Types
 // =====================================
 
+export type ServiceType = 'AIRPORT' | 'LOCAL' | 'OUTSTATION' | 'RENTAL';
+
 export interface VehiclePricingGroup {
   id: string;
   vehicleTypeId: string;
   vehicleType?: VehicleType;
   name?: string;
+  serviceType?: ServiceType;
+  bookingType?: string; // Kept for backward compatibility
   baseKm: number;
   baseFare: number;
   perKmPrice: number;
+  
+  // Expanded Metrics from UI
+  driverBaseKm: number;
+  driverBasePrice: number;
+  driverExtraPricePerKm: number;
+  commissionPercentage: number;
+  tollRate: number;
+  parkingRate: number;
+  gstRate: number;
+  
   cityCodeIds: string[];
   cityCodes?: CityCode[];
   isActive: boolean;
@@ -669,18 +683,82 @@ export interface VehiclePricingGroup {
 export interface CreateVehiclePricingGroupRequest {
   vehicleTypeId: string;
   name?: string;
-  baseKm?: number;
-  baseFare?: number;
+  serviceType?: ServiceType;
+  bookingType?: string;
+  baseKm: number;
+  baseFare: number;
   perKmPrice: number;
+  driverBaseKm: number;
+  driverBasePrice: number;
+  driverExtraPricePerKm: number;
+  commissionPercentage: number;
+  tollRate: number;
+  parkingRate: number;
+  gstRate: number;
   cityCodeIds: string[];
 }
 
 export interface UpdateVehiclePricingGroupRequest {
   name?: string;
+  serviceType?: ServiceType;
+  bookingType?: string;
   baseKm?: number;
   baseFare?: number;
   perKmPrice?: number;
+  driverBaseKm?: number;
+  driverBasePrice?: number;
+  driverExtraPricePerKm?: number;
+  commissionPercentage?: number;
+  tollRate?: number;
+  parkingRate?: number;
+  gstRate?: number;
   cityCodeIds?: string[];
+  isActive?: boolean;
+}
+
+// =====================================
+// Peak Hour Charge Types
+// =====================================
+
+export interface PeakHourSlot {
+  startTime: string; // "HH:mm"
+  endTime: string;   // "HH:mm"
+  fixedExtra?: number;
+  percentageExtra?: number;
+  dayAdjustments?: {
+    [key in DayOfWeek]?: number; // percentage adjustment for this day
+  };
+}
+
+export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+
+export interface PeakHourCharge {
+  id: string;
+  name: string;
+  vehicleTypeId: string;
+  vehicleType?: VehicleType;
+  cityCodeIds: string[];
+  cityCodes?: CityCode[];
+  days: DayOfWeek[];
+  slots: PeakHourSlot[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreatePeakHourChargeRequest {
+  name: string;
+  vehicleTypeId: string;
+  cityCodeIds: string[];
+  days: DayOfWeek[];
+  slots: PeakHourSlot[];
+}
+
+export interface UpdatePeakHourChargeRequest {
+  name?: string;
+  cityCodeIds?: string[];
+  days?: DayOfWeek[];
+  slots?: PeakHourSlot[];
   isActive?: boolean;
 }
 
