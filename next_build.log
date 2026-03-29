@@ -1,0 +1,19 @@
+Γû▓ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 16.0s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/dashboard/user/page.tsx:224:21
+Type error: JSX element class does not support attributes because it does not have a 'props' property.
+
+  222 |                     style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}
+  223 |                 >
+> 224 |                     <History size={28} className="text-gray-400 mb-3 group-hover:text-white transition-colors" />
+      |                     ^
+  225 |                     <p className="text-white font-semibold">Ride History</p>
+  226 |                     <p className="text-gray-400 text-xs mt-1">View all past rides</p>
+  227 |                 </Link>
+Next.js build worker exited with code: 1 and signal: null

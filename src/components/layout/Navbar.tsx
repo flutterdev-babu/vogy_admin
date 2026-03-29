@@ -4,15 +4,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Menu, 
-  X, 
-  ChevronRight, 
-  Car, 
-  Shield, 
-  MapPin, 
+import {
+  Menu,
+  X,
+  ChevronRight,
+  Car,
+  Shield,
+  MapPin,
   Briefcase,
-  LayoutDashboard
+  LayoutDashboard,
+  UserCircle
 } from 'lucide-react';
 import { TOKEN_KEYS } from '@/lib/api';
 
@@ -41,6 +42,7 @@ export default function Navbar() {
     agent: false,
     corporate: false,
     admin: false,
+    user: false,
   });
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function Navbar() {
         agent: !!localStorage.getItem(TOKEN_KEYS.agent),
         corporate: !!localStorage.getItem(TOKEN_KEYS.corporate),
         admin: !!localStorage.getItem(TOKEN_KEYS.admin),
+        user: !!localStorage.getItem(TOKEN_KEYS.user),
       });
     }
   }, []);
@@ -62,9 +65,9 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
             <div className="relative w-14 h-14">
-              <Image 
-                src="/logo_image.png" 
-                alt="Ara Travels Logo" 
+              <Image
+                src="/logo_image.png"
+                alt="Ara Travels Logo"
                 fill
                 className="object-contain rounded-xl"
               />
@@ -78,7 +81,7 @@ export default function Navbar() {
             <Link href="/about" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">About</Link>
             <Link href="/services" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">Services</Link>
             <Link href="/contact-us" className="text-sm font-medium text-neutral-300 hover:text-white transition-colors">Contact</Link>
-            
+
             {/* Join Us Dropdown */}
             <div className="relative group">
               <button className="text-sm font-medium text-neutral-300 hover:text-white transition-colors flex items-center gap-1">
@@ -122,6 +125,17 @@ export default function Navbar() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
+            {authState.user ? (
+              <Link href="/user/dashboard" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-all border border-white/10">
+                <UserCircle size={16} />
+                Dashboard
+              </Link>
+            ) : (
+              <Link href="/user/login" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-all border border-white/10">
+                <UserCircle size={16} />
+                User Login
+              </Link>
+            )}
             {authState.admin ? (
               <Link href="/dashboard" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white text-sm font-semibold transition-all shadow-lg shadow-red-900/20 hover:shadow-red-900/40">
                 <LayoutDashboard size={16} />
@@ -132,7 +146,7 @@ export default function Navbar() {
                 Admin Login
               </Link>
             )}
-            <Link 
+            <Link
               href="/download"
               className="px-5 py-2.5 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white text-sm font-semibold transition-all shadow-lg shadow-red-900/20 hover:shadow-red-900/40"
             >
@@ -141,7 +155,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Toggle */}
-          <button 
+          <button
             className="md:hidden p-2 text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
@@ -153,7 +167,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -164,7 +178,7 @@ export default function Navbar() {
               <Link href="/about" className="block text-base font-medium text-white/90">About</Link>
               <Link href="/services" className="block text-base font-medium text-white/90">Services</Link>
               <Link href="/contact-us" className="block text-base font-medium text-white/90">Contact</Link>
-              
+
               <div className="pt-4 border-t border-white/10">
                 <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Join Us</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -186,7 +200,16 @@ export default function Navbar() {
                   </Link>
                 </div>
               </div>
-              
+
+              {authState.user ? (
+                <Link href="/user/dashboard" className="flex items-center gap-2 text-base font-medium text-white pt-2">
+                  <UserCircle size={16} className="text-[#E32222]" /> Dashboard
+                </Link>
+              ) : (
+                <Link href="/user/login" className="flex items-center gap-2 text-base font-medium text-white pt-2">
+                  <UserCircle size={16} className="text-[#E32222]" /> User Login
+                </Link>
+              )}
               {authState.admin ? (
                 <Link href="/dashboard" className="flex items-center gap-2 text-base font-medium text-[#E32222] pt-2">
                   <LayoutDashboard size={16} /> Admin Dashboard
