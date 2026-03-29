@@ -12,6 +12,7 @@ import {
   UserCheck,
   TrendingUp,
   Calendar,
+  Clock,
   LogOut,
   Menu,
   X,
@@ -231,8 +232,8 @@ export default function Sidebar() {
       >
         {/* Logo */}
         <div className="p-6 border-b border-gray-100 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12">
+          <div className="flex items-center gap-4">
+            <div className="relative w-24 h-24">
                <Image 
                 src="/logo_image.png" 
                 alt="Ara Travels Logo" 
@@ -241,8 +242,8 @@ export default function Sidebar() {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">ARA</h1>
-              <p className="text-[10px] text-red-600 font-bold uppercase tracking-wider">Admin Panel</p>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ARA</h1>
+              <p className="text-[11px] text-red-600 font-bold uppercase tracking-wider">Admin Panel</p>
             </div>
           </div>
         </div>
