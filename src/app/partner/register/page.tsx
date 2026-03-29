@@ -8,6 +8,13 @@ import toast from 'react-hot-toast';
 import { partnerService } from '@/services/partnerService';
 import { agentService } from '@/services/agentService';
 
+const FALLBACK_CITIES = [
+  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
+  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
+  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
+  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
+];
+
 // Logic for document input within the dark theme
 const PublicDocInput = ({ label, value, onChange, required }: { label: string, value: string, onChange: (v: string) => void, required?: boolean }) => {
   const [mode, setMode] = useState<'URL' | 'UPLOAD'>('URL');
@@ -89,8 +96,15 @@ export default function PartnerRegisterPage() {
           agentService.getCityCodes(),
         ]);
         if (vtRes.success) setVehicleTypes(vtRes.data || []);
-        if (cityRes.success) setCityCodes(cityRes.data || []);
-      } catch (err) { console.error('Failed to load lookups:', err); }
+        if (cityRes.success && cityRes.data && cityRes.data.length > 0) {
+          setCityCodes(cityRes.data);
+        } else {
+          setCityCodes(FALLBACK_CITIES);
+        }
+      } catch (err) {
+        console.error('Failed to load lookups, using fallback cities:', err);
+        setCityCodes(FALLBACK_CITIES);
+      }
     };
     loadLookups();
   }, []);

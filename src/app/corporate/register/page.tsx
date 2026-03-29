@@ -1,11 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, UserPlus, Loader2, Building2, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { corporateService } from '@/services/corporateService';
+import { cityCodeService } from '@/services/cityCodeService';
+
+const FALLBACK_CITIES = [
+  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
+  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
+  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
+  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
+];
 
 export default function CorporateRegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,18 +23,62 @@ export default function CorporateRegisterPage() {
     email: '',
     password: '',
     gstNumber: '',
-    address: ''
+    address: '',
+    cityCodeId: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [cityCodes, setCityCodes] = useState<any[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const res = await cityCodeService.getAll();
+        if (res.success && res.data && res.data.length > 0) {
+          setCityCodes(res.data);
+        } else {
+          setCityCodes(FALLBACK_CITIES);
+        }
+      } catch (err) {
+        console.error('Failed to load cities, using fallback:', err);
+        setCityCodes(FALLBACK_CITIES);
+      }
+    };
+    loadCities();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.companyName || !formData.contactPerson || !formData.phone || !formData.email || !formData.password) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    if (formData.phone.length !== 10) {
+      toast.error('Phone number must be 10 digits');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const submitData = { ...formData, phone: `+91${formData.phone}` };
-      const response = await corporateService.register(submitData as any);
+      const submitData: any = {
+        ...formData,
+        phone: `+91${formData.phone}`,
+      };
+      // Don't send fallback city IDs to backend
+      if (submitData.cityCodeId?.startsWith('fallback-')) {
+        delete submitData.cityCodeId;
+      }
+      const response = await corporateService.register(submitData);
       if (response.success) {
         toast.success('Registration successful! Please login.');
         router.push('/corporate/login');
@@ -113,16 +165,33 @@ export default function CorporateRegisterPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Corporate Email *</label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className={inputClass}
-                placeholder="admin@business.com"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Corporate Email *</label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className={inputClass}
+                  placeholder="admin@business.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-300 ml-1">Operating City</label>
+                <select
+                  value={formData.cityCodeId}
+                  onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
+                  className={inputClass + " appearance-none cursor-pointer"}
+                >
+                  <option value="" className="bg-neutral-900">Select City</option>
+                  {cityCodes.map((c: any) => (
+                    <option key={c.id} value={c.id} className="bg-neutral-900">
+                      {c.cityName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -130,7 +199,7 @@ export default function CorporateRegisterPage() {
               <input
                 type="text"
                 value={formData.gstNumber}
-                onChange={(e) => setFormData({...formData, gstNumber: e.target.value})}
+                onChange={(e) => setFormData({...formData, gstNumber: e.target.value.toUpperCase()})}
                 className={inputClass}
                 placeholder="22AAAAA0000A1Z5"
               />

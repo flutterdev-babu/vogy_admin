@@ -8,6 +8,13 @@ import toast from 'react-hot-toast';
 import { vendorService } from '@/services/vendorService';
 import { cityCodeService } from '@/services/cityCodeService';
 
+const FALLBACK_CITIES = [
+  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
+  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
+  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
+  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
+];
+
 export default function VendorRegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -36,9 +43,14 @@ export default function VendorRegisterPage() {
     const loadCities = async () => {
       try {
         const res = await cityCodeService.getAll();
-        if (res.success) setCityCodes(res.data || []);
+        if (res.success && res.data && res.data.length > 0) {
+          setCityCodes(res.data);
+        } else {
+          setCityCodes(FALLBACK_CITIES);
+        }
       } catch (err) {
-        console.error('Failed to load cities:', err);
+        console.error('Failed to load cities, using fallback:', err);
+        setCityCodes(FALLBACK_CITIES);
       }
     };
     loadCities();

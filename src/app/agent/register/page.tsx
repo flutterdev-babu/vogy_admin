@@ -7,6 +7,13 @@ import { Eye, EyeOff, UserPlus, Loader2, Briefcase, ArrowLeft } from 'lucide-rea
 import toast from 'react-hot-toast';
 import { agentService } from '@/services/agentService';
 
+const FALLBACK_CITIES = [
+  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
+  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
+  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
+  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
+];
+
 export default function AgentRegisterPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -25,11 +32,14 @@ export default function AgentRegisterPage() {
     const loadCityCodes = async () => {
       try {
         const response = await agentService.getCityCodes();
-        if (response.success) {
-          setCityCodes(response.data || []);
+        if (response.success && response.data && response.data.length > 0) {
+          setCityCodes(response.data);
+        } else {
+          setCityCodes(FALLBACK_CITIES);
         }
       } catch (error) {
-        console.error('Failed to load city codes', error);
+        console.error('Failed to load city codes, using fallback:', error);
+        setCityCodes(FALLBACK_CITIES);
       }
     };
     loadCityCodes();
