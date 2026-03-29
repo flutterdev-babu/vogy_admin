@@ -33,7 +33,11 @@ const createApiInstance = (baseURL: string): AxiosInstance => {
     if (status === 503) {
       console.warn(`[API WARMUP] 503 - Server is waking up.`);
     } else {
-      console.error(`[API ERROR] ${status} ${message}`);
+      const url = `${error.config?.baseURL || ''}${error.config?.url || ''}`;
+      const fullMessage = `[${status}] ${message} at ${url}`;
+      console.error(`[API ERROR] ${fullMessage}`);
+      // If we are on the landing page or anywhere with toast, add the URL to the error so we can see it in the screenshot
+      error.message = `API Error ${status}: ${url}`;
     }
     return Promise.reject(error);
   });
