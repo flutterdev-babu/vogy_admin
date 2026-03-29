@@ -36,8 +36,8 @@ const createApiInstance = (baseURL: string): AxiosInstance => {
       const url = `${error.config?.baseURL || ''}${error.config?.url || ''}`;
       const fullMessage = `[${status}] ${message} at ${url}`;
       console.error(`[API ERROR] ${fullMessage}`);
-      // If we are on the landing page or anywhere with toast, add the URL to the error so we can see it in the screenshot
-      error.message = `API Error ${status}: ${url}`;
+      // If we are on the landing page or anywhere with toast, show the real message
+      error.message = message || `API Error ${status}: ${url}`;
     }
     return Promise.reject(error);
   });
