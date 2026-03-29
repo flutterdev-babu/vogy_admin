@@ -24,11 +24,15 @@ import {
   Activity
 } from 'lucide-react';
 import { adminDashboardService } from '@/services/adminDashboardService';
+import { adminApi } from '@/lib/api';
 import { AdminDashboardData, AdminRideAnalytics, CancellationAnalytics, AuditTimelineItem } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import { DashboardSkeleton } from '@/components/ui/Skeletons';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import PartnerLocationsMap from '@/components/PartnerLocationsMap';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const getStatusConfig = (status: string) => {
   const s = status.toUpperCase();
@@ -48,16 +52,19 @@ const getStatusConfig = (status: string) => {
 export default function DashboardPage() {
   const [stats, setStats] = useState<AdminDashboardData | null>(null);
   const [rideAnalytics, setRideAnalytics] = useState<AdminRideAnalytics | null>(null);
+  const [cancellations, setCancellations] = useState<CancellationAnalytics[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAutomating, setIsAutomating] = useState(false);
+  const [isAutoRefresh, setIsAutoRefresh] = useState(false);
 
   const handleAutomation = async () => {
     setIsAutomating(true);
     const toastId = toast.loading('Starting Automation...');
 
     try {
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const baseURL = process.env.NEXT_PUBLIC_API_URL;
+      if (!baseURL) throw new Error("CRITICAL: NEXT_PUBLIC_API_URL is not defined");
       const token = localStorage.getItem('admin_token');
 
       if (!token) throw new Error('No admin token found. Please login again.');
@@ -70,16 +77,16 @@ export default function DashboardPage() {
       toast.loading('Fetching Lookups...', { id: toastId });
 
       const [cityRes, vtRes] = await Promise.all([
-        fetch(`${baseURL}/admin/city-codes`, { headers }),
-        fetch(`${baseURL}/admin/vehicle-types`, { headers })
+        adminApi.get(`/city-codes`),
+        adminApi.get(`/vehicle-types`)
       ]);
 
-      const cities = (await cityRes.json()).data;
-      const vts = (await vtRes.json()).data;
+      const cities = cityRes.data.data;
+      const vts = vtRes.data.data;
 
       const blrCity = cities.find((c: any) => c.code === 'BLR');
       const sedanType = vts.find((t: any) => 
-        t.name.includes('SEDAN') || t.displayName.includes('Sedan')
+        t.name?.includes('SEDAN') || t.displayName?.includes('Sedan')
       );
 
       if (!blrCity) throw new Error('BLR City Code not found');
@@ -87,72 +94,56 @@ export default function DashboardPage() {
 
       toast.loading('Registering Partner...', { id: toastId });
 
-      const pRegRes = await fetch(`${baseURL}/admin/partners`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          firstName: "Kiran",
-          lastName: "Perepalle",
-          name: "Kiran Perepalle",
-          phone: "+91" + Math.floor(7000000000 + Math.random() * 2000000000),
-          password: "Password@123",
-          cityCodeId: blrCity.id,
-          gender: "MALE",
-          dateOfBirth: "1990-01-01",
-          localAddress: "Bangalore, India",
-          hasLicense: true,
-          licenseNumber: "KA01" + Math.floor(1000000000 + Math.random() * 9000000000),
-          licenseImage: "https://via.placeholder.com/600x400?text=Driving+License"
-        })
+      const pRegRes = await adminApi.post(`/partners`, {
+        firstName: "Kiran",
+        lastName: "Perepalle",
+        name: "Kiran Perepalle",
+        phone: "+91" + Math.floor(7000000000 + Math.random() * 2000000000),
+        password: "Password@123",
+        cityCodeId: blrCity.id,
+        gender: "MALE",
+        dateOfBirth: "1990-01-01",
+        localAddress: "Bangalore, India",
+        hasLicense: true,
+        licenseNumber: "KA01" + Math.floor(1000000000 + Math.random() * 9000000000),
+        licenseImage: "https://via.placeholder.com/600x400?text=Driving+License"
       });
 
-      const partner = (await pRegRes.json()).data;
+      const partner = pRegRes.data.data;
 
       toast.loading('Registering Vehicle...', { id: toastId });
 
-      const vRegRes = await fetch(`${baseURL}/admin/vehicles`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          registrationNumber: "KA01" + Math.floor(1000 + Math.random() * 9000),
-          vehicleModel: "Toyota Etios",
-          vehicleTypeId: sedanType.id,
-          cityCodeId: blrCity.id,
-          fuelType: "PETROL",
-          rcImage: "https://via.placeholder.com/600x400?text=Registration+Certificate"
-        })
+      const vRegRes = await adminApi.post(`/vehicles`, {
+        registrationNumber: "KA01" + Math.floor(1000 + Math.random() * 9000),
+        vehicleModel: "Toyota Etios",
+        vehicleTypeId: sedanType.id,
+        cityCodeId: blrCity.id,
+        fuelType: "PETROL",
+        rcImage: "https://via.placeholder.com/600x400?text=Registration+Certificate"
       });
 
-      const vehicle = (await vRegRes.json()).data;
+      const vehicle = vRegRes.data.data;
 
       toast.loading('Registering Vendor...', { id: toastId });
 
-      const vnRegRes = await fetch(`${baseURL}/admin/vendors`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          name: "Raju Kumar",
-          companyName: "Raju Travels",
-          phone: "+91" + Math.floor(7000000000 + Math.random() * 2000000000),
-          password: "Password@123",
-          cityCodeId: blrCity.id,
-          address: "Bangalore, India"
-        })
+      const vnRegRes = await adminApi.post(`/vendors`, {
+        name: "Raju Kumar",
+        companyName: "Raju Travels",
+        phone: "+91" + Math.floor(7000000000 + Math.random() * 2000000000),
+        password: "Password@123",
+        cityCodeId: blrCity.id,
+        address: "Bangalore, India"
       });
 
-      const vendor = (await vnRegRes.json()).data;
+      const vendor = vnRegRes.data.data;
 
       toast.loading('Creating Attachment...', { id: toastId });
 
-      await fetch(`${baseURL}/admin/attachments`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          partnerCustomId: partner.customId,
-          vehicleCustomId: vehicle.customId,
-          vendorCustomId: vendor.customId,
-          cityCode: blrCity.code
-        })
+      await adminApi.post(`/attachments`, {
+        partnerCustomId: partner.customId,
+        vehicleCustomId: vehicle.customId,
+        vendorCustomId: vendor.customId,
+        cityCode: blrCity.code
       });
 
       toast.success('Automation Completed Successfully!', { id: toastId });
@@ -165,35 +156,49 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [statsRes, rideAnalyticsRes] = await Promise.all([
-          adminDashboardService.getDashboard(),
-          adminDashboardService.getRideAnalytics()
-        ]);
+  const fetchDashboardData = async () => {
+    try {
+      const [statsRes, rideAnalyticsRes, cancelRes] = await Promise.all([
+        adminDashboardService.getDashboard(),
+        adminDashboardService.getRideAnalytics(),
+        adminDashboardService.getCancellationAnalytics()
+      ]);
 
-        if (statsRes.success) {
-          setStats(statsRes.data);
-        } else {
-          setError(statsRes.message || 'Failed to fetch dashboard statistics');
-        }
-        
-        if (rideAnalyticsRes.success) {
-          setRideAnalytics(rideAnalyticsRes.data);
-        }
-      } catch (err) {
-        console.error('Dashboard error:', err);
-        setError('An error occurred while loading dashboard data');
-      } finally {
-        setIsLoading(false);
+      if (statsRes.success) {
+        setStats(statsRes.data);
+      } else {
+        setError(statsRes.message || 'Failed to fetch dashboard statistics');
       }
-    };
+      
+      if (rideAnalyticsRes.success) {
+        setRideAnalytics(rideAnalyticsRes.data);
+      }
 
+      if (cancelRes?.success) {
+        setCancellations(cancelRes.data);
+      }
+    } catch (err) {
+      console.error('Dashboard error:', err);
+      setError('An error occurred while loading dashboard data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchDashboardData();
-  }, []);
+    
+    let intervalId: NodeJS.Timeout;
+    if (isAutoRefresh) {
+      intervalId = setInterval(fetchDashboardData, 30000);
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isAutoRefresh]);
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading) return <DashboardSkeleton />;
 
   if (error) {
     return (
@@ -238,6 +243,13 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-gray-100 shadow-sm mr-2 cursor-pointer transition-all hover:border-gray-200" onClick={() => setIsAutoRefresh(!isAutoRefresh)}>
+            <div className={`relative flex items-center px-0.5 w-10 h-5 rounded-full transition-colors ${isAutoRefresh ? 'bg-green-500' : 'bg-gray-300'}`}>
+              <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isAutoRefresh ? 'translate-x-[20px]' : 'translate-x-0'}`} />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Auto-Refresh {isAutoRefresh && '(30s)'}</span>
+          </div>
+
           <Link
             href="/dashboard/rides/manual"
             className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-lg active:scale-95 text-xs italic uppercase"
@@ -360,6 +372,67 @@ export default function DashboardPage() {
             );
           })}
         </div>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-6">
+        {/* Cancellations Chart */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Cancellation Insights</h2>
+          <p className="text-xs text-gray-500 mb-6">Breakdown of unfulfilled or aborted rides</p>
+          <div className="flex-1 w-full min-h-[300px]">
+            {cancellations && cancellations.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={cancellations}
+                    dataKey="count"
+                    nameKey="reason"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                  >
+                    {cancellations.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#64748b'][index % 5]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#475569' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                <span className="text-sm font-medium">No cancellations recorded.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Live Map Panel (HIDDEN FOR NOW) */}
+        {/* <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between z-10 bg-white relative">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+                <Navigation size={18} className="text-[#E32222]" />
+                Global Live Map
+              </h2>
+              <p className="text-xs text-gray-500">Real-time GPS tracking of active dispatch nodes.</p>
+            </div>
+            <div className="flex items-center gap-2">
+               <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+              </span>
+              <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider">Live Sync</span>
+            </div>
+          </div>
+          <div className="flex-1 w-full relative -mt-[1px]">
+            <PartnerLocationsMap />
+          </div>
+        </div> */}
       </div>
     </div>
   );

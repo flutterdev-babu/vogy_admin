@@ -186,7 +186,24 @@ export default function Sidebar() {
   };
 
   const isActive = (href: string) => {
-    return pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+    if (pathname === href) return true;
+    if (href === '/dashboard' || href === '/dashboard/') return false;
+
+    if (pathname.startsWith(href + '/')) {
+      // Check if there's a more specific item in the sidebar that also matches the current path.
+      // This prevents "List" items from highlighting when a "Create" or "Specialized" sub-item is active.
+      const hasMoreSpecificMatch = navSections.some(section =>
+        section.items.some(item =>
+          item.href !== href &&
+          item.href.length > href.length &&
+          item.href.startsWith(href) &&
+          pathname.startsWith(item.href)
+        )
+      );
+      return !hasMoreSpecificMatch;
+    }
+
+    return false;
   };
 
   return (

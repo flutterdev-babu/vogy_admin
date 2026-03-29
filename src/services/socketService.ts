@@ -1,13 +1,17 @@
 import { io, Socket } from 'socket.io-client';
 import { TOKEN_KEYS } from '@/lib/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_BASE_URL) throw new Error("CRITICAL: NEXT_PUBLIC_API_URL is not defined");
 // socket.io connects to the base server url, not /api
 const SOCKET_URL = API_BASE_URL.replace('/api', '');
 
 class SocketService {
     private socket: Socket | null = null;
     private listeners: Map<string, Function[]> = new Map();
+    getSocket(): Socket | null {
+        return this.socket;
+    }
 
     connect(tokenKey: string = TOKEN_KEYS.partner) {
         if (this.socket?.connected) return;

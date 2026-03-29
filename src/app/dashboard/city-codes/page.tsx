@@ -84,9 +84,9 @@ export default function CityCodesPage() {
       } else {
         toast.error(response.message || `Failed to ${isEditMode ? 'update' : 'create'} city code`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} city code:`, error);
-      toast.error('Something went wrong');
+      toast.error(error.response?.data?.message || error.message || 'Something went wrong');
     } finally {
       setIsSubmitting(false);
     }

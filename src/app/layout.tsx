@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   description: "Admin panel for ARA Travels ride-hailing platform",
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
