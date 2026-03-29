@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, UserPlus, Loader2, Building2, ArrowLeft, ChevronDown, ChevronUp, ShieldCheck, Info, CreditCard, Lock } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Building2, ArrowLeft, ShieldCheck, CreditCard, Car, Check, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { vendorService } from '@/services/vendorService';
 import { cityCodeService } from '@/services/cityCodeService';
+import { PremiumSelect, PremiumSelectOption } from '@/components/ui/PremiumSelect';
 
 const FALLBACK_CITIES = [
   { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
@@ -15,14 +16,16 @@ const FALLBACK_CITIES = [
   { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
 ];
 
+const VENDOR_TYPE_OPTIONS: PremiumSelectOption[] = [
+  { id: 'BUSINESS', label: 'Business Entity', subLabel: 'Registered Company / LLC' },
+  { id: 'INDIVIDUAL', label: 'Individual Owner', subLabel: 'Private Fleet Operator' }
+];
+
 export default function VendorRegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [cityCodes, setCityCodes] = useState<any[]>([]);
-  
-  const [showCompliance, setShowCompliance] = useState(false);
-  const [showBanking, setShowBanking] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -70,8 +73,8 @@ export default function VendorRegisterPage() {
       };
       const response = await vendorService.register(submitData);
       if (response.success) {
-        toast.success('Registration successful! Please login.');
-        router.push('/vendor/login');
+        toast.success('Registration successful! Redirecting to login...');
+        setTimeout(() => router.push('/vendor/login'), 2000);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Registration failed');
@@ -80,193 +83,150 @@ export default function VendorRegisterPage() {
     }
   };
 
-  const sectionClass = "bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden mb-4";
-  const labelClass = "text-[9px] font-black text-neutral-500 uppercase tracking-widest ml-1 mb-1 block";
-  const inputClass = "w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/30 transition-all h-10";
-  const selectClass = "w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white appearance-none cursor-pointer focus:outline-none focus:border-[#E32222] transition-all h-10";
+  const labelClass = "text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1 mb-1.5 block";
+  const inputClass = "w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/20 transition-all hover:bg-white/[0.05]";
+
+  const cityOptions: PremiumSelectOption[] = cityCodes.map(c => ({ id: c.id, label: c.cityName, subLabel: c.code }));
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center p-4 py-12 relative overflow-hidden">
-      {/* Abstract Background Effects */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E32222]/10 rounded-full blur-[120px] -mr-64 -mt-64 animate-pulse" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-600/5 rounded-full blur-[120px] -ml-64 -mb-64" />
+    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4 py-20 selection:bg-[#E32222]/30">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#E32222]/05 rounded-full blur-[120px] -mr-32 -mt-32" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-red-600/[0.02] rounded-full blur-[140px] -ml-32 -mb-32" />
+      </div>
 
-      <div className="relative z-10 w-full max-w-2xl animate-fade-in">
-        <Link href="/" className="inline-flex items-center gap-2 text-neutral-500 hover:text-white transition-all mb-6 group text-[10px] font-black uppercase tracking-widest">
-          <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+      <div className="relative z-10 w-full max-w-3xl animate-fade-in">
+        <Link href="/" className="inline-flex items-center gap-2 text-neutral-500 hover:text-white transition-all mb-10 group text-[10px] font-black uppercase tracking-widest">
+          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
           Back to Portal
         </Link>
 
-        <div className="mb-8 flex items-end justify-between">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-black text-white italic uppercase leading-none tracking-tighter">Vendor Signup</h1>
-            <p className="text-neutral-500 text-xs font-bold mt-2 uppercase tracking-wide">Register your fleet with Ara Platform</p>
+            <h1 className="text-5xl font-black text-white italic uppercase leading-none tracking-tighter">Vendor Portal</h1>
+            <p className="text-neutral-500 text-[10px] font-black mt-3 uppercase tracking-[0.3em]">Fleet Management Registration</p>
           </div>
-          <div className="w-16 h-16 bg-[#E32222]/10 rounded-[24px] border border-[#E32222]/20 flex items-center justify-center shadow-[0_0_30px_rgba(227,34,34,0.1)]">
-            <Building2 size={32} className="text-[#E32222]" />
+          <div className="w-20 h-20 bg-[#E32222]/05 rounded-[32px] border border-white/5 flex items-center justify-center shadow-2xl backdrop-blur-xl">
+            <Building2 size={36} className="text-[#E32222]" />
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Primary Info */}
-          <div className={sectionClass}>
-            <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center gap-2">
-              <Info size={14} className="text-[#E32222]" />
-              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Partner Identity</span>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Section: Business Info */}
+          <div className="bg-[#0F0F0F] border border-white/5 rounded-[40px] p-8 md:p-10 shadow-2xl">
+            <div className="flex items-center gap-3 mb-10">
+              <div className="w-8 h-8 rounded-full bg-[#E32222]/10 border border-[#E32222]/20 flex items-center justify-center">
+                <span className="text-[10px] font-black text-[#E32222]">01</span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-white/40">Business Details</h3>
             </div>
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="space-y-1">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-1">
                 <label className={labelClass}>Owner Name *</label>
-                <input type="text" required value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className={inputClass} placeholder="Full Name" />
+                <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className={inputClass} placeholder="Full Legal Name" />
               </div>
               <div className="space-y-1">
                 <label className={labelClass}>Company Name *</label>
-                <input type="text" required value={formData.companyName}
-                  onChange={(e) => setFormData({...formData, companyName: e.target.value})}
-                  className={inputClass} placeholder="Legal Entity Name" />
+                <input type="text" required value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className={inputClass} placeholder="Agency / Company Name" />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="space-y-1">
                 <label className={labelClass}>Primary Phone *</label>
-                <div className="flex gap-2">
-                   <div className="bg-white/5 border border-white/10 rounded-xl px-3 flex items-center h-10 text-[10px] font-bold text-neutral-400">+91</div>
-                  <input type="tel" required value={formData.phone}
-                    onChange={(e) => {
-                      let v = e.target.value.replace(/\D/g, '');
-                      if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
-                      setFormData({...formData, phone: v.slice(0, 10)});
-                    }}
-                    className={inputClass} placeholder="9876543210" maxLength={10} />
+                <div className="flex">
+                  <span className="px-4 py-3 bg-white/5 border border-white/10 border-r-0 rounded-l-xl text-[10px] font-black text-neutral-500 flex items-center tracking-widest">+91</span>
+                  <input type="tel" required value={formData.phone} onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, '');
+                    if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
+                    setFormData({...formData, phone: v.slice(0, 10)});
+                  }} className={inputClass + " rounded-l-none"} placeholder="10 Digit Number" maxLength={10} />
                 </div>
               </div>
               <div className="space-y-1">
                 <label className={labelClass}>Email Address</label>
-                <input type="email" value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className={inputClass} placeholder="vendor@company.com" />
+                <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className={inputClass} placeholder="admin@vogy.com" />
               </div>
             </div>
 
-            <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div className="space-y-1">
-                  <label className={labelClass}>Vendor Type *</label>
-                  <select value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value as any})}
-                    className={selectClass}>
-                    <option value="BUSINESS">Business Entity</option>
-                    <option value="INDIVIDUAL">Individual Owner</option>
-                  </select>
-               </div>
-               <div className="space-y-1">
-                  <label className={labelClass}>Operating City *</label>
-                  <select required value={formData.cityCodeId}
-                    onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
-                    className={selectClass}>
-                    <option value="">Select City</option>
-                    {cityCodes.map((c: any) => <option key={c.id} value={c.id}>{c.cityName}</option>)}
-                  </select>
-               </div>
-               <div className="space-y-1">
-                <label className={labelClass}>Create Password *</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <PremiumSelect 
+                label="Vendor Role" 
+                options={VENDOR_TYPE_OPTIONS} 
+                value={formData.type} 
+                onChange={v => setFormData({...formData, type: v as any})} 
+              />
+              <PremiumSelect 
+                label="Operating City" 
+                options={cityOptions} 
+                value={formData.cityCodeId} 
+                onChange={v => setFormData({...formData, cityCodeId: v})} 
+                placeholder="Choose City"
+                required
+              />
+              <div className="space-y-1">
+                <label className={labelClass}>Set Password *</label>
                 <div className="relative">
-                  <input type={showPassword ? 'text' : 'password'} required value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    className={inputClass + " pr-10"} placeholder="••••••••" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors">
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  <input type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className={inputClass + " pr-12"} placeholder="Security Key" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-white transition-colors">
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Compliance & Address */}
-          <div className={sectionClass}>
-            <button type="button" onClick={() => setShowCompliance(!showCompliance)}
-              className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={14} className="text-[#E32222]" />
-                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Compliance & Address</span>
+          {/* Section: Compliance & Payouts */}
+          <div className="bg-[#0F0F0F] border border-white/5 rounded-[40px] p-8 md:p-10 shadow-2xl">
+            <div className="flex items-center gap-3 mb-10">
+              <div className="w-8 h-8 rounded-full bg-[#E32222]/10 border border-[#E32222]/20 flex items-center justify-center">
+                <span className="text-[10px] font-black text-[#E32222]">02</span>
               </div>
-              {showCompliance ? <ChevronUp size={14} className="text-neutral-600" /> : <ChevronDown size={14} className="text-neutral-600" />}
-            </button>
+              <h3 className="text-xs font-black uppercase tracking-widest text-white/40">Compliance & Settlement</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <ShieldCheck size={14} className="text-[#E32222]" />
+                  <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">KYC Info</span>
+                </div>
+                <div className="space-y-4">
+                  <input type="text" value={formData.gstNumber} onChange={e => setFormData({...formData, gstNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="GST Number (Optional)" />
+                  <input type="text" value={formData.panNumber} onChange={e => setFormData({...formData, panNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="PAN Card Number" />
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard size={14} className="text-[#E32222]" />
+                  <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Payout Setup</span>
+                </div>
+                <div className="space-y-4">
+                  <input type="text" value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value})} className={inputClass} placeholder="Primary Bank A/C NO" />
+                  <input type="tel" value={formData.ccMobile} onChange={e => setFormData({...formData, ccMobile: e.target.value.replace(/\D/g, '')})} className={inputClass} placeholder="Customer Support Mobile" maxLength={10} />
+                </div>
+              </div>
+            </div>
             
-            {showCompliance && (
-              <div className="px-5 pb-5 pt-2 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className={labelClass}>GST Number (Optional)</label>
-                    <input type="text" value={formData.gstNumber}
-                      onChange={(e) => setFormData({...formData, gstNumber: e.target.value.toUpperCase()})}
-                      className={inputClass} placeholder="15 Digit GSTIN" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className={labelClass}>PAN Number (Optional)</label>
-                    <input type="text" value={formData.panNumber}
-                      onChange={(e) => setFormData({...formData, panNumber: e.target.value.toUpperCase()})}
-                      className={inputClass} placeholder="XXXXXXXXXX" maxLength={10} />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className={labelClass}>Main Office Address</label>
-                  <input type="text" value={formData.officeAddress}
-                    onChange={(e) => setFormData({...formData, officeAddress: e.target.value})}
-                    className={inputClass} placeholder="Street, Building, Area, City" />
-                </div>
-              </div>
-            )}
+            <div className="mt-8 space-y-1">
+              <label className={labelClass}>Office Address</label>
+              <textarea rows={2} value={formData.officeAddress} onChange={e => setFormData({...formData, officeAddress: e.target.value})} className={inputClass + " h-auto resize-none py-4"} placeholder="Full Registered Address" />
+            </div>
           </div>
 
-          {/* Banking Details */}
-          <div className={sectionClass}>
-            <button type="button" onClick={() => setShowBanking(!showBanking)}
-              className="w-full px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-              <div className="flex items-center gap-2">
-                <CreditCard size={14} className="text-[#E32222]" />
-                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]">Payment Information</span>
-              </div>
-              {showBanking ? <ChevronUp size={14} className="text-neutral-600" /> : <ChevronDown size={14} className="text-neutral-600" />}
+          <div className="pt-10 flex flex-col items-center">
+            <button type="submit" disabled={isLoading} className="group relative w-full md:w-[450px] h-16 rounded-[24px] bg-[#E32222] hover:bg-[#ff1a1a] text-white font-black uppercase tracking-[0.3em] text-sm transition-all shadow-[0_24px_48px_-12px_rgba(227,34,34,0.5)] active:scale-[0.98] disabled:opacity-50 overflow-hidden">
+               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+               {isLoading ? <Loader2 size={24} className="animate-spin mx-auto" /> : <span>Launch Fleet Partnership</span>}
             </button>
             
-            {showBanking && (
-              <div className="px-5 pb-5 pt-2 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className={labelClass}>Settlement Bank Account</label>
-                    <input type="text" value={formData.accountNumber}
-                      onChange={(e) => setFormData({...formData, accountNumber: e.target.value})}
-                      className={inputClass} placeholder="A/C Number for Payments" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className={labelClass}>Secondary Contact (CC)</label>
-                    <input type="tel" value={formData.ccMobile}
-                      onChange={(e) => setFormData({...formData, ccMobile: e.target.value})}
-                      className={inputClass} placeholder="Backup Contact" />
-                  </div>
-                </div>
-                <div className="p-3 bg-[#E32222]/5 rounded-xl border border-[#E32222]/10 flex items-start gap-3">
-                  <div className="mt-0.5"><Lock size={12} className="text-[#E32222]" /></div>
-                  <p className="text-[10px] text-neutral-400 leading-relaxed font-medium">Bank details are used strictly for settlement purposes and are encrypted in our systems.</p>
-                </div>
-              </div>
-            )}
+            <Link href="/vendor/login" className="mt-8 text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-[#E32222] transition-colors border-b border-white/5 pb-1">
+              Already a provider? Access Portal
+            </Link>
           </div>
-
-          <button type="submit" disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[#E32222] hover:bg-[#ff2a1a] text-white font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-red-900/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4 group">
-            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} className="group-hover:scale-110 transition-transform" />}
-            <span>{isLoading ? 'Processing Signup...' : 'Complete Registration'}</span>
-          </button>
         </form>
-
-        <p className="text-center text-neutral-500 mt-8 text-[10px] font-bold uppercase tracking-widest">
-          Existing fleet owner?{' '}
-          <Link href="/vendor/login" className="text-[#E32222] hover:text-[#ff4d4d] transition-colors ml-1">
-            Portal Login
-          </Link>
-        </p>
       </div>
     </div>
   );
