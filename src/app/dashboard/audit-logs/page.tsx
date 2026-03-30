@@ -367,6 +367,16 @@ export default function AuditLogsPage() {
                                     <span className="text-gray-400 text-xs">Action</span>
                                     <p className="font-medium text-gray-800">{selectedLog.action.replace(/_/g, ' ')}</p>
                                 </div>
+                                <div className="col-span-2 mt-2 pt-2 border-t border-gray-50 flex items-center justify-between">
+                                    <div>
+                                        <span className="text-gray-400 text-xs">IP Address</span>
+                                        <p className="font-medium text-blue-600 font-mono text-xs">{selectedLog.ipAddress || '—'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-gray-400 text-xs">Device/Browser</span>
+                                        <p className="text-[10px] text-gray-500 max-w-[250px] truncate" title={selectedLog.userAgent || ''}>{selectedLog.userAgent || '—'}</p>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Old vs New Data */}

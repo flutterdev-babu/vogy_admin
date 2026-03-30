@@ -177,7 +177,18 @@ export default function RideHistoryPage() {
                     {rides.map((ride) => {
                         const statusConf = getStatusConfig(ride.status);
                         const StatusIcon = statusConf.icon;
-                        const canCancel = CANCELLABLE_STATUSES.includes(ride.status);
+                        
+                        // NEW: Cancellation Rule & Expired Status Logic
+                        const rideTime = new Date(ride.scheduledDateTime || ride.createdAt).getTime();
+                        const now = Date.now();
+                        const diffHours = (rideTime - now) / (1000 * 60 * 60);
+                        
+                        // 3-hour rule
+                        const isTooLateToCancel = diffHours < 3;
+                        const canCancel = CANCELLABLE_STATUSES.includes(ride.status) && !isTooLateToCancel;
+                        
+                        // Post-dated (Missed) ride check
+                        const isPastDue = rideTime < now && (ride.status === 'UPCOMING' || ride.status === 'SCHEDULED' || ride.status === 'REQUESTED');
 
                         return (
                             <div
@@ -192,8 +203,11 @@ export default function RideHistoryPage() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: statusConf.bg, color: statusConf.color }}>
-                                                    {ride.status}
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ 
+                                                    background: isPastDue ? 'rgba(239, 68, 68, 0.1)' : statusConf.bg, 
+                                                    color: isPastDue ? '#ef4444' : statusConf.color 
+                                                }}>
+                                                    {isPastDue ? 'EXPIRED / MISSED' : ride.status}
                                                 </span>
                                                 {ride.customId && (
                                                     <span className="text-gray-600 text-xs font-mono">{ride.customId}</span>
@@ -215,8 +229,28 @@ export default function RideHistoryPage() {
                                                 <span>{formatDate(ride.createdAt)}</span>
                                                 <span>{ride.distanceKm?.toFixed(1)} km</span>
                                                 {ride.vehicleType && <span>{ride.vehicleType.displayName}</span>}
-                                                <span>{ride.paymentMode}</span>
+                                                <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/5 font-mono">{ride.paymentMode}</span>
                                             </div>
+
+                                            {/* NEW: Payment Breakdown for UPI */}
+                                            {ride.advanceAmount !== undefined && (
+                                                <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-wrap gap-4">
+                                                    <div>
+                                                        <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-0.5">Confirmation Fee Paid</p>
+                                                        <p className="text-green-400 font-bold text-sm">₹{ride.advanceAmount}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-0.5">Balance to Driver</p>
+                                                        <p className="text-white font-bold text-sm">₹{(ride.totalFare || 0) - (ride.advanceAmount || 0)}</p>
+                                                    </div>
+                                                    {ride.transactionId && (
+                                                        <div className="flex-1 min-w-[120px]">
+                                                            <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-0.5">Ref No. (UPI ID)</p>
+                                                            <p className="text-gray-400 font-mono text-[10px] truncate">{ride.transactionId}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -224,7 +258,7 @@ export default function RideHistoryPage() {
                                         {ride.totalFare != null && (
                                             <p className="text-white font-bold text-lg">₹{ride.totalFare}</p>
                                         )}
-                                        {canCancel && (
+                                        {canCancel ? (
                                             <button
                                                 onClick={() => handleCancelRide(ride.id)}
                                                 disabled={cancellingId === ride.id}
@@ -233,6 +267,12 @@ export default function RideHistoryPage() {
                                             >
                                                 {cancellingId === ride.id ? <Loader2 size={12} className="animate-spin" /> : 'Cancel'}
                                             </button>
+                                        ) : (
+                                            CANCELLABLE_STATUSES.includes(ride.status) && (
+                                                <p className="mt-2 text-[10px] text-gray-500 italic max-w-[100px] leading-tight">
+                                                    Cancellation closed (&lt; 3hrs)
+                                                </p>
+                                            )
                                         )}
                                     </div>
                                 </div>

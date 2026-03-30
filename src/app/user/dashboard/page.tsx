@@ -139,43 +139,69 @@ export default function UserDashboardPage() {
             </div>
 
             {/* Active Ride Banner */}
-            {activeRide && (
-                <div className="rounded-2xl p-5 animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                            <Navigation size={20} className="text-blue-400 animate-pulse" />
-                        </div>
-                        <div>
-                            <h3 className="text-white font-semibold">Active Ride</h3>
-                            <p className="text-blue-300 text-xs">Your ride is in progress</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div className="flex items-start gap-2">
-                            <div className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0" />
+            {activeRide && (() => {
+                const rideTime = new Date(activeRide.scheduledDateTime || activeRide.createdAt).getTime();
+                const now = Date.now();
+                const diffMs = now - rideTime;
+                const isPastDue = diffMs > 0 && (activeRide.status === 'UPCOMING' || activeRide.status === 'SCHEDULED' || activeRide.status === 'REQUESTED');
+                
+                // NEW: Hide banner if it's an upcoming ride that's more than 1 hour past due
+                if (isPastDue && diffMs > 60 * 60 * 1000) {
+                    return null;
+                }
+
+                return (
+                    <div className="rounded-2xl p-5 animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                <Navigation size={20} className="text-blue-400 animate-pulse" />
+                            </div>
                             <div>
-                                <p className="text-gray-400 text-xs">Pickup</p>
-                                <p className="text-white truncate">{activeRide.pickupAddress}</p>
+                                <h3 className="text-white font-semibold">Active Ride</h3>
+                                <p className="text-blue-300 text-xs">
+                                    {isPastDue 
+                                        ? 'Ride time has passed' 
+                                        : (activeRide.status === 'UPCOMING' || activeRide.status === 'SCHEDULED' || activeRide.status === 'REQUESTED'
+                                            ? 'You have an upcoming ride'
+                                            : 'Your ride is in progress')}
+                                </p>
                             </div>
                         </div>
-                        <div className="flex items-start gap-2">
-                            <div className="w-2 h-2 rounded-full bg-red-400 mt-1.5 shrink-0" />
-                            <div>
-                                <p className="text-gray-400 text-xs">Drop</p>
-                                <p className="text-white truncate">{activeRide.dropAddress}</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            <div className="flex items-start gap-2">
+                                <div className="w-2 h-2 rounded-full bg-green-400 mt-1.5 shrink-0" />
+                                <div>
+                                    <p className="text-gray-400 text-xs">Pickup</p>
+                                    <p className="text-white truncate">{activeRide.pickupAddress}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <div className="w-2 h-2 rounded-full bg-red-400 mt-1.5 shrink-0" />
+                                <div>
+                                    <p className="text-gray-400 text-xs">Drop</p>
+                                    <p className="text-white truncate">{activeRide.dropAddress}</p>
+                                </div>
                             </div>
                         </div>
+                        <div className="mt-3 flex items-center gap-3 flex-wrap">
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold" 
+                                style={{ 
+                                    background: isPastDue ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                    color: isPastDue ? '#ef4444' : '#93c5fd'
+                                }}>
+                                {isPastDue ? 'EXPIRED / MISSED' : activeRide.status}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-blue-200 text-xs font-medium">
+                                <Clock size={12} />
+                                {formatDate(activeRide.scheduledDateTime || activeRide.createdAt)}
+                            </div>
+                            {activeRide.totalFare && (
+                                <span className="text-white font-bold text-sm bg-blue-500/20 px-2 py-0.5 rounded-lg border border-blue-400/20 ml-auto">₹{activeRide.totalFare}</span>
+                            )}
+                        </div>
                     </div>
-                    <div className="mt-3 flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold text-blue-300" style={{ background: 'rgba(59, 130, 246, 0.2)' }}>
-                            {activeRide.status}
-                        </span>
-                        {activeRide.totalFare && (
-                            <span className="text-gray-400 text-sm">₹{activeRide.totalFare}</span>
-                        )}
-                    </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -267,10 +293,21 @@ export default function UserDashboardPage() {
                                             <p className="text-gray-400 text-sm truncate">{ride.dropAddress}</p>
                                         </div>
                                         <div className="flex items-center gap-3 mt-1">
-                                            <span className="text-xs text-gray-500">{formatDate(ride.createdAt)}</span>
-                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: statusConf.bg, color: statusConf.color }}>
-                                                {ride.status}
-                                            </span>
+                                            <span className="text-xs text-gray-500">{formatDate(ride.scheduledDateTime || ride.createdAt)}</span>
+                                            {(() => {
+                                                const rideTime = new Date(ride.scheduledDateTime || ride.createdAt).getTime();
+                                                const isPastDue = rideTime < Date.now() && (ride.status === 'UPCOMING' || ride.status === 'SCHEDULED' || ride.status === 'REQUESTED');
+                                                
+                                                return (
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" 
+                                                        style={{ 
+                                                            background: isPastDue ? 'rgba(239, 68, 68, 0.1)' : statusConf.bg, 
+                                                            color: isPastDue ? '#ef4444' : statusConf.color 
+                                                        }}>
+                                                        {isPastDue ? 'EXPIRED / MISSED' : ride.status}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                     <div className="text-right shrink-0">

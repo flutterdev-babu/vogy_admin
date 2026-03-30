@@ -24,6 +24,8 @@ export interface RideData {
     scheduledDateTime?: string;
     startTime?: string;
     endTime?: string;
+    advanceAmount?: number;
+    transactionId?: string;
 }
 
 export interface CreateRidePayload {
@@ -41,6 +43,8 @@ export interface CreateRidePayload {
     couponCode?: string;
     expectedFare?: number;
     cityCodeId?: string;
+    advanceAmount?: number;
+    transactionId?: string;
 }
 
 export interface FareEstimatePayload {
@@ -55,6 +59,21 @@ export interface FareEstimatePayload {
 export const userRideService = {
     async createRide(data: CreateRidePayload) {
         const response = await userRidesApi.post('/new-ride', data);
+        return response.data;
+    },
+
+    async initiatePayment(data: { amount: number; idempotencyKey: string; rideDetails?: any }) {
+        const response = await userRidesApi.post('/initiate-payment', data);
+        return response.data;
+    },
+
+    async verifyPayment(data: { verificationId: string; transactionId: string }) {
+        const response = await userRidesApi.post('/verify-payment', data);
+        return response.data;
+    },
+
+    async getActiveIntent() {
+        const response = await userRidesApi.get('/active-intent');
         return response.data;
     },
 

@@ -52,6 +52,7 @@ export default function FraudAlertsPage() {
   if (isLoading) return <PageLoader />;
 
   const filteredAlerts = data?.alerts.filter(a => !filterSeverity || a.severity === filterSeverity) || [];
+  const securityBlocks = (data as any)?.securityBlocks || [];
 
   const getSeverityStyles = (severity: string) => {
     switch (severity) {
@@ -67,9 +68,9 @@ export default function FraudAlertsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            <Shield className="text-red-500" size={28} /> Fraud Detection
+            <Shield className="text-red-500" size={28} /> Fraud & Security
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Anomalous rides flagged by our detection engine</p>
+          <p className="text-sm text-gray-500 mt-1">Anomalous rides and persistent security threats</p>
         </div>
         <button
           onClick={handleExport}
@@ -83,10 +84,10 @@ export default function FraudAlertsPage() {
       {data && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Alerts', value: data.totalAlerts, color: 'text-gray-800', bg: 'bg-white' },
-            { label: 'High Severity', value: data.highSeverity, color: 'text-red-600', bg: 'bg-red-50' },
-            { label: 'Medium Severity', value: data.mediumSeverity, color: 'text-orange-600', bg: 'bg-orange-50' },
-            { label: 'Low Severity', value: data.lowSeverity, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+            { label: 'Ride Alerts', value: data.totalAlerts, color: 'text-gray-800', bg: 'bg-white' },
+            { label: 'Security Blocks', value: securityBlocks.filter((b: any) => b.isLocked).length, color: 'text-red-600', bg: 'bg-red-50' },
+            { label: 'Failed Attempts', value: securityBlocks.reduce((acc: number, b: any) => acc + b.attempts, 0), color: 'text-orange-600', bg: 'bg-orange-50' },
+            { label: 'System Health', value: '100%', color: 'text-blue-600', bg: 'bg-blue-50' },
           ].map((card, i) => (
             <div key={i} className={`${card.bg} rounded-2xl p-5 border border-gray-100`}>
               <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">{card.label}</p>
@@ -96,9 +97,60 @@ export default function FraudAlertsPage() {
         </div>
       )}
 
+      {/* Security Blocks Section (NEW) */}
+      {securityBlocks.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-sm font-black uppercase text-gray-600 flex items-center gap-2">
+              <Shield size={16} className="text-red-500" /> Active Security Blocks (Persistence Guard)
+            </h2>
+            <span className="text-[10px] font-bold text-gray-400">TRACKING IP & USERID BRUTEFORCE</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                  <th className="px-5 py-3">IP / User</th>
+                  <th className="px-5 py-3">Attempts</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Locked Until</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {securityBlocks.map((block: any, i: number) => (
+                  <tr key={i} className="text-xs hover:bg-gray-50/50 transition-colors">
+                    <td className="px-5 py-4">
+                      <p className="font-mono text-blue-600 font-bold">{block.ipAddress || 'Unknown IP'}</p>
+                      <p className="text-[10px] text-gray-400">{block.userId || 'Guest Session'}</p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`px-2 py-0.5 rounded-full font-bold ${block.attempts >= 3 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {block.attempts} / 5
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      {block.isLocked ? (
+                        <span className="flex items-center gap-1 text-red-600 font-bold">
+                          <Clock size={12} /> BLOCKED
+                        </span>
+                      ) : (
+                        <span className="text-green-600 font-bold">MONITORING</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-gray-500">
+                      {block.isLocked ? new Date(block.lockedUntil).toLocaleTimeString() : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Filter */}
       <div className="flex gap-2 items-center">
-        <span className="text-xs font-bold text-gray-500 uppercase">Filter:</span>
+        <span className="text-xs font-bold text-gray-500 uppercase">Ride Anomaly Filter:</span>
         {['', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
           <button
             key={sev || 'all'}
@@ -107,7 +159,7 @@ export default function FraudAlertsPage() {
               ? 'bg-[#E32222] text-white shadow-md'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
-            {sev || 'All'}
+            {sev || 'All Anomalies'}
           </button>
         ))}
       </div>
@@ -115,10 +167,10 @@ export default function FraudAlertsPage() {
       {/* Alerts List */}
       <div className="space-y-3">
         {filteredAlerts.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-100 border-dashed">
             <Shield size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="font-bold">No fraud alerts detected</p>
-            <p className="text-sm">All rides look legitimate! 🎉</p>
+            <p className="font-bold text-gray-500">No anomalous rides detected</p>
+            <p className="text-sm">Ride speed, distance, and fare patterns look legitimate! 🎉</p>
           </div>
         ) : (
           filteredAlerts.map((alert, i) => (

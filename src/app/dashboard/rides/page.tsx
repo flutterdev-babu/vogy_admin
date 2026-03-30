@@ -84,7 +84,9 @@ export default function RidesPage() {
       'Vehicle': ride.vehicleType?.displayName || 'SEDAN',
       'Distance (km)': ride.distanceKm?.toFixed(1) || '0',
       'Driver': ride.partner?.name || 'N/A',
-      'Cost': ride.totalFare?.toFixed(2) || '0',
+      'Total Cost': ride.totalFare?.toFixed(2) || '0',
+      'Conf. Fee Paid': ride.advanceAmount?.toFixed(2) || '0',
+      'Ref No.': ride.transactionId || 'N/A',
       'Status': ride.status
     }));
     exportToCSV(dataToExport, `Rides_Export_${new Date().toISOString().slice(0, 10)}`);
@@ -329,26 +331,42 @@ export default function RidesPage() {
                     ₹{ride.totalFare?.toFixed(0) || '0'}
                   </h3>
                   
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    <span className="px-2 py-1 bg-white border border-gray-200 text-gray-700 text-[10px] font-bold uppercase rounded-md shadow-sm">
-                      {ride.paymentMode || 'CASH'}
-                    </span>
-                    <span className={`px-2 py-1 text-[10px] font-black uppercase rounded-md shadow-sm border ${
-                      ride.status === 'COMPLETED' ? 'bg-green-500 text-white border-green-600' : 'bg-red-50 text-red-600 border-red-200'
-                    }`}>
-                      {ride.status === 'COMPLETED' ? 'PAID' : 'UNPAID'}
-                    </span>
-                    <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md shadow-sm border ${
-                      ride.status === 'COMPLETED' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-gray-500 border-gray-200'
-                    }`}>
-                      CNR: {ride.status === 'COMPLETED' ? 'RCVD' : 'PEND'}
-                    </span>
-                  </div>
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      <span className="px-2 py-1 bg-white border border-gray-200 text-gray-700 text-[10px] font-bold uppercase rounded-md shadow-sm">
+                        {ride.paymentMode || 'CASH'}
+                      </span>
+                      {ride.advanceAmount && ride.advanceAmount > 0 ? (
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase rounded-md shadow-sm border border-green-200">
+                          FEE PAID: ₹{ride.advanceAmount}
+                        </span>
+                      ) : (
+                        <span className={`px-2 py-1 text-[10px] font-black uppercase rounded-md shadow-sm border ${
+                          ride.status === 'COMPLETED' ? 'bg-green-500 text-white border-green-600' : 'bg-red-50 text-red-600 border-red-200'
+                        }`}>
+                          {ride.status === 'COMPLETED' ? 'PAID' : 'UNPAID'}
+                        </span>
+                      )}
+                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md shadow-sm border ${
+                        ride.status === 'COMPLETED' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-white text-gray-500 border-gray-200'
+                      }`}>
+                        CNR: {ride.status === 'COMPLETED' ? 'RCVD' : 'PEND'}
+                      </span>
+                    </div>
                   
-                  {(ride.couponCode || ride.agentCode) && (
-                    <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg">
-                      <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Ref:</span>
-                      <span className="text-xs font-black text-blue-700">{ride.couponCode || ride.agentCode}</span>
+                  {(ride.couponCode || ride.agentCode || ride.transactionId) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(ride.couponCode || ride.agentCode) && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg">
+                          <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Ref:</span>
+                          <span className="text-xs font-black text-blue-700">{ride.couponCode || ride.agentCode}</span>
+                        </div>
+                      )}
+                      {ride.transactionId && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-100 rounded-lg">
+                          <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">UPI:</span>
+                          <span className="text-xs font-black text-green-700" title={ride.transactionId}>{ride.transactionId}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

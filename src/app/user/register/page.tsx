@@ -49,16 +49,13 @@ export default function UserRegisterPage() {
             toast.error('Please enter a valid 10-digit phone number');
             return;
         }
-        if (email && !isValidEmail(email)) {
+        if (!email.trim() || !isValidEmail(email)) {
             toast.error('Please enter a valid email address');
             return;
         }
+
         if (!password) {
             toast.error('Please create a password for your account');
-            return;
-        }
-        if (password.length < 6) {
-            toast.error('Password must be at least 6 characters');
             return;
         }
 
@@ -72,14 +69,12 @@ export default function UserRegisterPage() {
                 finalPhone = `+${phone}`;
             }
 
-            const payload: { name: string; phone: string; email?: string; password?: string } = {
+            const payload = {
                 name: name.trim(),
                 phone: finalPhone,
+                email: email.trim(),
                 password,
             };
-            if (email.trim()) {
-                payload.email = email.trim();
-            }
 
             await userAuthService.register(payload);
             toast.success('Registration successful! You can now login.');
@@ -96,9 +91,13 @@ export default function UserRegisterPage() {
         <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%)' }}>
             <div className="w-full max-w-md">
                 {/* Logo Section */}
-                <div className="text-center mb-8 animate-fade-in">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6" style={{ background: 'linear-gradient(135deg, #E32222, #ff4444)' }}>
+                <div className="flex flex-col items-center mb-8 animate-fade-in">
+                    <div className="flex items-center justify-center w-20 h-20 rounded-2xl mb-4" style={{ background: 'linear-gradient(135deg, #E32222, #ff4444)' }}>
                         <Car size={40} className="text-white" />
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full mb-6" style={{ background: 'rgba(227, 34, 34, 0.1)', border: '1px solid rgba(227, 34, 34, 0.2)' }}>
+                        <span className="w-2 h-2 rounded-full bg-[#E32222] animate-pulse" />
+                        <span className="text-[10px] font-bold text-[#E32222] tracking-widest uppercase">Customer Portal</span>
                     </div>
                     <h1 className="text-3xl font-black text-white">Create Your Account</h1>
                     <p className="text-gray-400 mt-2">Join ARA Travels and start booking rides</p>
@@ -148,7 +147,7 @@ export default function UserRegisterPage() {
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-300 mb-2">
-                                Email Address <span className="text-gray-500 font-normal ml-1">(optional)</span>
+                                Email Address <span className="text-[#E32222]">*</span>
                             </label>
                             <div className="relative">
                                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -160,6 +159,7 @@ export default function UserRegisterPage() {
                                     style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
                                     placeholder="you@example.com"
                                     disabled={isLoading}
+                                    required
                                 />
                             </div>
                         </div>

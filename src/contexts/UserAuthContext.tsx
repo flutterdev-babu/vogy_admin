@@ -2,14 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { userAuthService, UserData } from '@/services/userAuthService';
+import { userProfileService } from '@/services/userProfileService';
 import { TOKEN_KEYS, USER_KEYS } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 interface UserAuthContextType {
     user: UserData | null;
     token: string | null;
     isLoading: boolean;
-    sendOtp: (phone: string) => Promise<void>;
-    verifyOtp: (phone: string, code: string) => Promise<void>;
     loginWithEmail: (email: string, password: string) => Promise<void>;
     logout: () => void;
 }
@@ -21,6 +21,9 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const router = useRouter();
+
+    // 1. Initial Load from LocalStorage (Fast UI)
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const storedToken = localStorage.getItem(TOKEN_KEYS.user);
@@ -28,36 +31,62 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
             if (storedToken && storedUser) {
                 try {
+                    const parsedUser = JSON.parse(storedUser);
                     setToken(storedToken);
-                    setUser(JSON.parse(storedUser));
+                    setUser(parsedUser);
                 } catch {
-                    localStorage.removeItem(TOKEN_KEYS.user);
-                    localStorage.removeItem(USER_KEYS.user);
+                    handleLogout();
                 }
             }
             setIsLoading(false);
         }
     }, []);
 
-    const sendOtp = async (phone: string) => {
-        const response = await userAuthService.sendOtp(phone);
-        if (!response.success) {
-            throw new Error(response.message || 'Failed to send OTP');
+    // 2. Background Sync (Safe Profile Sync Strategy)
+    useEffect(() => {
+        if (token && user) {
+            const syncProfile = async () => {
+                try {
+                    const res = await userProfileService.getProfile();
+                    if (res.success && res.data) {
+                        const latestUser = res.data;
+                        // If role changed or user data mismatch, update state
+                        if (latestUser.role !== user.role || latestUser.id !== user.id) {
+                            setUser(latestUser);
+                            localStorage.setItem(USER_KEYS.user, JSON.stringify(latestUser));
+                        }
+                    }
+                } catch (err) {
+                    console.error('Background profile sync failed:', err);
+                    // Do not block UI if non-critical sync fails
+                }
+            };
+            syncProfile();
         }
+    }, [token]);
+
+    // 3. Cross-Tab Session Sync
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === TOKEN_KEYS.user && !e.newValue) {
+                // Token removed in another tab
+                handleLogout();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
+    const handleLogout = () => {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem(TOKEN_KEYS.user);
+        localStorage.removeItem(USER_KEYS.user);
+        router.push('/user/login');
     };
 
-    const verifyOtp = async (phone: string, code: string) => {
-        const response = await userAuthService.verifyOtp(phone, code);
-        if (response.success && response.data) {
-            const { token: newToken, user: newUser } = response.data;
-            setToken(newToken);
-            setUser(newUser);
-            localStorage.setItem(TOKEN_KEYS.user, newToken);
-            localStorage.setItem(USER_KEYS.user, JSON.stringify(newUser));
-        } else {
-            throw new Error(response.message || 'OTP verification failed');
-        }
-    };
+
 
     const loginWithEmail = async (email: string, password: string) => {
         const response = await userAuthService.loginWithEmail(email, password);
@@ -73,14 +102,11 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem(TOKEN_KEYS.user);
-        localStorage.removeItem(USER_KEYS.user);
+        handleLogout();
     };
 
     return (
-        <UserAuthContext.Provider value={{ user, token, isLoading, sendOtp, verifyOtp, loginWithEmail, logout }}>
+        <UserAuthContext.Provider value={{ user, token, isLoading, loginWithEmail, logout }}>
             {children}
         </UserAuthContext.Provider>
     );

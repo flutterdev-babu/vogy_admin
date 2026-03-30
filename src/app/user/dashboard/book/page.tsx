@@ -52,7 +52,15 @@ interface FareEstimate {
 
 export default function BookRidePage() {
     const router = useRouter();
-    const [step, setStep] = useState<'form' | 'success'>('form');
+    const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
+    const [advanceAmount, setAdvanceAmount] = useState<number>(0);
+    const [transactionId, setTransactionId] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+    
+    // Hardening: Idempotency & Intent State
+    const [idempotencyKey, setIdempotencyKey] = useState<string>('');
+    const [currentIntentId, setCurrentIntentId] = useState<string | null>(null);
+    const [intentExpiry, setIntentExpiry] = useState<Date | null>(null);
 
     // Form state
     const [pickupAddress, setPickupAddress] = useState('');
@@ -62,7 +70,7 @@ export default function BookRidePage() {
     const [distanceKm, setDistanceKm] = useState<number | null>(null);
     const [selectedVehicleTypeId, setSelectedVehicleTypeId] = useState('');
     const [selectedCityId, setSelectedCityId] = useState('');
-    const [paymentMode, setPaymentMode] = useState('CASH');
+    const [paymentMode, setPaymentMode] = useState('UPI');
     const [altMobile, setAltMobile] = useState('');
     const [rideType, setRideType] = useState('LOCAL');
 
@@ -95,35 +103,71 @@ export default function BookRidePage() {
         libraries: LIBRARIES,
     });
 
-    // Load initial data
+    // 1. Recovery Logic: On App Load (Session Resilience)
     useEffect(() => {
-        const loadInitialData = async () => {
+        const recoverSession = async () => {
             setIsLoadingData(true);
             try {
+                // Fetch active intent from backend (Truth)
+                const intentRes = await userRideService.getActiveIntent();
+                
+                if (intentRes.success && intentRes.data) {
+                    const intent = intentRes.data;
+                    console.log('RECOVERED INTENT:', intent);
+
+                    setCurrentIntentId(intent.id);
+                    setAdvanceAmount(intent.amount);
+                    setIntentExpiry(new Date(intent.expiresAt));
+                    setIdempotencyKey(intent.idempotencyKey);
+
+                    // Restore form details from intent
+                    if (intent.rideDetails) {
+                        const rd = intent.rideDetails;
+                        if (rd.pickupAddress) setPickupAddress(rd.pickupAddress);
+                        if (rd.dropAddress) setDropAddress(rd.dropAddress);
+                        if (rd.pickupCoords) setPickupCoords(rd.pickupCoords);
+                        if (rd.dropCoords) setDropCoords(rd.dropCoords);
+                        if (rd.distanceKm) setDistanceKm(rd.distanceKm);
+                        if (rd.rideType) setRideType(rd.rideType);
+                        if (rd.selectedFare) setSelectedFare(rd.selectedFare);
+                    }
+
+                    // Determine step based on status
+                    if (intent.status === 'VERIFIED') {
+                        setStep('payment'); // Already verified, will attempt Link
+                        setTransactionId(intent.transactionId || '');
+                    } else if (intent.status === 'PENDING') {
+                        setStep('payment');
+                    }
+                } else {
+                    // No intent, check for stale local keys
+                    localStorage.removeItem('vogy_booking_intent_id');
+                    localStorage.removeItem('vogy_booking_idempotency_key');
+                }
+
+                // Load other data
                 const [vtRes, ccRes, spRes] = await Promise.all([
                     userRideService.getVehicleTypes(),
                     userRideService.getCityCodes(),
                     userProfileService.getSavedPlaces()
                 ]);
 
-                if (vtRes.success) {
-                    setVehicleTypes(vtRes.data.filter((vt: any) => vt.isActive));
-                }
+                if (vtRes.success) setVehicleTypes(vtRes.data.filter((vt: any) => vt.isActive));
                 if (ccRes.success && ccRes.data) {
                     setCityCodes(ccRes.data);
-                    if (ccRes.data.length > 0) setSelectedCityId(ccRes.data[0].id);
+                    if (ccRes.data.length > 0 && !selectedCityId) setSelectedCityId(ccRes.data[0].id);
                 }
-                if (spRes.success && spRes.data) {
-                    setSavedPlaces(spRes.data);
-                }
+                if (spRes.success && spRes.data) setSavedPlaces(spRes.data);
+
             } catch (error) {
-                console.error('Failed to load initial data:', error);
-                toast.error('Failed to load booking configurations');
+                console.error('Session recovery failed:', error);
+                toast.error('Failed to restore your booking session');
             } finally {
                 setIsLoadingData(false);
             }
         };
-        loadInitialData();
+
+        recoverSession();
     }, []);
 
     // Initialize Autocomplete
@@ -257,57 +301,111 @@ export default function BookRidePage() {
     }, [updatePriceEstimate]);
 
     const handleBookRide = async () => {
-        let finalCityId = selectedCityId;
-        if (!finalCityId && cityCodes.length > 0) {
-            console.log('No city detected, falling back to first city:', cityCodes[0].cityName);
-            finalCityId = cityCodes[0].id;
-        }
-
         if (!pickupAddress) return toast.error('Pickup address is missing');
         if (!dropAddress) return toast.error('Drop address is missing');
         if (!pickupCoords) return toast.error('Pickup coordinates are missing');
         if (!dropCoords) return toast.error('Drop coordinates are missing');
         if (!selectedVehicleTypeId) return toast.error('Please select a vehicle type');
-        if (!finalCityId) return toast.error('City selection is missing. Please re-select locations.');
-
+        
         if (!selectedFare) {
             return toast.error('Please wait for the fare estimate to calculate before booking.');
         }
 
         setIsLoading(true);
         try {
+            const advance = Math.ceil(selectedFare.totalFare * 0.26);
+            
+            // Step 1: Initiate Intent on Backend
+            let key = idempotencyKey || crypto.randomUUID();
+            setIdempotencyKey(key);
+
+            const res = await userRideService.initiatePayment(({
+                amount: advance,
+                idempotencyKey: key,
+                rideDetails: {
+                    pickupAddress, dropAddress, pickupCoords, dropCoords, 
+                    distanceKm, rideType, selectedFare, selectedVehicleTypeId
+                }
+            }));
+
+            if (res.success && res.data) {
+                setCurrentIntentId(res.data.id);
+                setAdvanceAmount(advance);
+                setIntentExpiry(new Date(res.data.expiresAt));
+                setStep('payment');
+                
+                localStorage.setItem('vogy_booking_intent_id', res.data.id);
+                localStorage.setItem('vogy_booking_idempotency_key', key);
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to initiate booking intent');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!transactionId || transactionId.trim().length < 8) {
+            return toast.error('Please enter a valid Alphanumeric Transaction ID');
+        }
+        if (!currentIntentId) return toast.error('Booking session expired. Please refresh.');
+
+        setIsVerifying(true);
+        try {
+            // STEP 2: Verify Payment Intent
+            const verifyRes = await userRideService.verifyPayment({
+                verificationId: currentIntentId,
+                transactionId: transactionId.trim()
+            });
+
+            if (!verifyRes.success) {
+                toast.error(verifyRes.message || 'Payment verification failed');
+                setIsVerifying(false);
+                return;
+            }
+
+            // STEP 3: Create Ride (Atomic Linking)
+            let finalCityId = selectedCityId;
+            if (!finalCityId && cityCodes.length > 0) finalCityId = cityCodes[0].id;
+
             const payload: any = {
                 vehicleTypeId: selectedVehicleTypeId,
-                pickupLat: pickupCoords.lat,
-                pickupLng: pickupCoords.lng,
+                pickupLat: pickupCoords!.lat,
+                pickupLng: pickupCoords!.lng,
                 pickupAddress: pickupAddress.trim(),
-                dropLat: dropCoords.lat,
-                dropLng: dropCoords.lng,
+                dropLat: dropCoords!.lat,
+                dropLng: dropCoords!.lng,
                 dropAddress: dropAddress.trim(),
                 distanceKm: distanceKm || 0,
-                paymentMode,
+                paymentMode: 'UPI',
                 expectedFare: selectedFare?.totalFare,
                 cityCodeId: finalCityId,
                 rideType: rideType,
+                advanceAmount: advanceAmount,
+                transactionId: transactionId.trim(),
+                // FINAL HARDENING
+                idempotencyKey: idempotencyKey,
+                paymentVerificationId: currentIntentId
             };
 
-            if (altMobile.trim()) {
-                payload.altMobile = altMobile.trim();
-            }
+            if (altMobile.trim()) payload.altMobile = altMobile.trim();
 
-            console.log('Final Booking Payload:', payload);
             const res = await userRideService.createRide(payload);
             if (res.success) {
                 setCreatedRide(res.data);
                 setStep('success');
-                toast.success('Ride booked successfully!');
+                toast.success('Ride confirmed and linked successfully!');
+                
+                // Clear state ONLY after success
+                localStorage.removeItem('vogy_booking_intent_id');
+                localStorage.removeItem('vogy_booking_idempotency_key');
             } else {
-                toast.error(res.message || 'Failed to book ride');
+                toast.error(res.message || 'Ride creation failed but payment is verified. Retrying...');
             }
         } catch (err: any) {
-            toast.error(err.response?.data?.message || err.message || 'Booking failed');
+            toast.error(err.response?.data?.message || err.message || 'System error during booking');
         } finally {
-            setIsLoading(false);
+            setIsVerifying(false);
         }
     };
 
@@ -334,7 +432,96 @@ export default function BookRidePage() {
         );
     }
 
-    if (step === 'success') {
+    if (step === 'payment') {
+        const upiId = "7569645049@slc";
+        const upiDeepLink = `upi://pay?pa=${upiId}&pn=ARA%20Travels&am=${advanceAmount}&cu=INR`;
+
+        return (
+            <div className="max-w-md mx-auto py-10 animate-fade-in">
+                <div className="rounded-[40px] p-8 sm:p-10 space-y-8 bg-[#0D0D0D] border border-white/5 shadow-2xl relative overflow-hidden">
+                    <button onClick={() => setStep('form')} className="flex items-center gap-2 text-gray-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
+                        <ArrowLeft size={16} /> Edit Ride
+                    </button>
+
+                    <div className="text-center space-y-2">
+                        <h2 className="text-3xl font-black text-white italic tracking-tighter">SECURE PAYMENT</h2>
+                    </div>
+
+                    <div className="p-6 rounded-3xl bg-white/5 border border-white/5 space-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-400 text-[10px] font-black tracking-widest uppercase">Total Agreed</span>
+                            <span className="text-white text-3xl font-black italic tracking-tighter">₹{Math.ceil(selectedFare?.totalFare || 0)}</span>
+                        </div>
+                        <div className="flex justify-between items-center px-6 py-4 bg-white/5">
+                            <span className="text-green-400 text-[10px] font-bold tracking-widest uppercase">Confirmation Fee</span>
+                            <span className="text-green-400 text-xl font-black italic tracking-tighter">₹{Math.ceil((selectedFare?.totalFare || 0) * 0.26)}</span>
+                        </div>
+                         <div className="flex justify-between items-center px-6 py-5 bg-[#E32222]/10">
+                            <span className="text-[#E32222] text-[10px] font-black tracking-wider uppercase">Pay to Driver later</span>
+                            <span className="text-[#E32222] text-2xl font-black italic tracking-tighter">₹{Math.floor((selectedFare?.totalFare || 0) - Math.ceil((selectedFare?.totalFare || 0) * 0.26))}</span>
+                        </div>
+                        <div className="pt-3 border-t border-white/5 mt-2">
+                            <p className="text-[9px] text-gray-500 leading-relaxed italic">
+                                * Note: Refund of confirmation fee is only possible if cancelled more than 3 hours before the ride start time.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="text-center p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20">
+                            <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-1">UPI ID</p>
+                            <p className="text-white font-mono text-lg font-bold">{upiId}</p>
+                        </div>
+
+                        <a
+                            href={upiDeepLink}
+                            className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-widest transition-all hover:bg-gray-200 active:scale-95"
+                        >
+                            <Smartphone size={20} /> Pay via UPI App
+                        </a>
+                    </div>
+
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <div className="space-y-2">
+                            <label className="text-[10px] text-gray-600 uppercase font-black tracking-widest ml-1">Transaction ID (Ref No.)</label>
+                            <input
+                                type="text"
+                                value={transactionId}
+                                onChange={(e) => setTransactionId(e.target.value)}
+                                placeholder="Enter Transaction ID"
+                                className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-6 text-white text-sm focus:outline-none focus:border-[#E32222] transition-all font-mono"
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleConfirmPayment}
+                            disabled={isVerifying || !transactionId}
+                            className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl bg-[#E32222] text-white font-black text-sm uppercase tracking-widest transition-all hover:bg-[#cc1f1f] active:scale-95 disabled:opacity-50"
+                        >
+                            {isVerifying ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
+                            Confirm & Book Ride
+                        </button>
+                    </div>
+
+                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-900/50">
+                        <Info size={16} className="text-gray-500 shrink-0 mt-0.5" />
+                        <div className="space-y-2">
+                            <p className="text-[10px] text-gray-500 font-medium leading-relaxed italic">
+                                Your ride will be confirmed immediately after verification of the UPI Transaction ID.
+                            </p>
+                            {intentExpiry && (
+                                <p className="text-[10px] text-[#E32222] font-black uppercase tracking-widest">
+                                    Link expires at {intentExpiry.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'success' && createdRide) {
         return (
             <div className="max-w-md mx-auto py-10">
                 <div className="text-center rounded-3xl p-8 bg-[#0D0D0D] border border-green-500/20 shadow-2xl animate-fade-in shadow-green-500/5">
@@ -342,32 +529,55 @@ export default function BookRidePage() {
                         <CheckCircle2 size={40} className="text-green-400" />
                     </div>
                     <h2 className="text-white font-bold text-3xl mb-2 tracking-tight">Booking Successful!</h2>
-                    <p className="text-gray-400 mb-8 font-medium">Your ride has been scheduled.</p>
+                    <p className="text-gray-400 mb-8 font-medium">Professional Booking Receipt Attached</p>
 
-                    <div className="rounded-2xl p-6 mb-8 text-left space-y-5 bg-white/5 border border-white/5 relative overflow-hidden group">
+                    <div className="rounded-2xl p-6 mb-8 text-left space-y-4 bg-white/5 border border-white/5 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Zap size={64} className="text-[#E32222]" />
                         </div>
-                        <div className="flex items-start gap-4">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0 animate-pulse" />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Pickup</p>
-                                <p className="text-white text-sm line-clamp-2 font-medium">{createdRide?.pickupAddress}</p>
+                        
+                        <div className="space-y-4 pb-4 border-b border-white/5">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Official Ride ID</span>
+                                <span className="text-white text-sm font-black italic">{createdRide?.customId || createdRide?.id}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Transaction Ref</span>
+                                <span className="text-gray-400 text-[10px] font-mono">{createdRide?.transactionId || 'UPI_VERIFIED'}</span>
                             </div>
                         </div>
-                        <div className="flex items-start gap-4">
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Drop</p>
-                                <p className="text-white text-sm line-clamp-2 font-medium">{createdRide?.dropAddress}</p>
+
+                        <div className="space-y-4 pt-2">
+                            <div className="flex items-start gap-4">
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0 animate-pulse" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-1">Pickup</p>
+                                    <p className="text-white text-xs line-clamp-1 font-medium">{createdRide?.pickupAddress}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-1">Drop</p>
+                                    <p className="text-white text-xs line-clamp-1 font-medium">{createdRide?.dropAddress}</p>
+                                </div>
                             </div>
                         </div>
-                        {createdRide?.totalFare && (
-                            <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-                                <span className="text-gray-400 text-sm font-semibold">Total Fare</span>
-                                <span className="text-white font-black text-2xl tracking-tighter">₹{createdRide.totalFare}</span>
+                        
+                        <div className="pt-4 border-t border-white/10 space-y-3">
+                            <div className="flex justify-between items-center px-2 py-3 rounded-xl bg-white/[0.03]">
+                                <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Total Value</span>
+                                <span className="text-white font-black text-xl tracking-tighter">₹{createdRide.totalFare}</span>
                             </div>
-                        )}
+                            <div className="flex justify-between items-center px-2">
+                                <span className="text-green-400 text-[10px] font-bold uppercase tracking-widest">Advance Paid</span>
+                                <span className="text-green-400 font-black text-lg tracking-tighter">₹{createdRide.advanceAmount}</span>
+                            </div>
+                            <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5">
+                                <span className="text-[#E32222] text-[10px] font-black uppercase tracking-wider">Pay to Driver</span>
+                                <span className="text-[#E32222] font-black text-2xl italic tracking-tighter">₹{createdRide.totalFare - (createdRide.advanceAmount || 0)}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-3">
@@ -502,24 +712,18 @@ export default function BookRidePage() {
                         </div>
 
                         {/* Secondary Fields */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+                        <div className="grid grid-cols-1 gap-6 pt-4">
                             <div className="space-y-3">
-                                <label className="text-[10px] text-gray-600 uppercase font-black tracking-widest ml-1">Payment</label>
+                                <label className="text-[10px] text-gray-600 uppercase font-black tracking-widest ml-1">Payment Method</label>
                                 <div className="flex p-1 bg-white/[0.03] rounded-2xl border border-white/5">
-                                    {['CASH', 'ONLINE'].map((mode) => (
-                                        <button
-                                            key={mode}
-                                            onClick={() => setPaymentMode(mode)}
-                                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all ${paymentMode === mode
-                                                ? 'bg-blue-600 text-white shadow-lg'
-                                                : 'text-gray-500 hover:text-gray-300'}`}
-                                        >
-                                            <CreditCard size={14} />
-                                            {mode}
-                                        </button>
-                                    ))}
+                                    <div className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-[10px] font-black tracking-widest bg-blue-600 text-white shadow-lg">
+                                        <Smartphone size={14} />
+                                        UPI (MANDATORY)
+                                    </div>
                                 </div>
+                                <p className="text-[9px] text-gray-500 italic ml-1">* Confirmation fee required for all bookings. Remaining to be paid to driver.</p>
                             </div>
+
                             <div className="space-y-3">
                                 <label className="text-[10px] text-gray-600 uppercase font-black tracking-widest ml-1">Guest Number (Optional)</label>
                                 <div className="relative">

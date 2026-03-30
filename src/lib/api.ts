@@ -66,7 +66,7 @@ export const corporateApi = createApiInstance(`${API_BASE_URL}/corporate`);
 // Public API instance (for city codes, etc.)
 export const publicApi = createApiInstance(API_BASE_URL);
 
-// Auth API instance (for user/partner OTP login)
+// Auth API instance (for user/partner login)
 export const authApi = createApiInstance(`${API_BASE_URL}/auth`);
 
 // Ride & Payment API instances

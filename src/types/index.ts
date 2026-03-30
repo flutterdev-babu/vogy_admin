@@ -839,6 +839,8 @@ export interface Ride {
   couponCode?: string; // Agent discount code
   agentCode?: string; // Original agent code reference
   discountAmount?: number; // Calculated discount value
+  advanceAmount?: number; // Confirmation fee paid
+  transactionId?: string; // UPI Ref No.
   createdAt: string;
 }
 

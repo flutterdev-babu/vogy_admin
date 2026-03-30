@@ -273,6 +273,18 @@ export default function AdminRideDetailsPage() {
                 {ride.dropAddress}
               </span>
             </div>
+            {(ride as any).transactionId && (
+              <div className="flex items-center pt-2 border-t border-gray-50">
+                <span className={detailLabelClass}>Transaction ID</span>
+                <span className="text-[11px] font-mono font-bold text-blue-600 truncate">{ (ride as any).transactionId }</span>
+              </div>
+            )}
+            {(ride as any).idempotencyKey && (
+              <div className="flex items-center">
+                <span className={detailLabelClass}>Idempotency Key</span>
+                <span className="text-[9px] font-mono text-gray-400 truncate tracking-tighter">{ (ride as any).idempotencyKey }</span>
+              </div>
+            )}
           </div>
         </div>
 
