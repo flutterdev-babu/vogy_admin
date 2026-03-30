@@ -237,11 +237,11 @@ export default function RideHistoryPage() {
                                                 <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 flex flex-wrap gap-4">
                                                     <div>
                                                         <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-0.5">Confirmation Fee Paid</p>
-                                                        <p className="text-green-400 font-bold text-sm">₹{ride.advanceAmount}</p>
+                                                        <p className="text-green-400 font-bold text-sm">₹{Math.round(ride.advanceAmount || 0)}</p>
                                                     </div>
                                                     <div>
                                                         <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-0.5">Balance to Driver</p>
-                                                        <p className="text-white font-bold text-sm">₹{(ride.totalFare || 0) - (ride.advanceAmount || 0)}</p>
+                                                        <p className="text-white font-bold text-sm">₹{Math.round((ride.totalFare || 0) - (ride.advanceAmount || 0))}</p>
                                                     </div>
                                                     {ride.transactionId && (
                                                         <div className="flex-1 min-w-[120px]">
@@ -256,7 +256,7 @@ export default function RideHistoryPage() {
 
                                     <div className="text-right shrink-0">
                                         {ride.totalFare != null && (
-                                            <p className="text-white font-bold text-lg">₹{ride.totalFare}</p>
+                                            <p className="text-white font-bold text-lg">₹{Math.round(ride.totalFare)}</p>
                                         )}
                                         {canCancel ? (
                                             <button

@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useUserAuth } from '@/contexts/UserAuthContext';
-import { Loader2, ArrowRight, Car } from 'lucide-react';
+import { Loader2, ArrowRight, Car, Eye, EyeOff } from 'lucide-react';
 import { TOKEN_KEYS } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function UserLoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { loginWithEmail } = useUserAuth();
     const router = useRouter();
@@ -20,7 +21,7 @@ export default function UserLoginPage() {
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem(TOKEN_KEYS.user);
             if (token) {
-                router.replace('/user/dashboard');
+                router.replace('/user/dashboard/book');
             }
         }
     }, [router]);
@@ -37,7 +38,7 @@ export default function UserLoginPage() {
         try {
             await loginWithEmail(email, password);
             toast.success('Login successful!');
-            router.push('/user/dashboard');
+            router.push('/user/dashboard/book');
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } }; message?: string };
             toast.error(err.response?.data?.message || err.message || 'Invalid email or password');
@@ -99,15 +100,23 @@ export default function UserLoginPage() {
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                                 </span>
                                 <input
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 transition-all focus:ring-2 focus:ring-[#E32222] focus:outline-none"
+                                    className="w-full pl-12 pr-12 py-3.5 rounded-xl text-white placeholder-gray-500 transition-all focus:ring-2 focus:ring-[#E32222] focus:outline-none"
                                     style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
                                     placeholder="••••••••"
                                     disabled={isLoading}
                                     required
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                    style={{ zIndex: 10 }}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
                             </div>
                         </div>
 

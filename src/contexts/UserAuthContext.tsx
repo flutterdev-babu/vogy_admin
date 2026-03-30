@@ -83,7 +83,10 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         localStorage.removeItem(TOKEN_KEYS.user);
         localStorage.removeItem(USER_KEYS.user);
-        router.push('/user/login');
+        // Clear active booking caches on logout
+        localStorage.removeItem('vogy_booking_intent_id');
+        localStorage.removeItem('vogy_booking_idempotency_key');
+        router.push('/');
     };
 
 

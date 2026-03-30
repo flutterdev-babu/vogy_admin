@@ -1,4 +1,5 @@
 'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -144,7 +145,7 @@ export default function UserDashboardPage() {
                 const now = Date.now();
                 const diffMs = now - rideTime;
                 const isPastDue = diffMs > 0 && (activeRide.status === 'UPCOMING' || activeRide.status === 'SCHEDULED' || activeRide.status === 'REQUESTED');
-                
+
                 // NEW: Hide banner if it's an upcoming ride that's more than 1 hour past due
                 if (isPastDue && diffMs > 60 * 60 * 1000) {
                     return null;
@@ -159,8 +160,8 @@ export default function UserDashboardPage() {
                             <div>
                                 <h3 className="text-white font-semibold">Active Ride</h3>
                                 <p className="text-blue-300 text-xs">
-                                    {isPastDue 
-                                        ? 'Ride time has passed' 
+                                    {isPastDue
+                                        ? 'Ride time has passed'
                                         : (activeRide.status === 'UPCOMING' || activeRide.status === 'SCHEDULED' || activeRide.status === 'REQUESTED'
                                             ? 'You have an upcoming ride'
                                             : 'Your ride is in progress')}
@@ -184,8 +185,8 @@ export default function UserDashboardPage() {
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-3 flex-wrap">
-                            <span className="px-3 py-1 rounded-full text-xs font-semibold" 
-                                style={{ 
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold"
+                                style={{
                                     background: isPastDue ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)',
                                     color: isPastDue ? '#ef4444' : '#93c5fd'
                                 }}>
@@ -196,7 +197,7 @@ export default function UserDashboardPage() {
                                 {formatDate(activeRide.scheduledDateTime || activeRide.createdAt)}
                             </div>
                             {activeRide.totalFare && (
-                                <span className="text-white font-bold text-sm bg-blue-500/20 px-2 py-0.5 rounded-lg border border-blue-400/20 ml-auto">₹{activeRide.totalFare}</span>
+                                <span className="text-white font-bold text-sm bg-blue-500/20 px-2 py-0.5 rounded-lg border border-blue-400/20 ml-auto">₹{Math.round(activeRide.totalFare)}</span>
                             )}
                         </div>
                     </div>
@@ -297,12 +298,12 @@ export default function UserDashboardPage() {
                                             {(() => {
                                                 const rideTime = new Date(ride.scheduledDateTime || ride.createdAt).getTime();
                                                 const isPastDue = rideTime < Date.now() && (ride.status === 'UPCOMING' || ride.status === 'SCHEDULED' || ride.status === 'REQUESTED');
-                                                
+
                                                 return (
-                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" 
-                                                        style={{ 
-                                                            background: isPastDue ? 'rgba(239, 68, 68, 0.1)' : statusConf.bg, 
-                                                            color: isPastDue ? '#ef4444' : statusConf.color 
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                                                        style={{
+                                                            background: isPastDue ? 'rgba(239, 68, 68, 0.1)' : statusConf.bg,
+                                                            color: isPastDue ? '#ef4444' : statusConf.color
                                                         }}>
                                                         {isPastDue ? 'EXPIRED / MISSED' : ride.status}
                                                     </span>
@@ -312,7 +313,7 @@ export default function UserDashboardPage() {
                                     </div>
                                     <div className="text-right shrink-0">
                                         {ride.totalFare && (
-                                            <p className="text-white font-semibold text-sm">₹{ride.totalFare}</p>
+                                            <p className="text-white font-semibold text-sm">₹{Math.round(ride.totalFare)}</p>
                                         )}
                                         <p className="text-gray-600 text-xs">{ride.distanceKm?.toFixed(1)} km</p>
                                     </div>

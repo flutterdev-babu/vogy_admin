@@ -39,13 +39,13 @@ export default function CorporateSidebar() {
   useEffect(() => {
     const stored = localStorage.getItem(USER_KEYS.corporate);
     if (stored) setCorporate(JSON.parse(stored));
-    else router.push('/corporate/login');
+    else router.push('/');
   }, [router]);
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEYS.corporate);
     localStorage.removeItem(USER_KEYS.corporate);
-    router.push('/corporate/login');
+    router.push('/');
   };
 
   const isActive = (href: string) => {

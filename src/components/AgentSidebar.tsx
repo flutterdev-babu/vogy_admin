@@ -65,14 +65,14 @@ export default function AgentSidebar() {
     if (storedAgent) {
       setAgent(JSON.parse(storedAgent));
     } else {
-      router.push('/agent/login');
+      router.push('/');
     }
   }, [router]);
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEYS.agent);
     localStorage.removeItem(USER_KEYS.agent);
-    router.push('/agent/login');
+    router.push('/');
   };
 
   const isActive = (href: string) => {

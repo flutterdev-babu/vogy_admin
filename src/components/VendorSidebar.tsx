@@ -18,7 +18,7 @@ import {
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { TOKEN_KEYS, USER_KEYS } from '@/lib/api';
-import { ThemeToggle } from './ThemeToggle';
+
 
 interface NavItem {
   href: string;
@@ -46,13 +46,13 @@ export default function VendorSidebar() {
   useEffect(() => {
     const stored = localStorage.getItem(USER_KEYS.vendor);
     if (stored) setVendor(JSON.parse(stored));
-    else router.push('/vendor/login');
+    else router.push('/');
   }, [router]);
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEYS.vendor);
     localStorage.removeItem(USER_KEYS.vendor);
-    router.push('/vendor/login');
+    router.push('/');
   };
 
   const isActive = (href: string) => {
@@ -125,7 +125,7 @@ export default function VendorSidebar() {
                 <span>Logout</span>
               </button>
             </div>
-            <ThemeToggle />
+
           </div>
         </div>
       </aside>

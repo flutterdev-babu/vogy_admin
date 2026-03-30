@@ -29,15 +29,8 @@ const createApiInstance = (baseURL: string): AxiosInstance => {
     return response;
   }, (error) => {
     const status = error.response?.status || 'UNKNOWN';
-    const message = error.response?.data?.message || error.message;
     if (status === 503) {
       console.warn(`[API WARMUP] 503 - Server is waking up.`);
-    } else {
-      const url = `${error.config?.baseURL || ''}${error.config?.url || ''}`;
-      const fullMessage = `[${status}] ${message} at ${url}`;
-      console.error(`[API ERROR] ${fullMessage}`);
-      // If we are on the landing page or anywhere with toast, show the real message
-      error.message = message || `API Error ${status}: ${url}`;
     }
     return Promise.reject(error);
   });
@@ -114,14 +107,18 @@ const addAuthInterceptor = (api: AxiosInstance, tokenKey: string, userKey: strin
   api.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401 && !error.config.url?.includes('login')) {
-        if (typeof window !== 'undefined') {
+      if (error.response?.status === 401) {
+        const isLoginRequest = error.config.url?.includes('login') || error.config.url?.includes('register');
+        const isAuthCredentialError = isLoginRequest && error.response?.status === 401;
+
+        if (!isAuthCredentialError && typeof window !== 'undefined') {
           localStorage.removeItem(tokenKey);
           localStorage.removeItem(userKey);
-          // Redirect based on user type
-          const redirectPath = tokenKey === TOKEN_KEYS.admin ? '/login' : '/';
-          // Only redirect if we are not already on the redirect path
-          if (window.location.pathname !== redirectPath) {
+          
+          const redirectPath = '/';
+          // Only redirect if we are not already on the home page or login page
+          const currentPath = window.location.pathname;
+          if (currentPath !== redirectPath && !currentPath.includes('login')) {
             window.location.href = redirectPath;
           }
         }

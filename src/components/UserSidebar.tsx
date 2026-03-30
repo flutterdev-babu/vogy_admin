@@ -32,7 +32,6 @@ export default function UserSidebar() {
 
     const handleLogout = () => {
         logout();
-        router.push('/user/login');
     };
 
     const isActive = (href: string) => pathname === href;

@@ -108,11 +108,19 @@ export default function BookRidePage() {
         const recoverSession = async () => {
             setIsLoadingData(true);
             try {
-                // Fetch active intent from backend (Truth)
-                const intentRes = await userRideService.getActiveIntent();
+                // Only recover if the local storage indicates an active session
+                const storedIntentId = localStorage.getItem('vogy_booking_intent_id');
+                let intent = null;
+
+                if (storedIntentId) {
+                    // Fetch active intent from backend (Truth)
+                    const intentRes = await userRideService.getActiveIntent();
+                    if (intentRes.success && intentRes.data) {
+                        intent = intentRes.data;
+                    }
+                }
                 
-                if (intentRes.success && intentRes.data) {
-                    const intent = intentRes.data;
+                if (intent) {
                     console.log('RECOVERED INTENT:', intent);
 
                     setCurrentIntentId(intent.id);
@@ -140,9 +148,10 @@ export default function BookRidePage() {
                         setStep('payment');
                     }
                 } else {
-                    // No intent, check for stale local keys
+                    // No valid intent or session cleared (e.g., from logout), clear lingering keys
                     localStorage.removeItem('vogy_booking_intent_id');
                     localStorage.removeItem('vogy_booking_idempotency_key');
+                    setStep('form');
                 }
 
                 // Load other data
@@ -450,15 +459,15 @@ export default function BookRidePage() {
                     <div className="p-6 rounded-3xl bg-white/5 border border-white/5 space-y-4">
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-gray-400 text-[10px] font-black tracking-widest uppercase">Total Agreed</span>
-                            <span className="text-white text-3xl font-black italic tracking-tighter">₹{Math.ceil(selectedFare?.totalFare || 0)}</span>
+                            <span className="text-white text-3xl font-black italic tracking-tighter">₹{Math.round(selectedFare?.totalFare || 0)}</span>
                         </div>
                         <div className="flex justify-between items-center px-6 py-4 bg-white/5">
                             <span className="text-green-400 text-[10px] font-bold tracking-widest uppercase">Confirmation Fee</span>
-                            <span className="text-green-400 text-xl font-black italic tracking-tighter">₹{Math.ceil((selectedFare?.totalFare || 0) * 0.26)}</span>
+                            <span className="text-green-400 text-xl font-black italic tracking-tighter">₹{Math.round((selectedFare?.totalFare || 0) * 0.26)}</span>
                         </div>
                          <div className="flex justify-between items-center px-6 py-5 bg-[#E32222]/10">
                             <span className="text-[#E32222] text-[10px] font-black tracking-wider uppercase">Pay to Driver later</span>
-                            <span className="text-[#E32222] text-2xl font-black italic tracking-tighter">₹{Math.floor((selectedFare?.totalFare || 0) - Math.ceil((selectedFare?.totalFare || 0) * 0.26))}</span>
+                            <span className="text-[#E32222] text-2xl font-black italic tracking-tighter">₹{Math.round((selectedFare?.totalFare || 0) - Math.round((selectedFare?.totalFare || 0) * 0.26))}</span>
                         </div>
                         <div className="pt-3 border-t border-white/5 mt-2">
                             <p className="text-[9px] text-gray-500 leading-relaxed italic">
@@ -567,15 +576,15 @@ export default function BookRidePage() {
                         <div className="pt-4 border-t border-white/10 space-y-3">
                             <div className="flex justify-between items-center px-2 py-3 rounded-xl bg-white/[0.03]">
                                 <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Total Value</span>
-                                <span className="text-white font-black text-xl tracking-tighter">₹{createdRide.totalFare}</span>
+                                <span className="text-white font-black text-xl tracking-tighter">₹{Math.round(createdRide.totalFare)}</span>
                             </div>
                             <div className="flex justify-between items-center px-2">
                                 <span className="text-green-400 text-[10px] font-bold uppercase tracking-widest">Advance Paid</span>
-                                <span className="text-green-400 font-black text-lg tracking-tighter">₹{createdRide.advanceAmount}</span>
+                                <span className="text-green-400 font-black text-lg tracking-tighter">₹{Math.round(createdRide.advanceAmount || 0)}</span>
                             </div>
                             <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5">
                                 <span className="text-[#E32222] text-[10px] font-black uppercase tracking-wider">Pay to Driver</span>
-                                <span className="text-[#E32222] font-black text-2xl italic tracking-tighter">₹{createdRide.totalFare - (createdRide.advanceAmount || 0)}</span>
+                                <span className="text-[#E32222] font-black text-2xl italic tracking-tighter">₹{Math.round(createdRide.totalFare - (createdRide.advanceAmount || 0))}</span>
                             </div>
                         </div>
                     </div>

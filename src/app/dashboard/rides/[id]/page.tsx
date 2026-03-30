@@ -23,6 +23,7 @@ export default function AdminRideDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+  const [manualDiscount, setManualDiscount] = useState<number>(0);
   const [partnerSearch, setPartnerSearch] = useState('');
   const [newStatus, setNewStatus] = useState<RideStatus | ''>('');
   const [showOtp, setShowOtp] = useState(false);
@@ -51,6 +52,9 @@ export default function AdminRideDetailsPage() {
         setRide({ ...rideData, status });
         setSelectedPartnerId(rideData.partner?.id || '');
         setNewStatus(status);
+        if ((rideData as any).partnerManualDiscount) {
+          setManualDiscount((rideData as any).partnerManualDiscount);
+        }
       }
       if (partnersRes.success) {
         setPartners(partnersRes.data || []);
@@ -128,7 +132,7 @@ export default function AdminRideDetailsPage() {
 
     setIsUpdating(true);
     try {
-      const options: any = {};
+      const options: any = { manualDiscount };
       if (newStatus === 'ONGOING' && ride?.status !== 'ONGOING') {
         options.userOtp = userUniqueOtp;
         if (ride?.serviceType === 'RENTAL') options.startingKm = Number(startingKm);
@@ -184,16 +188,16 @@ export default function AdminRideDetailsPage() {
     </div>
   );
 
-  const cardClass = "bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full";
-  const labelClass = "text-xs font-semibold text-gray-800 mb-2 block";
-  const detailLabelClass = "text-[11px] font-bold text-gray-600 w-32 shrink-0";
-  const detailValueClass = "text-[11px] font-medium text-gray-600";
+  const cardClass = "bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full transition-colors duration-200";
+  const labelClass = "text-xs font-semibold text-gray-800 mb-2 block transition-colors duration-200";
+  const detailLabelClass = "text-[11px] font-bold text-gray-600 w-32 shrink-0 transition-colors duration-200";
+  const detailValueClass = "text-[11px] font-medium text-gray-600 transition-colors duration-200";
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 space-y-6 animate-in fade-in duration-500">
+    <div className="max-w-[1400px] mx-auto p-4 space-y-6 animate-in fade-in duration-500 min-h-screen bg-gray-50/50 transition-colors duration-200">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-800">Booking Details</h1>
+        <h1 className="text-lg font-bold text-gray-800 transition-colors duration-200">Booking Details</h1>
         <div className="flex items-center gap-2">
           <button 
             onClick={handleCopyRideDetails} 
@@ -215,7 +219,7 @@ export default function AdminRideDetailsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* User Details */}
         <div className={cardClass}>
-          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">User Details</h2>
+          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 transition-colors duration-200">User Details</h2>
           <div className="space-y-3">
             <div className="flex items-center">
               <span className={detailLabelClass}>Mobile Number</span>
@@ -242,7 +246,7 @@ export default function AdminRideDetailsPage() {
 
         {/* Ride Details */}
         <div className={cardClass}>
-          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">Ride Details</h2>
+          <h2 className="text-sm font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 transition-colors duration-200">Ride Details</h2>
           <div className="space-y-3">
             <div className="flex items-center">
               <span className={detailLabelClass}>Booking ID</span>
@@ -296,7 +300,7 @@ export default function AdminRideDetailsPage() {
               <select 
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value as RideStatus)}
-                className="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-gray-400 outline-none"
+                className="w-full bg-white border border-gray-300 text-gray-800 rounded px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-gray-400:ring-slate-500 outline-none transition-colors duration-200"
               >
                 <option value="REQUESTED">Requested</option>
                 <option value="UPCOMING">Future</option>
@@ -319,7 +323,7 @@ export default function AdminRideDetailsPage() {
                     placeholder="4-digit OTP"
                     value={userUniqueOtp}
                     onChange={(e) => setUserUniqueOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full border-2 border-red-100 rounded px-3 py-1.5 text-xs font-bold focus:border-red-400 outline-none text-center tracking-[0.5em]"
+                    className="w-full border-2 border-red-100 bg-white text-gray-800 rounded px-3 py-1.5 text-xs font-bold focus:border-red-400:border-slate-500 outline-none text-center tracking-[0.5em] transition-colors duration-200"
                   />
                 </div>
                 {ride?.serviceType === 'RENTAL' && (
@@ -366,7 +370,7 @@ export default function AdminRideDetailsPage() {
             </div>
             <div className="flex items-center">
               <span className={detailLabelClass}>Payment Type</span>
-              <span className="text-xs font-bold text-blue-400 capitalize">{ride.paymentMode || '-'}</span>
+              <span className="text-xs font-bold text-blue-400 capitalize">UPI</span>
             </div>
             <div className="flex items-center">
               <span className={detailLabelClass}>Payment Status</span>
@@ -431,7 +435,7 @@ export default function AdminRideDetailsPage() {
                     placeholder="Search Partner ID / Name / Phone"
                     value={partnerSearch}
                     onChange={(e) => setPartnerSearch(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-red-400 font-medium"
+                    className="w-full border border-gray-300 bg-white text-gray-800 rounded px-3 py-2 text-xs focus:outline-none focus:border-red-400:border-slate-500 font-medium transition-colors duration-200"
                   />
                   {filteredPartners.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
@@ -442,7 +446,7 @@ export default function AdminRideDetailsPage() {
                             setSelectedPartnerId(p.id);
                             setPartnerSearch(p.name);
                           }}
-                          className={`w-full text-left px-3 py-2 text-[11px] hover:bg-gray-50 border-b border-gray-50 last:border-0 ${selectedPartnerId === p.id ? 'bg-red-50 font-bold' : ''}`}
+                          className={`w-full text-left px-3 py-2 text-[11px] hover:bg-gray-50:bg-slate-700 border-b border-gray-50 last:border-0 ${selectedPartnerId === p.id ? 'bg-red-50 font-bold' : ''} text-gray-800`}
                         >
                           <div className="flex justify-between">
                             <span>{p.name}</span>
@@ -501,7 +505,7 @@ export default function AdminRideDetailsPage() {
 
             <div className="flex justify-end pt-2">
               <a 
-                href={ride.partner?.phone ? `https://wa.me/${ride.partner.phone.replace(/\D/g, '')}` : '#'}
+                href={ride.partner?.phone ? `https://wa.me/91${ride.partner.phone.replace(/\D/g, '')}` : '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-1.5 bg-[#4CAF50] text-white rounded-full hover:bg-[#388E3C] transition-shadow shadow-sm"
@@ -518,7 +522,7 @@ export default function AdminRideDetailsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Partner Price Details */}
         <div className={cardClass}>
-          <h2 className="text-sm font-bold text-gray-800 mb-6 font-mono">Partner Price Details</h2>
+          <h2 className="text-sm font-bold text-gray-800 mb-6 font-mono border-b border-gray-100 pb-2 transition-colors duration-200">Partner Price Details</h2>
           <div className="space-y-4">
             <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
               <span className="capitalize">Partner Base Price</span>
@@ -548,19 +552,27 @@ export default function AdminRideDetailsPage() {
               <span className="capitalize">Manual Driver Discount</span>
               <div className="flex items-center gap-2">
                 <div className="flex border rounded overflow-hidden">
-                  <button className="px-1 bg-gray-100 border-r text-gray-600">-</button>
-                  <button className="px-1 bg-[#2E7D32] text-white text-[8px]">+</button>
+                  <button onClick={() => setManualDiscount(prev => prev - 10)} className="px-2 bg-gray-100 hover:bg-gray-200:bg-slate-700 border-r text-gray-600 transition-colors">-</button>
+                  <button onClick={() => setManualDiscount(prev => prev + 10)} className="px-2 bg-[#2E7D32] hover:bg-[#1b5e20] text-white transition-colors">+</button>
                 </div>
-                <div className="flex items-center border rounded px-1 min-w-[60px]">
-                  <span className="text-[8px] text-gray-400 mr-1">₹</span>
-                  <input type="text" value="0" readOnly className="w-full text-right outline-none bg-transparent py-1" />
+                <div className="flex items-center border rounded px-1 min-w-[80px]">
+                  <span className={`text-[10px] mr-1 font-bold ${manualDiscount < 0 ? 'text-red-500' : 'text-[#2E7D32]'}`}>{manualDiscount < 0 ? '-' : '+'} ₹</span>
+                  <input 
+                    type="number" 
+                    value={Math.abs(manualDiscount)} 
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setManualDiscount(manualDiscount < 0 ? -val : val);
+                    }} 
+                    className="w-full text-right outline-none bg-transparent py-1 font-mono text-gray-800" 
+                  />
                 </div>
               </div>
             </div>
 
             <div className="pt-4 border-t-2 border-gray-100 flex justify-between items-center">
               <span className="text-sm font-bold text-gray-800">Partner Total Amount</span>
-              <span className="text-lg font-bold text-gray-800 font-mono">₹ {(ride.riderEarnings || ride.partnerEarnings || 0).toFixed(2)}</span>
+              <span className="text-lg font-bold text-gray-800 font-mono">₹ {((ride.riderEarnings || ride.partnerEarnings || 0) + manualDiscount).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -568,7 +580,7 @@ export default function AdminRideDetailsPage() {
         {/* Price Details */}
         <div className={cardClass}>
           <div className="flex-1 space-y-4">
-            <h2 className="text-sm font-bold text-gray-800 mb-6 font-mono">Price Details</h2>
+            <h2 className="text-sm font-bold text-gray-800 mb-6 font-mono border-b border-gray-100 pb-2 transition-colors duration-200">Price Details</h2>
             <div className="flex justify-between items-center text-[11px] font-bold text-gray-500">
               <span className="capitalize">Base Price</span>
               <span className="text-gray-800">₹ {ride.baseFare.toFixed(2)}</span>

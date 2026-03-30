@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
-import { ThemeToggle } from './ThemeToggle';
+
 
 interface NavSection {
   title: string;
@@ -322,7 +322,7 @@ export default function Sidebar() {
                 <span>Logout</span>
               </button>
             </div>
-            <ThemeToggle />
+
           </div>
         </div>
       </aside >

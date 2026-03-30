@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { Admin } from '@/types';
 import { authService } from '@/services/authService';
 
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     // Check for stored auth on mount
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAdmin(null);
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
+    router.push('/');
   };
 
   const hasPermission = (permission: string): boolean => {
