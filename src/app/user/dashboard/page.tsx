@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useUserAuth } from '@/contexts/UserAuthContext';
 import { userRideService, RideData } from '@/services/userRideService';
+import { userProfileService, SavedPlace } from '@/services/userProfileService';
 import {
     Car,
     MapPin,
@@ -19,6 +20,7 @@ import {
     Wallet,
     ArrowRight,
     History,
+    Bookmark,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -47,6 +49,7 @@ export default function UserDashboardPage() {
     const [summary, setSummary] = useState<RideSummary | null>(null);
     const [activeRide, setActiveRide] = useState<RideData | null>(null);
     const [recentRides, setRecentRides] = useState<RideData[]>([]);
+    const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -54,10 +57,11 @@ export default function UserDashboardPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const [summaryRes, activeRes, ridesRes] = await Promise.allSettled([
+            const [summaryRes, activeRes, ridesRes, placesRes] = await Promise.allSettled([
                 userRideService.getRideSummary(),
                 userRideService.getActiveRide(),
                 userRideService.getRides(),
+                userProfileService.getSavedPlaces(),
             ]);
 
             if (summaryRes.status === 'fulfilled' && summaryRes.value.success) {
@@ -71,6 +75,10 @@ export default function UserDashboardPage() {
             if (ridesRes.status === 'fulfilled' && ridesRes.value.success) {
                 const rides = ridesRes.value.data || [];
                 setRecentRides(rides.slice(0, 5));
+            }
+
+            if (placesRes.status === 'fulfilled' && placesRes.value.success) {
+                setSavedPlaces(placesRes.value.data || []);
             }
         } catch (err: unknown) {
             const e = err as { message?: string };
@@ -247,15 +255,19 @@ export default function UserDashboardPage() {
                     <p className="text-white font-semibold">Ride History</p>
                     <p className="text-gray-400 text-xs mt-1">View all past rides</p>
                 </Link>
-
-                <div
-                    className="rounded-2xl p-5"
+ 
+                <Link
+                    href="/user/dashboard/profile"
+                    className="group rounded-2xl p-5 transition-all hover:scale-[1.02]"
                     style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}
                 >
-                    <Wallet size={28} className="text-gray-500 mb-3" />
-                    <p className="text-white font-semibold">Wallet</p>
-                    <p className="text-gray-500 text-xs mt-1">Coming soon</p>
-                </div>
+                    <Bookmark size={28} className="text-[#3b82f6] mb-3 group-hover:scale-110 transition-transform" />
+                    <p className="text-white font-semibold">Saved Places</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                        {savedPlaces.length} locations saved
+                    </p>
+                </Link>
+
             </div>
 
             {/* Recent Rides */}
