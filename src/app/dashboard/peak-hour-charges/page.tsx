@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Loader2, Clock, MapPin, X, Save, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Clock, MapPin, X, Save, Calendar, Zap, Shield, AlertTriangle, CheckCircle, RotateCcw } from 'lucide-react';
 import { peakHourChargeService } from '@/services/peakHourChargeService';
 import { vehicleTypeService } from '@/services/vehicleTypeService';
 import { cityCodeService } from '@/services/cityCodeService';
-import { 
-  PeakHourCharge, 
+import {
+  PeakHourCharge,
   PeakHourSlot,
   DayOfWeek,
-  VehicleType, 
+  VehicleType,
   CityCode,
   CreatePeakHourChargeRequest,
   UpdatePeakHourChargeRequest
@@ -101,32 +101,33 @@ export default function PeakHourChargesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.vehicleTypeId || formData.cityCodeIds.length === 0 || formData.days.length === 0) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     if (formData.slots.length === 0) {
-        toast.error('Add at least one time slot');
-        return;
+      toast.error('Add at least one time slot');
+      return;
     }
 
     setIsSubmitting(true);
+    const toastId = toast.loading('Synchronizing surge protocols...');
     try {
       if (editingCharge) {
         await peakHourChargeService.update(editingCharge.id, formData as UpdatePeakHourChargeRequest);
-        toast.success('Peak hour charge updated successfully');
+        toast.success('Surge configuration successfully updated', { id: toastId });
       } else {
         await peakHourChargeService.create(formData);
-        toast.success('Peak hour charge created successfully');
+        toast.success('Surge configuration successfully created', { id: toastId });
       }
       setIsModalOpen(false);
       resetForm();
       fetchData();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Operation failed');
+      toast.error(err.response?.data?.message || 'Operation failure', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -135,25 +136,27 @@ export default function PeakHourChargesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this configuration?')) return;
     setDeleteId(id);
+    const toastId = toast.loading('Executing deletion protocol...');
     try {
       await peakHourChargeService.delete(id);
-      toast.success('Configuration deleted successfully');
+      toast.success('Surge configuration purged', { id: toastId });
       fetchData();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Delete failed');
+      toast.error(err.response?.data?.message || 'Purge failure', { id: toastId });
     } finally {
       setDeleteId(null);
     }
   };
 
   const toggleActive = async (charge: PeakHourCharge) => {
+    const toastId = toast.loading(`${!charge.isActive ? 'Activating' : 'Deactivating'} surge protocol...`);
     try {
       await peakHourChargeService.update(charge.id, { isActive: !charge.isActive });
-      toast.success(`Configuration ${!charge.isActive ? 'activated' : 'deactivated'}`);
+      toast.success(`Protocol ${!charge.isActive ? 'ONLINE' : 'OFFLINE'}`, { id: toastId });
       fetchData();
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.error('Protocol toggle failure', { id: toastId });
     }
   };
 
@@ -201,115 +204,172 @@ export default function PeakHourChargesPage() {
   }
 
   return (
-    <div className="animate-fade-in text-gray-900">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 lg:mb-8">
+    <div className="space-y-10 pb-20 max-w-7xl mx-auto">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Peak Hour Charges</h1>
-          <p className="text-gray-500 mt-1 text-sm sm:text-base">Configure dynamic pricing for high-demand periods</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3 uppercase">
+            Surge Command
+          </h1>
+          <p className="text-sm text-gray-500 font-medium mt-1 uppercase tracking-wider">Dynamic Yield & Peak Hour Protocol Management</p>
         </div>
-        <button onClick={openCreateModal} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
-          <Plus size={20} />
-          <span>Add Peak Charge</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-red-100 transition-all hover:bg-black hover:-translate-y-0.5 active:scale-95"
+          >
+            <Plus size={16} />
+            <span>AUTHORIZE SURGE EVENT</span>
+          </button>
+          <button
+            onClick={fetchData}
+            className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+          >
+            <RotateCcw size={20} className={isLoading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
-      {/* List */}
+      {/* Control Insight */}
+      <div className="bg-gray-900 rounded-[2.5rem] p-8 shadow-2xl shadow-gray-200 text-white flex items-center justify-between">
+        <div className="flex items-center gap-8">
+          <div className="flex-shrink-0 w-16 h-16 rounded-[2rem] bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-900/40">
+            <Zap size={32} />
+          </div>
+          <div>
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Yield Multipliers Active</h3>
+            <p className="text-3xl font-black text-white mt-1 uppercase tracking-tight">{charges.filter(c => c.isActive).length} PROTOCOLS ONLINE</p>
+          </div>
+        </div>
+        <div className="hidden lg:flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Registry</p>
+            <p className="text-xl font-black text-white">{charges.length} CONFIGS</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-500">
+            <Shield size={20} />
+          </div>
+        </div>
+      </div>
+
+      {/* Grid of Protocols */}
       {charges.length === 0 ? (
-        <div className="card p-8 sm:p-12 text-center">
-          <p className="text-gray-500">No peak hour charges configured.</p>
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 p-20 text-center shadow-sm">
+          <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center text-gray-300 mx-auto mb-6 border border-gray-100">
+            <AlertTriangle size={32} />
+          </div>
+          <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest leading-none">No Surge Protocols Found</h3>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-2">Initialize your first dynamic pricing event above</p>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-10 lg:grid-cols-2">
           {charges.map((charge) => (
-            <div key={charge.id} className="card p-6 border border-gray-100 hover:border-red-200 transition-all shadow-sm">
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-bold">{charge.name}</h3>
-                            <button onClick={() => toggleActive(charge)}>
-                                <ActiveBadge isActive={charge.isActive} />
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                             <CategoryBadge category={charge.vehicleType?.category || 'CAR'} />
-                             <span className="text-sm font-semibold text-gray-700">{charge.vehicleType?.displayName}</span>
-                        </div>
+            <div key={charge.id} className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm transition-all hover:shadow-xl hover:shadow-gray-100 group relative">
+              <div className="absolute top-8 right-8 flex items-center gap-2">
+                <button
+                  onClick={() => openEditModal(charge)}
+                  className="p-3 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-all"
+                >
+                  <Edit2 size={18} />
+                </button>
+                <button
+                  onClick={() => handleDelete(charge.id)}
+                  disabled={deleteId === charge.id}
+                  className="p-3 bg-gray-50 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all"
+                >
+                  {deleteId === charge.id ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={18} />
+                  )}
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                {/* Identity & Status */}
+                <div className="flex items-start gap-4">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${charge.isActive ? 'bg-red-50 border-red-100 text-red-600' : 'bg-gray-50 border-gray-100 text-gray-300'}`}>
+                    <Zap size={24} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight leading-none">{charge.name}</h3>
+                      <button onClick={() => toggleActive(charge)}>
+                        <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border tracking-widest ${charge.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-gray-50 text-gray-400 border-gray-100/50'}`}>
+                          {charge.isActive ? 'ONLINE' : 'OFFLINE'}
+                        </span>
+                      </button>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <button
-                        onClick={() => openEditModal(charge)}
-                        className="p-2 hover:bg-orange-50 rounded-lg text-orange-500 transition-colors"
-                        >
-                        <Edit2 size={18} />
-                        </button>
-                        <button
-                        onClick={() => handleDelete(charge.id)}
-                        disabled={deleteId === charge.id}
-                        className="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-colors disabled:opacity-50"
-                        >
-                        {deleteId === charge.id ? (
-                            <Loader2 size={18} className="animate-spin" />
-                        ) : (
-                            <Trash2 size={18} />
-                        )}
-                        </button>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-gray-100 text-gray-500 bg-gray-50`}>
+                        {charge.vehicleType?.category}
+                      </span>
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
+                        {charge.vehicleType?.displayName} FLEET
+                      </span>
                     </div>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
-                    {/* Cities */}
-                    <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Applicable Cities</label>
-                        <div className="flex flex-wrap gap-1">
-                            {charge.cityCodes?.map(city => (
-                                <span key={city.id} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs border border-gray-200 flex items-center gap-1">
-                                    <MapPin size={10} />
-                                    {city.cityName}
-                                </span>
-                            ))}
-                        </div>
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Cities */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] block">Jurisdiction</label>
+                    <div className="flex flex-wrap gap-2">
+                      {charge.cityCodes?.map(city => (
+                        <span key={city.id} className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-xl text-[10px] font-black border border-gray-100 flex items-center gap-2 uppercase tracking-tighter">
+                          <MapPin size={10} className="text-gray-300" />
+                          {city.cityName}
+                        </span>
+                      ))}
                     </div>
+                  </div>
 
-                    {/* Days */}
-                    <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Applicable Days</label>
-                        <div className="flex flex-wrap gap-1">
-                            {charge.days.map(day => (
-                                <span key={day} className="px-2 py-0.5 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 uppercase">
-                                    {day.slice(0, 3)}
-                                </span>
-                            ))}
-                        </div>
+                  {/* Days */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] block">Schedule</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {DAYS_OF_WEEK.map(day => {
+                        const active = charge.days.includes(day);
+                        return (
+                          <span key={day} className={`w-8 h-8 flex items-center justify-center rounded-lg text-[9px] font-black border transition-all ${active ? 'bg-red-600 text-white border-red-500 shadow-sm' : 'bg-gray-50 text-gray-300 border-gray-100 opacity-50'}`}>
+                            {day.slice(0, 1)}
+                          </span>
+                        );
+                      })}
                     </div>
-
-                    {/* Slots */}
-                    <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Peak Slots & Extras</label>
-                        <div className="grid gap-2">
-                             {charge.slots.map((slot, idx) => (
-                                 <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                     <div className="flex items-center gap-2 text-sm font-semibold">
-                                         <Clock size={14} className="text-gray-400" />
-                                         <span>{slot.startTime} - {slot.endTime}</span>
-                                     </div>
-                                     <div className="flex items-center gap-3">
-                                         {(slot.fixedExtra ?? 0) > 0 && (
-                                             <div className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">
-                                                 +₹{slot.fixedExtra}
-                                             </div>
-                                         )}
-                                         {(slot.percentageExtra ?? 0) > 0 && (
-                                             <div className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
-                                                 +{slot.percentageExtra}%
-                                             </div>
-                                         )}
-                                     </div>
-                                 </div>
-                             ))}
-                        </div>
-                    </div>
+                  </div>
                 </div>
+
+                {/* Slots */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] block">Dynamic Multipliers</label>
+                  <div className="grid gap-3">
+                    {charge.slots.map((slot, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-[1.5rem] border border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-gray-400 shadow-sm">
+                            <Clock size={14} />
+                          </div>
+                          <span className="text-xs font-black text-gray-900 uppercase tracking-tighter">{slot.startTime} — {slot.endTime}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {(slot.fixedExtra ?? 0) > 0 && (
+                            <div className="px-3 py-1.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-xl border border-emerald-100 font-mono">
+                              +₹{slot.fixedExtra}
+                            </div>
+                          )}
+                          {(slot.percentageExtra ?? 0) > 0 && (
+                            <div className="px-3 py-1.5 bg-red-600 text-white text-[10px] font-black rounded-xl shadow-lg shadow-red-100 font-mono">
+                              +{slot.percentageExtra}%
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -319,58 +379,59 @@ export default function PeakHourChargesPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); resetForm(); }}
-        title={editingCharge ? 'Edit Peak Charge' : 'New Peak Charge'}
+        title={editingCharge ? 'Recalibrate Surge Event' : 'Authorize New Surge Event'}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-6 max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar">
+        <form onSubmit={handleSubmit} className="space-y-10 p-2 overflow-y-auto max-h-[75vh] pr-4 custom-scrollbar">
           {/* Basic Info */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Configuration Name</label>
-                <input
+          <div className="grid gap-8 sm:grid-cols-2">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Header</label>
+              <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="input"
-                placeholder="e.g. Morning Rush"
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-100 outline-none transition-all placeholder:text-gray-300"
+                placeholder="e.g. Morning Rush Terminal"
                 required
-                />
+              />
             </div>
-            <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Vehicle Type</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fleet Selection</label>
+              <div className="relative">
                 <select
-                value={formData.vehicleTypeId}
-                onChange={(e) => setFormData({ ...formData, vehicleTypeId: e.target.value })}
-                className="input"
-                required
+                  value={formData.vehicleTypeId}
+                  onChange={(e) => setFormData({ ...formData, vehicleTypeId: e.target.value })}
+                  className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-100 outline-none transition-all appearance-none"
+                  required
                 >
-                <option value="" disabled>Select vehicle type</option>
-                {vehicleTypes.map(type => (
+                  <option value="" disabled>AUTHORIZE FLEET TYPE</option>
+                  {vehicleTypes.map(type => (
                     <option key={type.id} value={type.id}>{type.displayName} ({type.category})</option>
-                ))}
+                  ))}
                 </select>
+              </div>
             </div>
           </div>
 
           {/* Cities Multi-select */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between">
-                <span>Apply to Cities</span>
-                <span className="text-[10px] text-gray-400 font-bold uppercase">{formData.cityCodeIds.length} Selected</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-gray-50 rounded-2xl border border-gray-100 max-h-40 overflow-y-auto">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between ml-1 text-white">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Jurisdictional Coverage</label>
+              <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded-lg">{formData.cityCodeIds.length} ACTIVE NODES</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-6 bg-gray-50 rounded-[2.5rem] border border-gray-100 max-h-56 overflow-y-auto">
               {cities.map(city => (
                 <button
                   key={city.id}
                   type="button"
                   onClick={() => toggleCity(city.id)}
-                  className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all truncate text-left flex items-center gap-2 ${
-                    formData.cityCodeIds.includes(city.id)
-                      ? 'bg-red-500 text-white border-red-500 shadow-md shadow-red-200'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-red-200'
-                  }`}
+                  className={`px-4 py-3 text-[10px] font-black rounded-2xl border transition-all truncate text-left flex items-center gap-3 uppercase tracking-widest ${formData.cityCodeIds.includes(city.id)
+                    ? 'bg-red-600 text-white border-red-500 shadow-xl shadow-red-100'
+                    : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                    }`}
                 >
-                  <MapPin size={12} />
+                  <MapPin size={12} className={formData.cityCodeIds.includes(city.id) ? 'text-white' : 'text-gray-300'} />
                   {city.cityName}
                 </button>
               ))}
@@ -378,89 +439,88 @@ export default function PeakHourChargesPage() {
           </div>
 
           {/* Days Selection */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Applicable Days</label>
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Temporal Window (Days)</label>
             <div className="flex flex-wrap gap-2">
               {DAYS_OF_WEEK.map(day => (
                 <button
                   key={day}
                   type="button"
                   onClick={() => toggleDay(day)}
-                  className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all ${
-                    formData.days.includes(day)
-                      ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-200'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-orange-200'
-                  }`}
+                  className={`px-5 py-3 text-[10px] font-black rounded-2xl border transition-all uppercase tracking-widest ${formData.days.includes(day)
+                    ? 'bg-gray-900 text-white border-gray-900 shadow-xl shadow-gray-200'
+                    : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
+                    }`}
                 >
                   {day.slice(0, 3)}
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 mt-2">
-                <button type="button" onClick={() => setFormData(p => ({...p, days: DAYS_OF_WEEK.slice(0, 5)}))} className="text-[10px] font-bold text-blue-600 hover:underline">Weekdays</button>
-                <button type="button" onClick={() => setFormData(p => ({...p, days: DAYS_OF_WEEK.slice(5)}))} className="text-[10px] font-bold text-blue-600 hover:underline">Weekends</button>
-                <button type="button" onClick={() => setFormData(p => ({...p, days: DAYS_OF_WEEK}))} className="text-[10px] font-bold text-blue-600 hover:underline">All Days</button>
+            <div className="flex gap-4 mt-4 ml-1">
+              <button type="button" onClick={() => setFormData(p => ({ ...p, days: DAYS_OF_WEEK.slice(0, 5) }))} className="text-[10px] font-black text-indigo-600 hover:underline uppercase tracking-widest">WEEKDAYS</button>
+              <button type="button" onClick={() => setFormData(p => ({ ...p, days: DAYS_OF_WEEK.slice(5) }))} className="text-[10px] font-black text-indigo-600 hover:underline uppercase tracking-widest">WEEKENDS</button>
+              <button type="button" onClick={() => setFormData(p => ({ ...p, days: DAYS_OF_WEEK }))} className="text-[10px] font-black text-indigo-600 hover:underline uppercase tracking-widest">FULL SPECTRUM</button>
             </div>
           </div>
 
           {/* Slots Management */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-gray-700">Peak Slots & Pricing Adjustments</label>
-              <button type="button" onClick={addSlot} className="text-xs font-bold text-red-600 flex items-center gap-1 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors">
-                <Plus size={14} /> Add Slot
+          <div className="space-y-6">
+            <div className="flex items-center justify-between ml-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Yield Adjustment Windows</label>
+              <button type="button" onClick={addSlot} className="px-4 py-2 bg-gray-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all">
+                <Plus size={12} /> ADD WINDOW
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="grid gap-6">
               {formData.slots.map((slot, idx) => (
-                <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 relative group">
-                  <button 
-                    type="button" 
+                <div key={idx} className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 relative group transition-all hover:bg-white hover:shadow-xl hover:shadow-gray-100">
+                  <button
+                    type="button"
                     onClick={() => removeSlot(idx)}
-                    className="absolute -top-2 -right-2 p-1 bg-white border border-gray-200 rounded-full text-gray-400 hover:text-red-500 hover:border-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-3 -right-3 p-2 bg-white border border-gray-200 rounded-full text-gray-400 hover:text-red-600 hover:border-red-500 shadow-xl transition-all"
                   >
-                    <X size={14} />
+                    <X size={16} />
                   </button>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Start Time</label>
-                        <input 
-                          type="time" 
-                          value={slot.startTime} 
+                  <div className="grid gap-10 md:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">START PROTOCOL</label>
+                        <input
+                          type="time"
+                          value={slot.startTime}
                           onChange={(e) => updateSlot(idx, 'startTime', e.target.value)}
-                          className="input py-1.5 text-sm"
+                          className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 outline-none focus:ring-2 focus:ring-gray-100"
                         />
                       </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">End Time</label>
-                        <input 
-                          type="time" 
-                          value={slot.endTime} 
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">TERMINATE PROTOCOL</label>
+                        <input
+                          type="time"
+                          value={slot.endTime}
                           onChange={(e) => updateSlot(idx, 'endTime', e.target.value)}
-                          className="input py-1.5 text-sm"
+                          className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-black text-gray-900 outline-none focus:ring-2 focus:ring-gray-100"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Fixed Extra (₹)</label>
-                        <input 
-                          type="number" 
-                          value={slot.fixedExtra} 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">FIXED SURGE (INR)</label>
+                        <input
+                          type="number"
+                          value={slot.fixedExtra}
                           onChange={(e) => updateSlot(idx, 'fixedExtra', Number(e.target.value))}
-                          className="input py-1.5 text-sm"
+                          className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-black text-emerald-600 outline-none focus:ring-2 focus:ring-emerald-100 font-mono"
                           placeholder="0"
                           min="0"
                         />
                       </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Percentage (%)</label>
-                        <input 
-                          type="number" 
-                          value={slot.percentageExtra} 
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">YIELD MULTIPLIER (%)</label>
+                        <input
+                          type="number"
+                          value={slot.percentageExtra}
                           onChange={(e) => updateSlot(idx, 'percentageExtra', Number(e.target.value))}
-                          className="input py-1.5 text-sm"
+                          className="w-full px-5 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-black text-red-600 outline-none focus:ring-2 focus:ring-red-100 font-mono"
                           placeholder="0"
                           min="0"
                           max="100"
@@ -474,11 +534,11 @@ export default function PeakHourChargesPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-6 sticky bottom-0 bg-white pb-2">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 flex items-center justify-center gap-2">
-              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              <span>{editingCharge ? 'Update Configuration' : 'Create Configuration'}</span>
+          <div className="flex gap-4 pt-10 sticky bottom-0 bg-white pb-4 mt-10">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-all">ABORT OPERATION</button>
+            <button type="submit" disabled={isSubmitting} className="flex-1 py-5 bg-gray-900 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-gray-200 hover:bg-black transition-all flex items-center justify-center gap-3 disabled:bg-gray-200 disabled:shadow-none min-w-[240px]">
+              {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+              <span>{editingCharge ? 'UPDATE PROTOCOL' : 'INITIALIZE PROTOCOL'}</span>
             </button>
           </div>
         </form>

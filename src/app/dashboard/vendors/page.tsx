@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Building2, Search, Eye, Phone, Mail, MapPin, Plus, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Building2, Search, Eye, Phone, Mail, MapPin, Plus, ChevronLeft, ChevronRight, RotateCcw, Filter as FilterIcon, CheckCircle } from 'lucide-react';
 import { vendorService } from '@/services/vendorService';
 import { Vendor, EntityActiveStatus, EntityVerificationStatus } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -100,176 +100,212 @@ export default function VendorsPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="space-y-4">
-      {/* Page Title & Actions */}
-      <div className="flex justify-between items-center mb-2">
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-800">Vendors</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Manage fleet owners and vehicle providers</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Vendors</h1>
+          <p className="text-sm text-gray-500 font-medium">Manage fleet owners and logistical providers</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1.5 rounded-full bg-orange-100 text-orange-600 text-xs font-semibold">
-            {vendors.length} Total
-          </span>
-          <Link
-            href="/dashboard/vendors/create"
-            className="flex items-center gap-2 px-4 py-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20 text-sm font-semibold transition-all"
-          >
-            <Plus size={16} />
-            Add Vendor
-          </Link>
-          <button 
-            onClick={fetchVendors}
-            className="p-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20"
-          >
-            <RotateCcw size={18} />
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1">
+            <div className="px-4 py-2 flex flex-col items-center">
+              <span className="text-xl font-black text-gray-900 leading-none">{vendors.length}</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Active Entities</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard/vendors/create"
+              className="flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-2xl hover:bg-black shadow-lg shadow-gray-200 text-sm font-bold transition-all transform hover:-translate-y-0.5 active:scale-95"
+            >
+              <Plus size={18} />
+              Add Vendor
+            </Link>
+            <button
+              onClick={fetchVendors}
+              className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
+              title="Refresh List"
+            >
+              <RotateCcw size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Quick Filters */}
-      <div className="flex gap-2">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as EntityActiveStatus | '')}
-          className="text-xs p-2 border border-gray-200 rounded-lg bg-white outline-none min-w-[120px]"
-        >
-          <option value="">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-          <option value="SUSPENDED">Suspended</option>
-          <option value="BANNED">Banned</option>
-        </select>
+      {/* Modern Filter Section */}
+      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex-1 min-w-[300px] relative">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Quick search by company, owner, or vendor code..."
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-400"
+              value={filters.name}
+              onChange={e => setFilters({ ...filters, name: e.target.value })}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <FilterIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as EntityActiveStatus | '')}
+                className="pl-9 pr-8 py-3 bg-gray-50 border-none rounded-2xl text-xs font-bold text-gray-600 appearance-none focus:ring-2 focus:ring-gray-200 outline-none cursor-pointer"
+              >
+                <option value="">Status: All</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="SUSPENDED">Suspended</option>
+                <option value="BANNED">Banned</option>
+              </select>
+            </div>
+
+            <button
+              onClick={() => setFilters({ name: '', company: '', phone: '', email: '', city: '' })}
+              className="px-4 py-3 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Extended Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input type="text" placeholder="Company Name..." className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-xs focus:ring-1 focus:ring-gray-200 outline-none"
+            value={filters.company} onChange={e => setFilters({ ...filters, company: e.target.value })} />
+          <input type="text" placeholder="Contact Details..." className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-xs focus:ring-1 focus:ring-gray-200 outline-none"
+            value={filters.phone} onChange={e => setFilters({ ...filters, phone: e.target.value })} />
+          <input type="text" placeholder="Location Hub..." className="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-xs focus:ring-1 focus:ring-gray-200 outline-none"
+            value={filters.city} onChange={e => setFilters({ ...filters, city: e.target.value })} />
+        </div>
       </div>
 
-      {/* Table Container */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      {/* Table Section */}
+      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1100px]">
-            {/* Header */}
-            <thead className="bg-[#E32222] text-white">
-              <tr>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[100px]">ID</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Owner</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Company</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Phone</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Email</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">City</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[80px]">GST</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[100px]">Status</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[140px]">Actions</th>
+            <thead>
+              <tr className="border-b border-gray-50">
+                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">ID Reference</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Vendor / Owner</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Company Entity</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Contact Primary</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Base Hub</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Regulatory</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Status & Verify</th>
+                <th className="px-4 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono pr-8">Actions</th>
               </tr>
             </thead>
-            {/* Filter Row */}
-            <tbody className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <td className="px-2 py-2"></td>
-                <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-red-200 rounded outline-none focus:border-red-400"
-                    value={filters.name} onChange={e => setFilters({...filters, name: e.target.value})} />
-                </td>
-                <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
-                    value={filters.company} onChange={e => setFilters({...filters, company: e.target.value})} />
-                </td>
-                <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
-                    value={filters.phone} onChange={e => setFilters({...filters, phone: e.target.value})} />
-                </td>
-                <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
-                    value={filters.email} onChange={e => setFilters({...filters, email: e.target.value})} />
-                </td>
-                <td className="px-2 py-2">
-                  <input type="text" placeholder="Search" className="w-full text-[11px] p-1 border border-gray-200 rounded outline-none"
-                    value={filters.city} onChange={e => setFilters({...filters, city: e.target.value})} />
-                </td>
-                <td className="px-2 py-2"></td>
-                <td className="px-2 py-2"></td>
-                <td className="px-2 py-2"></td>
-              </tr>
-            </tbody>
-            {/* Data Rows */}
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-50">
               {filteredVendors.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500 italic">No vendors found.</td>
+                  <td colSpan={8} className="px-6 py-20 text-center">
+                    <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                      <Building2 size={24} className="text-gray-300" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-400">No vendors found matching your filters</p>
+                  </td>
                 </tr>
               ) : (
                 filteredVendors.map((vendor) => (
-                  <tr key={vendor.id} className="hover:bg-red-50/30 transition-colors">
-                    <td className="px-3 py-3">
-                      <span className="text-[11px] font-bold text-orange-600 font-mono">{vendor.customId}</span>
+                  <tr key={vendor.id} className="group transition-all duration-200 hover:bg-gray-50/50">
+                    <td className="px-6 py-4">
+                      <span className="text-[11px] font-black text-orange-600 tracking-tight font-mono">
+                        {vendor.customId}
+                      </span>
                     </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-sm">
-                          <Building2 size={14} className="text-white" />
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                          <Building2 size={16} />
                         </div>
-                        <span className="text-[11px] font-bold text-gray-800">{vendor.name}</span>
+                        <span className="text-sm font-black text-gray-900 tracking-tight">{vendor.name}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-3">
-                      <span className="text-[11px] font-medium text-gray-700">{vendor.companyName}</span>
+                    <td className="px-4 py-4">
+                      <span className="text-[13px] font-black text-gray-800">{vendor.companyName}</span>
                     </td>
-                    <td className="px-3 py-3">
-                      <span className="text-[10px] font-medium text-gray-600">{vendor.phone}</span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="text-[10px] font-medium text-gray-600 truncate block max-w-[160px]">{vendor.email || '-'}</span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="text-[10px] font-medium text-gray-600">{vendor.cityCode?.cityName || '-'}</span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span className="text-[10px] font-medium text-gray-500">{vendor.gstNumber ? '✓' : '-'}</span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col gap-1">
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase w-fit ${activeStatusColors[vendor.status] || 'bg-gray-100 text-gray-700'}`}>
-                          Status: {vendor.status}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase w-fit ${verificationStatusColors[vendor.verificationStatus] || 'bg-gray-100 text-gray-700'}`}>
-                          Verify: {vendor.verificationStatus}
-                        </span>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5">
+                          <Phone size={10} className="text-gray-400" />
+                          <span className="text-[10px] font-black text-gray-700 tracking-tight">{vendor.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Mail size={10} className="text-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-400 truncate max-w-[140px]">{vendor.email || 'No email set'}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3">
-                      <div className="flex gap-1">
-                        <select
-                          value=""
-                          onChange={(e) => {
-                            if (e.target.value) handleStatusUpdate(vendor, e.target.value as EntityActiveStatus);
-                          }}
-                          className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer"
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin size={12} className="text-gray-400" />
+                        <span className="text-[11px] font-black text-gray-700">{vendor.cityCode?.cityName || 'Unset'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      {vendor.gstNumber ? (
+                        <div className="inline-flex px-2 py-0.5 bg-green-50 text-green-600 rounded-md border border-green-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest">GST Registered</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex px-2 py-0.5 bg-gray-100 text-gray-400 rounded-md">
+                          <span className="text-[9px] font-black uppercase tracking-widest">No GST info</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-1.5 max-w-[160px]">
+                        <div className={`px-2 py-1 rounded-lg flex items-center gap-1.5 ${activeStatusColors[vendor.status] || 'bg-gray-100 text-gray-700'}`}>
+                          <div className={`w-1 h-1 rounded-full ${vendor.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <span className="text-[9px] font-black uppercase tracking-widest">{vendor.status}</span>
+                        </div>
+                        <div className={`px-2 py-1 rounded-lg flex items-center gap-1.5 ${verificationStatusColors[vendor.verificationStatus] || 'bg-gray-100 text-gray-700'}`}>
+                          <span className="text-[9px] font-black uppercase tracking-widest">{vendor.verificationStatus}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-right pr-6">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-2">
+                        <div className="relative group/actions">
+                          <button className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-gray-900">
+                            <FilterIcon size={16} />
+                          </button>
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 hidden group-hover/actions:block z-20">
+                            <p className="px-4 py-1 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Update Status</p>
+                            {['ACTIVE', 'INACTIVE', 'SUSPENDED', 'BANNED'].map((s) => (
+                              <button key={s} onClick={() => handleStatusUpdate(vendor, s as any)} className="w-full px-4 py-2 text-left text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-between">
+                                {s} {vendor.status === s && <CheckCircle size={10} className="text-green-500" />}
+                              </button>
+                            ))}
+                            <div className="h-px bg-gray-100 my-1" />
+                            <p className="px-4 py-1 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 mt-1">Verification</p>
+                            {['VERIFIED', 'REJECTED', 'UNDER_REVIEW'].map((v) => (
+                              <button key={v} onClick={() => handleVerify(vendor, v as any)} className="w-full px-4 py-2 text-left text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-between">
+                                {v.replace('_', ' ')} {vendor.verificationStatus === v && <CheckCircle size={10} className="text-blue-500" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <Link
+                          href={`/dashboard/vendors/${vendor.id}/edit`}
+                          className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-xl transition-all shadow-sm"
+                          title="Edit Vendor"
                         >
-                          <option value="">Status</option>
-                          <option value="ACTIVE">Activate</option>
-                          <option value="INACTIVE">Deactivate</option>
-                          <option value="SUSPENDED">Suspend</option>
-                          <option value="BANNED">Ban</option>
-                        </select>
-                        <select
-                          value=""
-                          onChange={(e) => {
-                            if (e.target.value) handleVerify(vendor, e.target.value as EntityVerificationStatus);
-                          }}
-                          className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer"
-                        >
-                          <option value="">Verify</option>
-                          <option value="VERIFIED">Verify</option>
-                          <option value="REJECTED">Reject</option>
-                          <option value="UNDER_REVIEW">Review</option>
-                        </select>
-                        <Link href={`/dashboard/vendors/${vendor.id}/edit`} className="p-1 px-2 text-blue-600 hover:bg-blue-50 rounded text-[9px] font-bold flex items-center gap-1">
-                          <Eye size={12} /> Edit
+                          <Eye size={16} />
                         </Link>
-                        <button 
+
+                        <button
                           onClick={() => handleDelete(vendor)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          className="p-2 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all shadow-sm"
                           title="Delete Vendor"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -279,12 +315,19 @@ export default function VendorsPage() {
             </tbody>
           </table>
         </div>
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
-          <span className="text-xs text-gray-500">Showing <span className="font-bold text-[#E32222]">{filteredVendors.length}</span> of {vendors.length} vendors</span>
-          <div className="flex gap-1">
-            <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft size={14}/></button>
-            <button className="p-1 border rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight size={14}/></button>
+
+        {/* Modern Footer */}
+        <div className="flex items-center justify-between px-8 py-5 border-t border-gray-50 bg-gray-50/30">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            Showing <span className="text-gray-900">{filteredVendors.length}</span> logistical partners
+          </span>
+          <div className="flex items-center gap-3">
+            <button className="p-2 text-gray-400 hover:text-gray-900 disabled:opacity-30">
+              <ChevronLeft size={18} />
+            </button>
+            <button className="p-2 text-gray-400 hover:text-gray-900 disabled:opacity-30">
+              <ChevronRight size={18} />
+            </button>
           </div>
         </div>
       </div>

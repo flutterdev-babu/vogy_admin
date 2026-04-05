@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DollarSign, Users, TrendingUp, Wallet, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { settlementService } from '@/services/enterpriseService';
 import { exportToCSV } from '@/utils/csvExport';
@@ -60,121 +60,181 @@ export default function SettlementsPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
+    <div className="space-y-10 pb-20 max-w-7xl mx-auto">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">💸 Settlements & Payouts</h1>
-          <p className="text-sm text-gray-500 mt-1">Track and manage partner & vendor earnings</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3 uppercase">
+            Financial Core
+          </h1>
+          <p className="text-sm text-gray-500 font-medium mt-1 uppercase tracking-wider">Settlements & Distributed Payouts Ledger</p>
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 text-xs font-bold uppercase rounded-lg hover:bg-green-100 border border-green-200 transition-all"
+          className="flex items-center gap-3 px-6 py-3 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-emerald-100 border border-emerald-100 transition-all shadow-sm"
         >
-          <Download size={16} /> Export CSV
+          <Download size={16} /> EXPORT FISCAL LEDGER
         </button>
       </div>
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
-            { label: 'Total Revenue', value: `₹${(stats.totalRevenue || 0).toLocaleString()}`, icon: TrendingUp, color: 'bg-blue-50 text-blue-600', iconBg: 'bg-blue-100' },
-            { label: 'Rider Earnings', value: `₹${(stats.totalRiderEarnings || 0).toLocaleString()}`, icon: Wallet, color: 'bg-green-50 text-green-600', iconBg: 'bg-green-100' },
-            { label: 'Commission', value: `₹${(stats.totalCommission || 0).toLocaleString()}`, icon: DollarSign, color: 'bg-purple-50 text-purple-600', iconBg: 'bg-purple-100' },
-            { label: 'Pending Payments', value: `${stats.pendingPayments || 0}`, icon: Users, color: 'bg-orange-50 text-orange-600', iconBg: 'bg-orange-100' },
+            { label: 'GROSS REVENUE', value: `₹${(stats.totalRevenue || 0).toLocaleString()}`, icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50/50' },
+            { label: 'PARTNER YIELD', value: `₹${(stats.totalRiderEarnings || 0).toLocaleString()}`, icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
+            { label: 'SYSTEM ROYALTY', value: `₹${(stats.totalCommission || 0).toLocaleString()}`, icon: DollarSign, color: 'text-purple-600', bg: 'bg-purple-50/50' },
+            { label: 'OPEN DISBURSEMENTS', value: `${stats.pendingPayments || 0}`, icon: Users, color: 'text-amber-600', bg: 'bg-amber-50/50' },
           ].map((card, i) => (
-            <div key={i} className={`${card.color} rounded-2xl p-5 border border-gray-100`}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 ${card.iconBg} rounded-xl flex items-center justify-center`}>
-                  <card.icon size={20} />
+            <div key={i} className={`bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm transition-all hover:shadow-md group`}>
+              <div className="flex items-center justify-between mb-6">
+                <div className={`w-12 h-12 ${card.bg} ${card.color} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
+                  <card.icon size={22} />
                 </div>
-                <span className="text-xs font-bold uppercase tracking-wider opacity-70">{card.label}</span>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.label}</span>
               </div>
-              <p className="text-2xl font-black">{card.value}</p>
+              <p className="text-3xl font-black text-gray-900 tracking-tighter">{card.value}</p>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Real-time update</span>
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tab Switcher */}
-      <div className="flex gap-2 bg-white rounded-xl p-1 border border-gray-200 w-fit">
-        {(['partners', 'vendors'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all capitalize ${activeTab === tab
-              ? 'bg-[#E32222] text-white shadow-md shadow-red-500/20'
-              : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            {tab}
-          </button>
-        ))}
+      {/* Control Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-4 rounded-[2rem] border border-gray-100 shadow-sm">
+        {/* Premium Segmented Control */}
+        <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200/50 shadow-inner overflow-hidden max-w-fit">
+          {(['partners', 'vendors'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-10 py-2.5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab
+                ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-100'
+                : 'text-gray-400 hover:text-gray-600'
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="px-6 py-4 bg-gray-900 rounded-[1.5rem] flex items-center justify-between min-w-[200px]">
+          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest truncate mr-4">Total Settled Entities</span>
+          <span className="text-sm font-black text-white">{data.length}</span>
+        </div>
       </div>
 
       {/* Settlement Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">ID</th>
-              <th className="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Name</th>
-              <th className="text-left py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Phone</th>
-              <th className="text-right py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Rides</th>
-              <th className="text-right py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Total Fare</th>
-              <th className="text-right py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Earnings</th>
-              <th className="text-right py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Commission</th>
-              <th className="text-center py-4 px-6 text-xs font-bold uppercase tracking-wider text-gray-500">Details</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {data.length === 0 ? (
-              <tr><td colSpan={8} className="py-12 text-center text-gray-400 text-sm">No settlement data found.</td></tr>
-            ) : (
-              data.map((item) => (
-                <>
-                  <tr key={item.entityId} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 px-6 text-sm font-bold text-[#E32222]">{item.customId}</td>
-                    <td className="py-4 px-6 text-sm font-bold text-gray-800">{item.name}</td>
-                    <td className="py-4 px-6 text-sm text-gray-600">{item.phone}</td>
-                    <td className="py-4 px-6 text-sm font-bold text-gray-800 text-right">{item.totalRides}</td>
-                    <td className="py-4 px-6 text-sm font-bold text-gray-800 text-right">₹{item.totalFare.toFixed(2)}</td>
-                    <td className="py-4 px-6 text-sm font-black text-green-600 text-right">₹{item.totalEarnings.toFixed(2)}</td>
-                    <td className="py-4 px-6 text-sm font-bold text-purple-600 text-right">₹{item.totalCommission.toFixed(2)}</td>
-                    <td className="py-4 px-6 text-center">
-                      <button
-                        onClick={() => setExpandedId(expandedId === item.entityId ? null : item.entityId)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        {expandedId === item.entityId ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedId === item.entityId && (
-                    <tr key={`${item.entityId}-detail`}>
-                      <td colSpan={8} className="bg-gray-50/50 px-8 py-4">
-                        <div className="text-xs font-bold uppercase text-gray-400 mb-3">Recent Rides</div>
-                        <div className="grid gap-2 max-h-60 overflow-y-auto">
-                          {item.rides.slice(0, 10).map((ride: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between bg-white rounded-lg px-4 py-2.5 border border-gray-100 text-xs">
-                              <span className="font-bold text-gray-700">{ride.customId || 'N/A'}</span>
-                              <span className="text-gray-500">{new Date(ride.date).toLocaleDateString()}</span>
-                              <span className="text-gray-500">{ride.vehicleType}</span>
-                              <span className="font-bold text-green-600">₹{(ride.riderEarnings || ride.totalFare || 0).toFixed(2)}</span>
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${ride.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                                {ride.paymentStatus || ride.paymentMode || 'N/A'}
-                              </span>
-                            </div>
-                          ))}
+      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden p-2">
+        <div className="px-8 py-6 flex items-center justify-between border-b border-gray-50 mb-2">
+          <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Fiscal Distributions</h3>
+          {isLoading && <span className="text-[9px] font-black text-gray-300 uppercase animate-pulse">Synchronizing ledger...</span>}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-50">
+                <th className="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Asset ID</th>
+                <th className="text-left py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Entity Identity</th>
+                <th className="text-right py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Volume</th>
+                <th className="text-right py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Gross Revenue</th>
+                <th className="text-right py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Distribution</th>
+                <th className="text-right py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Royalty</th>
+                <th className="text-center py-5 px-8 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Audit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-24 text-center">
+                    <div className="flex flex-col items-center gap-4 opacity-20">
+                      <DollarSign size={48} />
+                      <span className="text-xs font-black uppercase tracking-[0.2em]">No financial data detected</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                data.map((item) => (
+                  <React.Fragment key={item.entityId}>
+                    <tr className="group hover:bg-gray-50/50 transition-all">
+                      <td className="py-5 px-8">
+                        <span className="text-xs font-black text-red-600 tracking-tight font-mono">{item.customId}</span>
+                      </td>
+                      <td className="py-5 px-8">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{item.name}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase mt-1.5 tracking-tighter">{item.phone}</span>
                         </div>
                       </td>
+                      <td className="py-5 px-8 text-right">
+                        <span className="text-xs font-black text-gray-900">{item.totalRides}</span>
+                      </td>
+                      <td className="py-5 px-8 text-right">
+                        <span className="text-xs font-black text-gray-900">₹{item.totalFare.toLocaleString()}</span>
+                      </td>
+                      <td className="py-5 px-8 text-right">
+                        <span className="text-xs font-black text-emerald-600">₹{item.totalEarnings.toLocaleString()}</span>
+                      </td>
+                      <td className="py-5 px-8 text-right">
+                        <span className="text-xs font-black text-indigo-500">₹{item.totalCommission.toLocaleString()}</span>
+                      </td>
+                      <td className="py-5 px-8 text-center">
+                        <button
+                          onClick={() => setExpandedId(expandedId === item.entityId ? null : item.entityId)}
+                          className={`w-10 h-10 inline-flex items-center justify-center rounded-2xl transition-all ${expandedId === item.entityId
+                            ? 'bg-gray-900 text-white shadow-lg'
+                            : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                            }`}
+                        >
+                          {expandedId === item.entityId ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </button>
+                      </td>
                     </tr>
-                  )}
-                </>
-              ))
-            )}
-          </tbody>
-        </table>
+                    {expandedId === item.entityId && (
+                      <tr key={`${item.entityId}-detail`}>
+                        <td colSpan={7} className="bg-gray-50/50 px-12 py-8 border-y border-gray-100">
+                          <div className="flex items-center justify-between mb-6">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Transaction Micro-Ledger</h4>
+                            <span className="text-[9px] font-bold text-gray-400 uppercase">Showing last 10 distributions</span>
+                          </div>
+                          <div className="grid gap-3 max-h-80 overflow-y-auto pr-4 scrollbar-thin">
+                            {item.rides.slice(0, 10).map((ride: any, i: number) => (
+                              <div key={i} className="flex items-center justify-between bg-white rounded-[1.25rem] px-6 py-4 border border-gray-100 shadow-sm animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                                <div className="flex items-center gap-4">
+                                  <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                                  <span className="text-[11px] font-black text-gray-900 font-mono tracking-tighter uppercase">{ride.customId || 'TRX-PEND'}</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">{new Date(ride.date).toLocaleDateString('en-GB')}</span>
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{ride.vehicleType}</span>
+                                <div className="flex items-center gap-6">
+                                  <div className="text-right">
+                                    <p className="text-[11px] font-black text-gray-900 leading-tight">₹{(ride.riderEarnings || ride.totalFare || 0).toLocaleString()}</p>
+                                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter">Distributed</p>
+                                  </div>
+                                  <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${ride.paymentStatus === 'PAID'
+                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50'
+                                    : 'bg-amber-50 text-amber-600 border border-amber-100/50'
+                                    }`}>
+                                    {ride.paymentStatus || ride.paymentMode || 'PENDING'}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+
   );
 }

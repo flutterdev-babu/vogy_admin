@@ -21,6 +21,7 @@ import {
     ArrowRight,
     History,
     Bookmark,
+    ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -152,12 +153,21 @@ export default function UserDashboardPage() {
                 const rideTime = new Date(activeRide.scheduledDateTime || activeRide.createdAt).getTime();
                 const now = Date.now();
                 const diffMs = now - rideTime;
-                const isPastDue = diffMs > 0 && (activeRide.status === 'UPCOMING' || activeRide.status === 'SCHEDULED' || activeRide.status === 'REQUESTED');
 
-                // NEW: Hide banner if it's an upcoming ride that's more than 1 hour past due
-                if (isPastDue && diffMs > 60 * 60 * 1000) {
+                // Triggers if ride time is in the past
+                const isPast = diffMs > 0;
+
+                // Statuses that are "Active" but haven't actually started the physical journey
+                const isPreJourney = ['UPCOMING', 'SCHEDULED', 'REQUESTED', 'ASSIGNED', 'ACCEPTED'].includes(activeRide.status);
+
+                // If it's a pre-journey ride and it's more than 2 hours past due, hide it from the "Active Ride" highlight
+                // This prevents stale rides from previous days (like the Mar 31 ride mentioned by the user) from cluttering the dashboard on Apr 2.
+                if (isPast && isPreJourney && diffMs > 2 * 60 * 60 * 1000) {
                     return null;
                 }
+
+                // Also if it's in the past and NOT in an ongoing state, mark it as past due UI-wise
+                const isPastDue = isPast && isPreJourney;
 
                 return (
                     <div className="rounded-2xl p-5 animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
@@ -255,18 +265,22 @@ export default function UserDashboardPage() {
                     <p className="text-white font-semibold">Ride History</p>
                     <p className="text-gray-400 text-xs mt-1">View all past rides</p>
                 </Link>
- 
-                <Link
-                    href="/user/dashboard/profile"
-                    className="group rounded-2xl p-5 transition-all hover:scale-[1.02]"
+
+                <div
+                    className="group rounded-2xl p-5 transition-all hover:scale-[1.02] cursor-default"
                     style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}
                 >
-                    <Bookmark size={28} className="text-[#3b82f6] mb-3 group-hover:scale-110 transition-transform" />
-                    <p className="text-white font-semibold">Saved Places</p>
-                    <p className="text-gray-400 text-xs mt-1">
-                        {savedPlaces.length} locations saved
+                    <ShieldCheck size={28} className="text-[#3b82f6] mb-3 group-hover:scale-110 transition-transform" />
+                    <p className="text-white font-semibold">Unique Ride OTP</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                            {user?.uniqueOtp || '----'}
+                        </p>
+                    </div>
+                    <p className="text-gray-500 text-[10px] uppercase tracking-wider font-semibold mt-2">
+                        Life-long verification code
                     </p>
-                </Link>
+                </div>
 
             </div>
 
@@ -309,7 +323,7 @@ export default function UserDashboardPage() {
                                             <span className="text-xs text-gray-500">{formatDate(ride.scheduledDateTime || ride.createdAt)}</span>
                                             {(() => {
                                                 const rideTime = new Date(ride.scheduledDateTime || ride.createdAt).getTime();
-                                                const isPastDue = rideTime < Date.now() && (ride.status === 'UPCOMING' || ride.status === 'SCHEDULED' || ride.status === 'REQUESTED');
+                                                const isPastDue = rideTime < Date.now() && ['UPCOMING', 'SCHEDULED', 'REQUESTED', 'ASSIGNED', 'ACCEPTED'].includes(ride.status);
 
                                                 return (
                                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"

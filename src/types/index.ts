@@ -43,6 +43,8 @@ export interface CityCode {
   id: string;
   code: string;
   cityName: string;
+  isActive: boolean;
+  isAvailable: boolean;
 }
 
 // =====================================
@@ -197,7 +199,7 @@ export interface Partner {
   ownVehicleTypeId?: string;
   ownVehicleType?: VehicleTypeSummary; // Added per API v2 docs
   cityCode?: CityCode;
-  
+
   // New attachments list
   attachments?: Array<{
     id: string;
@@ -359,21 +361,21 @@ export interface Corporate {
   creditLimit: number;
   currentBalance: number;
   cityCode?: CityCode;
-  
+
   // Basic & Location Info
   state?: string;
   area?: string;
-  
+
   // Detailed Addresses
   headOfficeAddress?: string;
   branchOfficeAddress?: string;
   address?: string; // Kept for backward compatibility
-  
+
   // Tax & Legal
   panNumber?: string;
   gstNumber?: string;
   comments?: string;
-  
+
   // Owner Details
   ownerName?: string;
   ownerPhone?: string;
@@ -391,7 +393,7 @@ export interface Corporate {
   financeContactName?: string;
   financeContactNumber?: string;
   financeContactEmail?: string;
-  
+
   // Bank Information 
   accountHolderName?: string;
   bankName?: string;
@@ -411,21 +413,21 @@ export interface CorporateRegisterRequest {
   email: string;
   password?: string;
   cityCodeId?: string;
-  
+
   // Basic & Location Info
   state?: string;
   area?: string;
-  
+
   // Detailed Addresses
   headOfficeAddress?: string;
   branchOfficeAddress?: string;
   address?: string; // Kept for backward compatibility
-  
+
   // Tax & Legal
   panNumber?: string;
   gstNumber?: string;
   comments?: string;
-  
+
   // Owner Details
   ownerName?: string;
   ownerPhone?: string;
@@ -443,7 +445,7 @@ export interface CorporateRegisterRequest {
   financeContactName?: string;
   financeContactNumber?: string;
   financeContactEmail?: string;
-  
+
   // Bank Information 
   accountHolderName?: string;
   bankName?: string;
@@ -663,7 +665,7 @@ export interface VehiclePricingGroup {
   baseKm: number;
   baseFare: number;
   perKmPrice: number;
-  
+
   // Expanded Metrics from UI
   driverBaseKm: number;
   driverBasePrice: number;
@@ -672,7 +674,7 @@ export interface VehiclePricingGroup {
   tollRate: number;
   parkingRate: number;
   gstRate: number;
-  
+
   cityCodeIds: string[];
   cityCodes?: CityCode[];
   isActive: boolean;
@@ -827,6 +829,7 @@ export interface Ride {
   isManualBooking: boolean;
   scheduledDateTime?: string;
   bookingNotes?: string;
+  altMobile?: string;
   serviceType?: string;
   paymentMode?: string;
   paymentStatus?: string; // New field from v2 API
@@ -841,6 +844,7 @@ export interface Ride {
   discountAmount?: number; // Calculated discount value
   advanceAmount?: number; // Confirmation fee paid
   transactionId?: string; // UPI Ref No.
+  isLocked: boolean;
   createdAt: string;
 }
 
@@ -1041,8 +1045,8 @@ export interface PartnerEarningsData {
 
 // --- Admin Dashboard ---
 export interface AdminDashboardData {
-  entities: { 
-    users: number; vendors: number; partners: number; vehicles: number; 
+  entities: {
+    users: number; vendors: number; partners: number; vehicles: number;
     agents: number; corporates: number; onlinePartners: number;
   };
   rides: { total: number; completed: number; active: number; today: number };

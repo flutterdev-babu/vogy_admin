@@ -26,9 +26,12 @@ export default function PartnerDocumentsPage() {
             const response = await partnerService.getDocuments();
             if (response.success && response.data) {
                 setDocuments(response.data);
+            } else {
+                setDocuments([]);
             }
         } catch (error) {
-            console.error('Failed to load documents');
+            // API may not be available yet - gracefully handle
+            setDocuments([]);
         } finally {
             setIsLoading(false);
         }

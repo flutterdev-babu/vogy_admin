@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Loader2, DollarSign, Percent, Info, Clock, Plus } from 'lucide-react';
+import { Save, Loader2, DollarSign, Percent, Info, Clock, Plus, Zap, Shield, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { pricingService } from '@/services/pricingService';
 import { PricingConfig } from '@/types';
@@ -52,11 +52,12 @@ export default function PricingPage() {
     e.preventDefault();
 
     if (riderPercentage + appCommission !== 100) {
-      toast.error('Rider percentage and app commission must sum to 100%');
+      toast.error('Yield distribution must sum to 100%');
       return;
     }
 
     setIsSubmitting(true);
+    const toastId = toast.loading('Synchronizing financial protocols...');
     try {
       const response = await pricingService.update({
         baseFare,
@@ -64,10 +65,10 @@ export default function PricingPage() {
         appCommission,
       });
       setConfig(response.data);
-      toast.success('Pricing configuration updated successfully');
+      toast.success('System yield configuration successfully updated', { id: toastId });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Update failed');
+      toast.error(err.response?.data?.message || 'Update failure', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -85,164 +86,180 @@ export default function PricingPage() {
   const exampleAppEarnings = (exampleTotal * appCommission) / 100;
 
   return (
-    <div className="animate-fade-in">
-      {/* Header */}
-      <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Pricing Configuration</h1>
-        <p className="text-gray-500 mt-1 text-sm sm:text-base">Configure global pricing and commission settings</p>
+    <div className="space-y-10 pb-20 max-w-7xl mx-auto">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3 uppercase">
+            Fiscal Architecture
+          </h1>
+          <p className="text-sm text-gray-500 font-medium mt-1 uppercase tracking-wider">Global Pricing & Yield Distribution Engine</p>
+        </div>
+        <div className="flex items-center gap-2 px-6 py-3 bg-indigo-50 text-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-indigo-100">
+          <Shield size={16} />
+          Active Financial Protocol
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-2">
+      <div className="grid gap-10 lg:grid-cols-12 items-start">
         {/* Form Card */}
-        <div className="card p-4 sm:p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="lg:col-span-7 bg-white rounded-[2.5rem] border border-gray-100 p-10 shadow-sm space-y-10">
+          <form onSubmit={handleSubmit} className="space-y-10">
             {/* Base Fare */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <DollarSign size={16} className="text-orange-500" />
-                Global Base Fare (₹)
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block ml-1">
+                Global Base Fare (INR)
               </label>
-              <input
-                type="number"
-                value={baseFare}
-                onChange={(e) => setBaseFare(Number(e.target.value))}
-                className="input"
-                placeholder="20"
-                min="0"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Default base fare. Vehicle types can override this.
-              </p>
-            </div>
-
-            {/* Rider Percentage */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Percent size={16} className="text-green-500" />
-                Captain Earnings (%)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={riderPercentage}
-                  onChange={(e) => handleRiderPercentageChange(Number(e.target.value))}
-                  className="input"
-                  placeholder="80"
-                  min="0"
-                  max="100"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <span className="text-gray-400">%</span>
+              <div className="relative group">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-500 transition-colors">
+                  <DollarSign size={20} />
                 </div>
-              </div>
-            </div>
-
-            {/* App Commission */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Percent size={16} className="text-orange-500" />
-                App Commission (%)
-              </label>
-              <div className="relative">
                 <input
                   type="number"
-                  value={appCommission}
-                  onChange={(e) => handleAppCommissionChange(Number(e.target.value))}
-                  className="input"
+                  value={baseFare}
+                  onChange={(e) => setBaseFare(Number(e.target.value))}
+                  className="w-full pl-14 pr-6 py-5 bg-gray-50 border-none rounded-[1.5rem] text-lg font-black text-gray-900 focus:ring-2 focus:ring-gray-100 outline-none transition-all placeholder:text-gray-300"
                   placeholder="20"
                   min="0"
-                  max="100"
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <span className="text-gray-400">%</span>
-                </div>
               </div>
-              <p className={`text-xs mt-1 ${riderPercentage + appCommission === 100 ? 'text-green-500' : 'text-red-500'}`}>
-                Total: {riderPercentage + appCommission}% {riderPercentage + appCommission === 100 ? '✓' : '(must equal 100%)'}
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter ml-1">
+                Default baseline for all transactions. Regional overrides apply.
               </p>
             </div>
 
-            {/* Submit Button */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Rider Percentage */}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block ml-1">
+                  Captain Yield (%)
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500">
+                    <Percent size={18} />
+                  </div>
+                  <input
+                    type="number"
+                    value={riderPercentage}
+                    onChange={(e) => handleRiderPercentageChange(Number(e.target.value))}
+                    className="w-full pl-14 pr-6 py-5 bg-emerald-50/30 border border-emerald-100/50 rounded-[1.5rem] text-lg font-black text-emerald-700 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
+                    placeholder="80"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+
+              {/* App Commission */}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 block ml-1">
+                  System Commission (%)
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-500">
+                    <Percent size={18} />
+                  </div>
+                  <input
+                    type="number"
+                    value={appCommission}
+                    onChange={(e) => handleAppCommissionChange(Number(e.target.value))}
+                    className="w-full pl-14 pr-6 py-5 bg-indigo-50/30 border border-indigo-100/50 rounded-[1.5rem] text-lg font-black text-indigo-700 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                    placeholder="20"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={`p-4 rounded-2xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest ${riderPercentage + appCommission === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+              <span>Yield Integrity Status</span>
+              <span>Total Distribution: {riderPercentage + appCommission}% {riderPercentage + appCommission === 100 ? '✓' : '(Must Equal 100%)'}</span>
+            </div>
+
             <button
               type="submit"
               disabled={isSubmitting || riderPercentage + appCommission !== 100}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className="w-full py-5 bg-gray-900 hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-[1.5rem] shadow-2xl shadow-gray-200 transition-all active:scale-95 disabled:bg-gray-100 disabled:shadow-none min-w-[200px] flex items-center justify-center gap-3"
             >
-              {isSubmitting ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <Save size={20} />
-              )}
-              <span>{isSubmitting ? 'Saving...' : 'Save Configuration'}</span>
+              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              <span>{isSubmitting ? 'SYNCHRONIZING...' : 'AUTHORIZE FINANCIAL SETTINGS'}</span>
             </button>
           </form>
         </div>
 
         {/* Example Calculation Card */}
-        <div className="card p-4 sm:p-6 bg-gradient-to-br from-orange-50 to-white">
-          <div className="flex items-center gap-2 mb-4">
-            <Info size={20} className="text-orange-500" />
-            <h3 className="font-bold text-gray-800">Example Calculation</h3>
+        <div className="lg:col-span-5 space-y-8">
+          <div className="bg-gray-900 rounded-[2.5rem] p-8 text-white space-y-8 shadow-2xl shadow-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Yield Simulation</h3>
+              <TrendingUp size={20} className="text-emerald-500" />
+            </div>
+
+            <div className="space-y-6">
+              {[
+                { label: 'DISTANCE PARAMETER', value: `${exampleDistance} KM` },
+                { label: 'YIELD PER UNIT', value: `₹${examplePricePerKm}` },
+                { label: 'BASELINE FARE', value: `₹${baseFare}` },
+              ].map((item, i) => (
+                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="text-[10px] font-black text-gray-500 tracking-wider font-mono">{item.label}</span>
+                  <span className="text-sm font-black text-white">{item.value}</span>
+                </div>
+              ))}
+
+              <div className="p-6 bg-red-600 rounded-[1.5rem] space-y-1">
+                <span className="text-[10px] font-black text-white/60 tracking-widest uppercase">GROSS PROJECTED FARE</span>
+                <div className="text-3xl font-black text-white">₹{exampleTotal.toLocaleString()}</div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 bg-gray-800 rounded-2xl border border-gray-700/50 space-y-1">
+                  <span className="text-[9px] font-black text-gray-500 uppercase">CAPTAIN NET</span>
+                  <div className="text-xl font-black text-emerald-400">₹{exampleRiderEarnings.toFixed(2)}</div>
+                </div>
+                <div className="p-5 bg-gray-800 rounded-2xl border border-gray-700/50 space-y-1">
+                  <span className="text-[9px] font-black text-gray-500 uppercase">SYSTEM YIELD</span>
+                  <div className="text-xl font-black text-indigo-400">₹{exampleAppEarnings.toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-800/50 rounded-xl flex gap-3">
+              <Info size={16} className="text-gray-500 shrink-0 mt-0.5" />
+              <p className="text-[9px] text-gray-500 uppercase leading-relaxed font-mono">
+                Formula: Total = Base + (UnitRate × Volume) <br />
+                Net = Total × (Yield% / 100)
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between py-2 border-b border-orange-100">
-              <span className="text-gray-600">Distance</span>
-              <span className="font-semibold">{exampleDistance} km</span>
+          <Link
+            href="/dashboard/peak-hour-charges"
+            className="group block p-8 bg-amber-50 rounded-[2.5rem] border border-amber-100/50 transition-all hover:bg-amber-100/50 shadow-sm"
+          >
+            <div className="flex items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-amber-600">
+                  <Clock size={18} />
+                  <h4 className="text-[10px] font-black uppercase tracking-widest">Dynamic Surge Config</h4>
+                </div>
+                <p className="text-[10px] text-amber-800/60 font-medium uppercase leading-relaxed">Adjust yield protocols for high-demand windows and regional hotspots.</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-amber-600 shadow-sm group-hover:scale-110 transition-transform">
+                <Plus size={20} />
+              </div>
             </div>
-            <div className="flex justify-between py-2 border-b border-orange-100">
-              <span className="text-gray-600">Price per KM</span>
-              <span className="font-semibold">₹{examplePricePerKm}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-orange-100">
-              <span className="text-gray-600">Base Fare</span>
-              <span className="font-semibold">₹{baseFare}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-orange-200 bg-orange-100 -mx-2 px-2 rounded">
-              <span className="text-gray-800 font-semibold">Total Fare</span>
-              <span className="font-bold text-orange-600">₹{exampleTotal}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-orange-100">
-              <span className="text-gray-600">Captain Earnings ({riderPercentage}%)</span>
-              <span className="font-semibold text-green-600">₹{exampleRiderEarnings.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-gray-600">App Commission ({appCommission}%)</span>
-              <span className="font-semibold text-orange-600">₹{exampleAppEarnings.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <div className="mt-4 p-3 bg-white rounded-lg border border-orange-200">
-            <p className="text-xs text-gray-500">
-              <strong>Formula:</strong> Total = baseFare + (pricePerKm × distance)
-            </p>
-          </div>
+          </Link>
         </div>
       </div>
 
-      {/* Helpful Link */}
-      <div className="mt-8 p-4 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-between gap-4">
-        <div>
-          <h4 className="font-bold text-gray-800 flex items-center gap-2">
-            <Clock size={18} className="text-orange-500" />
-            Peak Hour Charges
-          </h4>
-          <p className="text-sm text-gray-600 mt-1">Configure temporary price increases for high-demand periods and specific cities.</p>
-        </div>
-        <Link 
-          href="/dashboard/peak-hour-charges" 
-          className="btn-primary py-2 px-4 text-sm flex items-center gap-2 whitespace-nowrap"
-        >
-          Manage Peak Charges
-          <Plus size={16} />
-        </Link>
-      </div>
-
-      {/* Current Config Info */}
+      {/* Sync Footer */}
       {config && (
-        <div className="mt-8 card p-4 bg-gray-50">
-          <p className="text-sm text-gray-500">
-            Last updated: {new Date(config.createdAt).toLocaleString()}
+        <div className="flex items-center gap-3 px-8 py-4 bg-gray-50 rounded-full border border-gray-100 w-fit mx-auto">
+          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            Last Protocol Synchronization: {new Date(config.createdAt).toLocaleString()}
           </p>
         </div>
       )}
