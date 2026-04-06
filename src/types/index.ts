@@ -673,6 +673,22 @@ export interface VehiclePricingGroup {
   parkingRate: number;
   gstRate: number;
   
+  // Rental Package Metrics
+  rentalHalfDayBaseHr?: number;
+  rentalHalfDayBaseKm?: number;
+  rentalHalfDayBaseFare?: number;
+  rentalFullDayBaseHr?: number;
+  rentalFullDayBaseKm?: number;
+  rentalFullDayBaseFare?: number;
+  rentalExtraHrPrice?: number;
+  rentalExtraKmPrice?: number;
+
+  // Outstation Metrics
+  outstationOnewayPricePerKm?: number;
+  outstationRoundTripPricePerKm?: number;
+  outstationDriverAllowance?: number;
+  outstationMinBaseKmPerDay?: number;
+
   cityCodeIds: string[];
   cityCodes?: CityCode[];
   isActive: boolean;
@@ -695,6 +711,23 @@ export interface CreateVehiclePricingGroupRequest {
   tollRate: number;
   parkingRate: number;
   gstRate: number;
+
+  // Rental
+  rentalHalfDayBaseHr?: number;
+  rentalHalfDayBaseKm?: number;
+  rentalHalfDayBaseFare?: number;
+  rentalFullDayBaseHr?: number;
+  rentalFullDayBaseKm?: number;
+  rentalFullDayBaseFare?: number;
+  rentalExtraHrPrice?: number;
+  rentalExtraKmPrice?: number;
+
+  // Outstation
+  outstationOnewayPricePerKm?: number;
+  outstationRoundTripPricePerKm?: number;
+  outstationDriverAllowance?: number;
+  outstationMinBaseKmPerDay?: number;
+
   cityCodeIds: string[];
 }
 
@@ -712,6 +745,23 @@ export interface UpdateVehiclePricingGroupRequest {
   tollRate?: number;
   parkingRate?: number;
   gstRate?: number;
+
+  // Rental
+  rentalHalfDayBaseHr?: number;
+  rentalHalfDayBaseKm?: number;
+  rentalHalfDayBaseFare?: number;
+  rentalFullDayBaseHr?: number;
+  rentalFullDayBaseKm?: number;
+  rentalFullDayBaseFare?: number;
+  rentalExtraHrPrice?: number;
+  rentalExtraKmPrice?: number;
+
+  // Outstation
+  outstationOnewayPricePerKm?: number;
+  outstationRoundTripPricePerKm?: number;
+  outstationDriverAllowance?: number;
+  outstationMinBaseKmPerDay?: number;
+
   cityCodeIds?: string[];
   isActive?: boolean;
 }

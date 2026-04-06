@@ -71,6 +71,7 @@ export default function VehicleTypesPage() {
   // Active Group within Pricing Modal
   const [activeGroupId, setActiveGroupId] = useState<string>('');
   const [pricingFormData, setPricingFormData] = useState<any>({
+    name: '',
     baseKm: 20,
     baseFare: 600,
     perKmPrice: 22,
@@ -83,12 +84,59 @@ export default function VehicleTypesPage() {
     gstRate: 5,
     cityCodeIds: [],
     serviceType: 'LOCAL' as ServiceType,
-    bookingType: 'AIRPORT_TO_CITY'
+    bookingType: 'AIRPORT_TO_CITY',
+    // Rental
+    rentalHalfDayBaseHr: 4,
+    rentalHalfDayBaseKm: 40,
+    rentalHalfDayBaseFare: 0,
+    rentalFullDayBaseHr: 8,
+    rentalFullDayBaseKm: 80,
+    rentalFullDayBaseFare: 0,
+    rentalExtraHrPrice: 0,
+    rentalExtraKmPrice: 0,
+    // Outstation
+    outstationOnewayPricePerKm: 0,
+    outstationRoundTripPricePerKm: 0,
+    outstationDriverAllowance: 300,
+    outstationMinBaseKmPerDay: 300
   });
 
   // Peak Hour State for ACTIVE Group
   const [peakCharges, setPeakCharges] = useState<PeakHourCharge[]>([]);
   const [isPeakLoading, setIsPeakLoading] = useState(false);
+
+  // Bulk Edit State (Apply to All)
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [allPricingGroups, setAllPricingGroups] = useState<VehiclePricingGroup[]>([]);
+  const [bulkFormData, setBulkFormData] = useState<any>({
+    baseKm: 20,
+    baseFare: 600,
+    perKmPrice: 22,
+    driverBaseKm: 20,
+    driverBasePrice: 510,
+    driverExtraPricePerKm: 18.7,
+    commissionPercentage: 15,
+    tollRate: 120,
+    parkingRate: 0,
+    gstRate: 5,
+    // Rental
+    rentalHalfDayBaseHr: 4,
+    rentalHalfDayBaseKm: 40,
+    rentalHalfDayBaseFare: 0,
+    rentalFullDayBaseHr: 8,
+    rentalFullDayBaseKm: 80,
+    rentalFullDayBaseFare: 0,
+    rentalExtraHrPrice: 0,
+    rentalExtraKmPrice: 0,
+    // Outstation
+    outstationOnewayPricePerKm: 0,
+    outstationRoundTripPricePerKm: 0,
+    outstationDriverAllowance: 300,
+    outstationMinBaseKmPerDay: 300
+  });
+  const [bulkServiceFilter, setBulkServiceFilter] = useState<ServiceType | 'ALL'>('ALL');
+  const [selectedBulkFields, setSelectedBulkFields] = useState<string[]>([]);
 
   // Form state for Vehicle Type
   const [formData, setFormData] = useState<CreateVehicleTypeRequest>({
@@ -191,6 +239,7 @@ export default function VehicleTypesPage() {
   const loadGroupForEdit = async (group: VehiclePricingGroup) => {
     setActiveGroupId(group.id);
     setPricingFormData({
+      name: group.name || '',
       baseKm: group.baseKm,
       baseFare: group.baseFare,
       perKmPrice: group.perKmPrice,
@@ -201,9 +250,23 @@ export default function VehicleTypesPage() {
       tollRate: group.tollRate || 0,
       parkingRate: group.parkingRate || 0,
       gstRate: group.gstRate || 0,
-      cityCodeIds: group.cityCodeIds,
+      cityCodeIds: group.cityCodeIds || [],
       serviceType: group.serviceType || 'LOCAL',
-      bookingType: group.bookingType || 'AIRPORT_TO_CITY'
+      bookingType: group.bookingType || 'AIRPORT_TO_CITY',
+      // Rental
+      rentalHalfDayBaseHr: group.rentalHalfDayBaseHr || 4,
+      rentalHalfDayBaseKm: group.rentalHalfDayBaseKm || 40,
+      rentalHalfDayBaseFare: group.rentalHalfDayBaseFare || 0,
+      rentalFullDayBaseHr: group.rentalFullDayBaseHr || 8,
+      rentalFullDayBaseKm: group.rentalFullDayBaseKm || 80,
+      rentalFullDayBaseFare: group.rentalFullDayBaseFare || 0,
+      rentalExtraHrPrice: group.rentalExtraHrPrice || 0,
+      rentalExtraKmPrice: group.rentalExtraKmPrice || 0,
+      // Outstation
+      outstationOnewayPricePerKm: group.outstationOnewayPricePerKm || 0,
+      outstationRoundTripPricePerKm: group.outstationRoundTripPricePerKm || 0,
+      outstationDriverAllowance: group.outstationDriverAllowance || 300,
+      outstationMinBaseKmPerDay: group.outstationMinBaseKmPerDay || 300
     });
     
     setIsPeakLoading(true);
@@ -216,6 +279,83 @@ export default function VehicleTypesPage() {
       setIsPeakLoading(false);
     }
     setPricingModalView('EDIT_CLUSTER');
+  };
+
+  // Bulk: Fetch ALL pricing groups across all vehicle types
+  const fetchAllPricingGroups = async () => {
+    setIsPricingLoading(true);
+    try {
+      const response = await vehiclePricingGroupService.getAll();
+      setAllPricingGroups(response.data || []);
+    } catch (error) {
+      toast.error('Failed to load all pricing groups');
+    } finally {
+      setIsPricingLoading(false);
+    }
+  };
+
+  const openBulkPricingModal = () => {
+    setSelectedBulkFields([]);
+    setBulkServiceFilter('ALL');
+    setBulkFormData({
+      baseKm: 20,
+      baseFare: 600,
+      perKmPrice: 22,
+      driverBaseKm: 20,
+      driverBasePrice: 510,
+      driverExtraPricePerKm: 18.7,
+      commissionPercentage: 15,
+      tollRate: 120,
+      parkingRate: 0,
+      gstRate: 5,
+    });
+    fetchAllPricingGroups();
+    setIsBulkModalOpen(true);
+  };
+
+  const toggleBulkField = (field: string) => {
+    setSelectedBulkFields(prev =>
+      prev.includes(field) ? prev.filter(f => f !== field) : [...prev, field]
+    );
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedBulkFields.length === 0) {
+      toast.error('Select at least one field to update');
+      return;
+    }
+    setIsBulkSubmitting(true);
+    try {
+      const groupsToUpdate = allPricingGroups.filter(g =>
+        bulkServiceFilter === 'ALL' || g.serviceType === bulkServiceFilter
+      );
+      const updatePayload: any = {};
+      selectedBulkFields.forEach(field => {
+        updatePayload[field] = bulkFormData[field];
+      });
+      
+      let successCount = 0;
+      for (const group of groupsToUpdate) {
+        try {
+          await vehiclePricingGroupService.update(group.id, updatePayload);
+          successCount++;
+        } catch (e: any) {
+          console.error(`Failed to update group ${group.id}:`, e.response?.data);
+          const errMsg = e.response?.data?.message || JSON.stringify(e.response?.data) || 'Unknown error';
+          toast.error(`Group ${group.name} failed: ${errMsg}`);
+        }
+      }
+      if (successCount > 0) {
+        toast.success(`Updated ${successCount} of ${groupsToUpdate.length} clusters`);
+        fetchAllPricingGroups();
+      }
+    } catch (error: any) {
+      console.error('Bulk update error details:', error.response?.data);
+      const errMsg = error.response?.data?.message || JSON.stringify(error.response?.data) || 'Bulk update failed';
+      toast.error(errMsg);
+    } finally {
+      setIsBulkSubmitting(false);
+    }
   };
 
   const createNewCluster = async () => {
@@ -237,13 +377,29 @@ export default function VehicleTypesPage() {
         parkingRate: 0,
         gstRate: 5,
         serviceType: 'LOCAL',
-        bookingType: 'AIRPORT_TO_CITY'
+        bookingType: 'AIRPORT_TO_CITY',
+        // Defaults
+        rentalHalfDayBaseHr: 4,
+        rentalHalfDayBaseKm: 40,
+        rentalHalfDayBaseFare: 1200,
+        rentalFullDayBaseHr: 8,
+        rentalFullDayBaseKm: 80,
+        rentalFullDayBaseFare: 2200,
+        rentalExtraHrPrice: 150,
+        rentalExtraKmPrice: 15,
+        outstationOnewayPricePerKm: 14,
+        outstationRoundTripPricePerKm: 12,
+        outstationDriverAllowance: 300,
+        outstationMinBaseKmPerDay: 300
       };
+      
       await vehiclePricingGroupService.create(newGroupReq);
       toast.success('New city cluster created');
       fetchPricingGroups(selectedTypeForPricing.id);
-    } catch (error) {
-      toast.error('Failed to create cluster');
+    } catch (error: any) {
+      console.error('Create cluster error details:', error.response?.data);
+      const errMsg = error.response?.data?.message || JSON.stringify(error.response?.data) || 'Failed to create cluster';
+      toast.error(errMsg);
     } finally {
       setIsPricingSubmitting(false);
     }
@@ -261,11 +417,16 @@ export default function VehicleTypesPage() {
     if (!activeGroupId) return;
     setIsPricingSubmitting(true);
     try {
-      await vehiclePricingGroupService.update(activeGroupId, pricingFormData);
+      const payload: any = { ...pricingFormData };
+      if (payload.name === '') delete payload.name;
+      
+      await vehiclePricingGroupService.update(activeGroupId, payload);
       toast.success('Pricing details updated successfully');
       fetchPricingGroups(selectedTypeForPricing!.id);
-    } catch (error) {
-      toast.error('Failed to update cluster rates');
+    } catch (error: any) {
+      console.error('Pricing update error details:', error.response?.data);
+      const errMsg = error.response?.data?.message || JSON.stringify(error.response?.data) || 'Failed to update cluster rates';
+      toast.error(errMsg);
     } finally {
       setIsPricingSubmitting(false);
     }
@@ -311,6 +472,13 @@ export default function VehicleTypesPage() {
           <p className="text-gray-500 mt-1 font-medium italic">Define segments and city-based pricing clusters</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
+          <button 
+            onClick={openBulkPricingModal}
+            className="bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl shadow-lg shadow-gray-200 transition-all font-bold flex items-center justify-center gap-2 group text-sm"
+          >
+            <Settings size={18} />
+            <span>Apply to All</span>
+          </button>
           <button 
             onClick={() => setIsWizardOpen(true)}
             className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-red-100 transition-all font-bold flex items-center justify-center gap-2 group text-sm"
@@ -691,6 +859,152 @@ export default function VehicleTypesPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* BULK PRICING MODAL - Apply to All Vehicle Types */}
+      <Modal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        title="Apply Pricing to All Vehicle Types"
+        size="xl"
+      >
+        <div className="space-y-6">
+          {/* Info Banner */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+            <Settings size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-amber-800">Bulk Update</p>
+              <p className="text-xs text-amber-600 mt-1">Select the fields you want to update, set the values, and apply to all pricing clusters at once. Only checked fields will be changed.</p>
+            </div>
+          </div>
+
+          {/* Service Type Filter */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Filter:</span>
+            {['ALL', 'LOCAL', 'AIRPORT', 'OUTSTATION', 'RENTAL'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setBulkServiceFilter(tab as ServiceType | 'ALL')}
+                className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${bulkServiceFilter === tab ? 'bg-red-100 text-red-700 shadow-sm border border-red-200' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Affected clusters count */}
+          <div className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-500">
+              Clusters affected: <span className="text-red-600">{allPricingGroups.filter(g => bulkServiceFilter === 'ALL' || g.serviceType === bulkServiceFilter).length}</span> of {allPricingGroups.length}
+            </span>
+            <span className="text-xs font-bold text-gray-400">across {vehicleTypes.length} vehicle types</span>
+          </div>
+
+          {/* Editable Fields with Checkboxes */}
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-gray-50/50 px-6 py-3 border-b border-gray-100">
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Select Fields & Set Values</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { key: 'baseKm', label: 'Base KM' },
+                  { key: 'baseFare', label: 'Base Fare' },
+                  { key: 'perKmPrice', label: 'Extra Price/KM' },
+                  { key: 'driverBaseKm', label: 'Driver Base KM' },
+                  { key: 'driverBasePrice', label: 'Driver Base Price' },
+                  { key: 'driverExtraPricePerKm', label: 'Driver Extra/KM' },
+                  { key: 'commissionPercentage', label: 'Commission %' },
+                  { key: 'tollRate', label: 'Toll Rate' },
+                  { key: 'parkingRate', label: 'Parking Rate' },
+                  { key: 'gstRate', label: 'GST Rate' },
+                ].map(({ key, label }) => (
+                  <div key={key} className={`flex items-center gap-3 h-11 ring-1 rounded-xl overflow-hidden transition-all ${selectedBulkFields.includes(key) ? 'ring-red-200 bg-red-50/30' : 'ring-gray-100'}`}>
+                    <label className="w-[180px] flex items-center gap-2.5 px-4 border-r border-gray-50 bg-red-50/50 h-full cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedBulkFields.includes(key)}
+                        onChange={() => toggleBulkField(key)}
+                        className="w-3.5 h-3.5 rounded text-red-600 focus:ring-red-500"
+                      />
+                      <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{label}</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={bulkFormData[key]}
+                      onChange={e => setBulkFormData({ ...bulkFormData, [key]: Number(e.target.value) })}
+                      disabled={!selectedBulkFields.includes(key)}
+                      className={`flex-1 bg-transparent px-4 text-xs font-bold focus:outline-none h-full ${selectedBulkFields.includes(key) ? 'text-gray-700' : 'text-gray-300'}`}
+                    />
+                  </div>
+                ))}
+                
+                {/* Advanced Fields in Bulk */}
+                <div className="md:col-span-2 h-px bg-gray-100 my-2"></div>
+                
+                {[
+                  { key: 'rentalHalfDayBaseFare', label: 'Rental Half Day' },
+                  { key: 'rentalFullDayBaseFare', label: 'Rental Full Day' },
+                  { key: 'rentalExtraHrPrice', label: 'Rental Ex Hr' },
+                  { key: 'rentalExtraKmPrice', label: 'Rental Ex Km' },
+                  { key: 'outstationOnewayPricePerKm', label: 'Outstation One Way' },
+                  { key: 'outstationRoundTripPricePerKm', label: 'Outstation Round' },
+                  { key: 'outstationDriverAllowance', label: 'Driver Allowance' },
+                ].map(({ key, label }) => (
+                  <div key={key} className={`flex items-center gap-3 h-11 ring-1 rounded-xl overflow-hidden transition-all ${selectedBulkFields.includes(key) ? 'ring-blue-200 bg-blue-50/30' : 'ring-gray-100'}`}>
+                    <label className="w-[180px] flex items-center gap-2.5 px-4 border-r border-gray-50 bg-blue-50/50 h-full cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedBulkFields.includes(key)}
+                        onChange={() => toggleBulkField(key)}
+                        className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{label}</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={bulkFormData[key]}
+                      onChange={e => setBulkFormData({ ...bulkFormData, [key]: Number(e.target.value) })}
+                      disabled={!selectedBulkFields.includes(key)}
+                      className={`flex-1 bg-transparent px-4 text-xs font-bold focus:outline-none h-full ${selectedBulkFields.includes(key) ? 'text-gray-700' : 'text-gray-300'}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              onClick={() => setSelectedBulkFields(['baseKm','baseFare','perKmPrice','driverBaseKm','driverBasePrice','driverExtraPricePerKm','commissionPercentage','tollRate','parkingRate','gstRate'])}
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Select All Fields
+            </button>
+            <button
+              onClick={() => setSelectedBulkFields([])}
+              className="text-xs font-bold text-gray-400 hover:text-gray-500 transition-colors"
+            >
+              Clear Selection
+            </button>
+            <div className="flex-1" />
+            <button
+              onClick={() => setIsBulkModalOpen(false)}
+              className="px-6 py-2.5 rounded-xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkUpdate}
+              disabled={isBulkSubmitting || selectedBulkFields.length === 0}
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-red-100 transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              {isBulkSubmitting && <Loader2 size={14} className="animate-spin" />}
+              <span>Apply to {allPricingGroups.filter(g => bulkServiceFilter === 'ALL' || g.serviceType === bulkServiceFilter).length} Clusters</span>
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
