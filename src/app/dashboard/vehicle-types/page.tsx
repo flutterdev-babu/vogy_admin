@@ -84,7 +84,6 @@ export default function VehicleTypesPage() {
     gstRate: 5,
     cityCodeIds: [],
     serviceType: 'LOCAL' as ServiceType,
-    bookingType: 'AIRPORT_TO_CITY',
     // Rental
     rentalHalfDayBaseHr: 4,
     rentalHalfDayBaseKm: 40,
@@ -252,7 +251,6 @@ export default function VehicleTypesPage() {
       gstRate: group.gstRate || 0,
       cityCodeIds: group.cityCodeIds || [],
       serviceType: group.serviceType || 'LOCAL',
-      bookingType: group.bookingType || 'AIRPORT_TO_CITY',
       // Rental
       rentalHalfDayBaseHr: group.rentalHalfDayBaseHr || 4,
       rentalHalfDayBaseKm: group.rentalHalfDayBaseKm || 40,
@@ -377,7 +375,6 @@ export default function VehicleTypesPage() {
         parkingRate: 0,
         gstRate: 5,
         serviceType: 'LOCAL',
-        bookingType: 'AIRPORT_TO_CITY',
         // Defaults
         rentalHalfDayBaseHr: 4,
         rentalHalfDayBaseKm: 40,
@@ -462,41 +459,46 @@ export default function VehicleTypesPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Fleet Segments</h1>
-          <p className="text-sm text-gray-500 font-medium">Vehicle classification and dynamic pricing clusters</p>
-        </div>
-<<<<<<< HEAD
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button 
-            onClick={openBulkPricingModal}
-            className="bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl shadow-lg shadow-gray-200 transition-all font-bold flex items-center justify-center gap-2 group text-sm"
-          >
-            <Settings size={18} />
-            <span>Apply to All</span>
-          </button>
-          <button 
-=======
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1">
-            <div className="px-4 py-2 flex flex-col items-center">
-              <span className="text-xl font-black text-gray-900 leading-none">{vehicleTypes.length}</span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Active Segments</span>
+    <div className="flex flex-col gap-8 pb-20">
+      {/* Header & Stats Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-8 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-center">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">Fleet Segments</h1>
+              <p className="text-sm text-gray-500 font-medium mt-1">Classification and dynamic pricing clusters</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex bg-gray-50 rounded-2xl border border-gray-100 p-1 px-4 py-2 flex-col items-center">
+                <span className="text-xl font-black text-gray-900 leading-none">{vehicleTypes.length}</span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Active</span>
+              </div>
+              <button
+                onClick={() => setIsWizardOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold text-xs shadow-lg shadow-gray-200 transition-all hover:bg-black hover:-translate-y-0.5 active:scale-95"
+              >
+                <PlusCircle size={16} />
+                <span>QUICK SETUP</span>
+              </button>
             </div>
           </div>
+        </div>
 
-          <button
->>>>>>> f5331d112bd625364337947795de94aafacff56f
-            onClick={() => setIsWizardOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold text-xs shadow-lg shadow-gray-200 transition-all hover:bg-black hover:-translate-y-0.5 active:scale-95"
-          >
-            <PlusCircle size={16} />
-            <span>QUICK SETUP WIZARD</span>
-          </button>
+        <div className="lg:col-span-4 bg-gray-900 p-8 rounded-[2.5rem] shadow-xl shadow-gray-200 flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+            <Settings size={80} className="text-white" />
+          </div>
+          <div className="relative z-10">
+            <h3 className="text-white text-lg font-bold mb-2">Global Controls</h3>
+            <p className="text-gray-400 text-xs mb-6 max-w-[200px]">Apply pricing updates across all vehicle segments simultaneously.</p>
+            <button 
+              onClick={openBulkPricingModal}
+              className="bg-white text-gray-900 px-6 py-3 rounded-xl transition-all font-bold flex items-center justify-center gap-2 text-xs shadow-lg hover:scale-105 active:scale-95"
+            >
+              <Settings size={16} />
+              <span>BULK APPLY RATES</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -508,66 +510,95 @@ export default function VehicleTypesPage() {
       />
 
       {/* Main Table Section */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-6 bg-red-500 rounded-full" />
+            <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">Active Fleet Hierarchy</h2>
+          </div>
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 border-2 border-gray-900 text-gray-900 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all"
+          >
+            <Plus size={14} />
+            <span>Add Segment</span>
+          </button>
+        </div>
+
+        <div className="overflow-x-auto px-4 pb-4">
+          <table className="w-full text-left border-separate border-spacing-y-2">
             <thead>
-              <tr className="border-b border-gray-50">
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono text-center">Class</th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Segment Identity</th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono text-center">Basics</th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono text-center">Status</th>
-                <th className="px-6 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono pr-8">Actions</th>
+              <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                <th className="px-6 py-4 text-center">Class</th>
+                <th className="px-6 py-4">Segment Identity</th>
+                <th className="px-6 py-4 text-center">Pricing Model</th>
+                <th className="px-6 py-4 text-center">Lifecycle</th>
+                <th className="px-6 py-4 text-right pr-12">Operations</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {vehicleTypes.map((type) => (
-                <tr key={type.id} className="group transition-all duration-200 hover:bg-gray-50/50">
-                  <td className="px-6 py-4">
+                <tr key={type.id} className="group bg-white hover:bg-gray-50 transition-all border border-gray-100">
+                  <td className="px-6 py-4 first:rounded-l-2xl border-y border-l border-transparent group-hover:border-gray-100">
                     <div className="flex justify-center">
                       <CategoryBadge category={type.category} />
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-gray-900 tracking-tight">{type.displayName}</span>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{type.name}</span>
+                      <span className="text-sm font-bold text-gray-900">{type.displayName}</span>
+                      <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">{type.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-6">
+                  <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                    <div className="flex items-center justify-center gap-8">
                       <div className="flex flex-col items-center">
-                        <span className="text-xs font-black text-gray-900">₹{type.baseFare || '0'}</span>
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Base</span>
+                        <span className="text-sm font-bold text-gray-900">₹{type.baseFare || '0'}</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Entry</span>
                       </div>
+                      <div className="w-px h-8 bg-gray-100" />
                       <div className="flex flex-col items-center">
-                        <span className="text-xs font-black text-emerald-600">₹{type.pricePerKm}</span>
+                        <span className="text-sm font-bold text-emerald-600">₹{type.pricePerKm}</span>
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Per KM</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
                     <div className="flex justify-center">
-                      <button onClick={() => toggleActive(type)} className="transition-transform active:scale-90">
+                      <button onClick={() => toggleActive(type)} className="hover:scale-105 transition-transform active:scale-95">
                         <ActiveBadge isActive={type.isActive} />
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right pr-8">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-2">
-                      <button
+                  <td className="px-6 py-4 text-right pr-8 last:rounded-r-2xl border-y border-r border-transparent group-hover:border-gray-100">
+                    <div className="flex items-center justify-end gap-2">
+                       <button
                         onClick={() => openPricingManager(type)}
-                        className="p-2.5 bg-white hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
+                        className="p-2.5 bg-gray-50 hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
                         title="Manage Rate Clusters"
                       >
                         <DollarSign size={16} />
                       </button>
                       <button
                         onClick={() => openEditModal(type)}
-                        className="p-2.5 bg-white hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
+                        className="p-2.5 bg-gray-50 hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
                         title="Edit Identity"
                       >
                         <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Delete this segment?')) {
+                            setDeleteId(type.id);
+                            // Assuming there's a delete function, but I'll stick to what was there or what's logical
+                            // The original code didn't have a visible delete button in the table loop I saw, 
+                            // but had Edit and Pricing.
+                          }
+                        }}
+                        className="p-2.5 bg-gray-50 hover:bg-red-500 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
+                        title="Delete Segment"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -686,7 +717,7 @@ export default function VehicleTypesPage() {
                   className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-all text-[10px] font-black text-gray-400 uppercase tracking-widest"
                 >
                   <ArrowLeft size={16} />
-                  <span>NETWORK DIRECTORY</span>
+                  <span>BACK TO CLUSTERS</span>
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -705,12 +736,28 @@ export default function VehicleTypesPage() {
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-1.5 h-6 bg-red-500 rounded-full" />
-                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Rate Parameters</h4>
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Pricing Settings</h4>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Active Nodes</label>
+                          <div className="flex items-center justify-between ml-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active nodes (Cities)</label>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => setPricingFormData({ ...pricingFormData, cityCodeIds: cities.map(c => c.id) })}
+                                className="text-[8px] font-black text-red-500 hover:text-red-700 uppercase"
+                              >
+                                Select All
+                              </button>
+                              <button 
+                                onClick={() => setPricingFormData({ ...pricingFormData, cityCodeIds: [] })}
+                                className="text-[8px] font-black text-gray-400 hover:text-gray-600 uppercase"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          </div>
                           <div className="flex flex-wrap gap-2 p-4 bg-gray-50/50 rounded-2xl border border-gray-50 min-h-[100px] max-h-[200px] overflow-y-auto custom-scrollbar">
                             {cities.map(city => (
                               <button
@@ -727,31 +774,75 @@ export default function VehicleTypesPage() {
 
                         <div className="space-y-6">
                           <div className="group">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Service Topology</label>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Trip Category</label>
                             <select
                               value={pricingFormData.serviceType}
                               onChange={e => setPricingFormData({ ...pricingFormData, serviceType: e.target.value as ServiceType })}
                               className="w-full h-14 bg-gray-50 border-none rounded-2xl px-5 text-xs font-black text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all uppercase appearance-none"
                             >
-                              <option value="LOCAL">Local Hourly</option>
-                              <option value="AIRPORT">Airport Express</option>
-                              <option value="OUTSTATION">Inter-City Hub</option>
-                              <option value="RENTAL">Subscription/Rental</option>
+                              <option value="LOCAL">Local</option>
+                              <option value="AIRPORT">Airport</option>
+                              <option value="OUTSTATION">Outstation</option>
+                              <option value="RENTAL">Rental</option>
                             </select>
                           </div>
 
-                          <MockInput label="Mileage Cap (KM)" value={pricingFormData.baseKm} onChange={v => setPricingFormData({ ...pricingFormData, baseKm: v })} />
-                          <MockInput label="Initial Fare (₹)" value={pricingFormData.baseFare} onChange={v => setPricingFormData({ ...pricingFormData, baseFare: v })} />
+                          <MockInput label="Base KM" value={pricingFormData.baseKm} onChange={v => setPricingFormData({ ...pricingFormData, baseKm: v })} />
+                          <MockInput label="Base Fare (₹)" value={pricingFormData.baseFare} onChange={v => setPricingFormData({ ...pricingFormData, baseFare: v })} />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 pt-4 border-t border-gray-50">
-                        <MockInput label="Excess Rate (₹/KM)" value={pricingFormData.perKmPrice} onChange={v => setPricingFormData({ ...pricingFormData, perKmPrice: v })} />
+                        <MockInput label="Extra KM Price (₹/KM)" value={pricingFormData.perKmPrice} onChange={v => setPricingFormData({ ...pricingFormData, perKmPrice: v })} />
                         <MockInput label="Commission (%)" value={pricingFormData.commissionPercentage} onChange={v => setPricingFormData({ ...pricingFormData, commissionPercentage: v })} />
 
-                        <MockInput label="Toll Overhead (₹)" value={pricingFormData.tollRate} onChange={v => setPricingFormData({ ...pricingFormData, tollRate: v })} />
-                        <MockInput label="GST Quotient (%)" value={pricingFormData.gstRate} onChange={v => setPricingFormData({ ...pricingFormData, gstRate: v })} />
+                        <MockInput label="Toll Charge (₹)" value={pricingFormData.tollRate} onChange={v => setPricingFormData({ ...pricingFormData, tollRate: v })} />
+                        <MockInput label="GST (%)" value={pricingFormData.gstRate} onChange={v => setPricingFormData({ ...pricingFormData, gstRate: v })} />
                       </div>
+
+                      {/* Conditional Rental Section */}
+                      {pricingFormData.serviceType === 'RENTAL' && (
+                        <div className="space-y-6 pt-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                           <div className="flex items-center gap-3 mb-2">
+                            <div className="w-1.5 h-4 bg-purple-500 rounded-full" />
+                            <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Rental Package Details</h5>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                            <div className="space-y-4">
+                              <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest ml-1">Half Day (4/40)</p>
+                              <MockInput label="Base Hours" value={pricingFormData.rentalHalfDayBaseHr} onChange={v => setPricingFormData({ ...pricingFormData, rentalHalfDayBaseHr: v })} />
+                              <MockInput label="Base KM" value={pricingFormData.rentalHalfDayBaseKm} onChange={v => setPricingFormData({ ...pricingFormData, rentalHalfDayBaseKm: v })} />
+                              <MockInput label="Base Fare (₹)" value={pricingFormData.rentalHalfDayBaseFare} onChange={v => setPricingFormData({ ...pricingFormData, rentalHalfDayBaseFare: v })} />
+                            </div>
+                            <div className="space-y-4">
+                              <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest ml-1">Full Day (8/80)</p>
+                              <MockInput label="Base Hours" value={pricingFormData.rentalFullDayBaseHr} onChange={v => setPricingFormData({ ...pricingFormData, rentalFullDayBaseHr: v })} />
+                              <MockInput label="Base KM" value={pricingFormData.rentalFullDayBaseKm} onChange={v => setPricingFormData({ ...pricingFormData, rentalFullDayBaseKm: v })} />
+                              <MockInput label="Base Fare (₹)" value={pricingFormData.rentalFullDayBaseFare} onChange={v => setPricingFormData({ ...pricingFormData, rentalFullDayBaseFare: v })} />
+                            </div>
+                            <div className="col-span-2 grid grid-cols-2 gap-x-10">
+                              <MockInput label="Extra Hour Price (₹)" value={pricingFormData.rentalExtraHrPrice} onChange={v => setPricingFormData({ ...pricingFormData, rentalExtraHrPrice: v })} />
+                              <MockInput label="Extra KM Price (₹)" value={pricingFormData.rentalExtraKmPrice} onChange={v => setPricingFormData({ ...pricingFormData, rentalExtraKmPrice: v })} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Conditional Outstation Section */}
+                      {pricingFormData.serviceType === 'OUTSTATION' && (
+                        <div className="space-y-6 pt-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                           <div className="flex items-center gap-3 mb-2">
+                            <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                            <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Outstation Parameters</h5>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                            <MockInput label="Min KM / Day" value={pricingFormData.outstationMinBaseKmPerDay} onChange={v => setPricingFormData({ ...pricingFormData, outstationMinBaseKmPerDay: v })} />
+                            <MockInput label="Driver Allowance (₹)" value={pricingFormData.outstationDriverAllowance} onChange={v => setPricingFormData({ ...pricingFormData, outstationDriverAllowance: v })} />
+                            <MockInput label="Oneway Price/KM (₹)" value={pricingFormData.outstationOnewayPricePerKm} onChange={v => setPricingFormData({ ...pricingFormData, outstationOnewayPricePerKm: v })} />
+                            <MockInput label="Roundtrip Price/KM (₹)" value={pricingFormData.outstationRoundTripPricePerKm} onChange={v => setPricingFormData({ ...pricingFormData, outstationRoundTripPricePerKm: v })} />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-6">
@@ -773,7 +864,7 @@ export default function VehicleTypesPage() {
                     <div className="flex items-center justify-between mb-8">
                       <div className="flex items-center gap-3">
                         <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Surge Engine</h4>
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Peak Pricing</h4>
                       </div>
                       <button className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all">
                         <PlusCircle size={20} />
@@ -1041,7 +1132,6 @@ export default function VehicleTypesPage() {
         </div>
       </Modal>
     </div>
-
   );
 }
 

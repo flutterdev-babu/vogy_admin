@@ -661,7 +661,6 @@ export interface VehiclePricingGroup {
   vehicleType?: VehicleType;
   name?: string;
   serviceType?: ServiceType;
-  bookingType?: string; // Kept for backward compatibility
   baseKm: number;
   baseFare: number;
   perKmPrice: number;
@@ -674,7 +673,6 @@ export interface VehiclePricingGroup {
   tollRate: number;
   parkingRate: number;
   gstRate: number;
-<<<<<<< HEAD
   
   // Rental Package Metrics
   rentalHalfDayBaseHr?: number;
@@ -691,8 +689,6 @@ export interface VehiclePricingGroup {
   outstationRoundTripPricePerKm?: number;
   outstationDriverAllowance?: number;
   outstationMinBaseKmPerDay?: number;
-=======
->>>>>>> f5331d112bd625364337947795de94aafacff56f
 
   cityCodeIds: string[];
   cityCodes?: CityCode[];
@@ -705,7 +701,6 @@ export interface CreateVehiclePricingGroupRequest {
   vehicleTypeId: string;
   name?: string;
   serviceType?: ServiceType;
-  bookingType?: string;
   baseKm: number;
   baseFare: number;
   perKmPrice: number;
@@ -739,7 +734,6 @@ export interface CreateVehiclePricingGroupRequest {
 export interface UpdateVehiclePricingGroupRequest {
   name?: string;
   serviceType?: ServiceType;
-  bookingType?: string;
   baseKm?: number;
   baseFare?: number;
   perKmPrice?: number;
