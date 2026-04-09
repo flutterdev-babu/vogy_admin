@@ -268,6 +268,8 @@ export interface Agent {
   phone: string;
   email?: string;
   agentCode: string;
+  cityCodeId?: string;
+  cityCode?: CityCode;
   coupons?: Coupon[];
   createdAt: string;
   updatedAt?: string;
@@ -1142,7 +1144,7 @@ export interface AuditTimelineItem {
 }
 
 // --- Attachment Governance ---
-export type AttachmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+export type AttachmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'VERIFIED' | 'UNVERIFIED';
 
 export interface Attachment {
   id: string;
