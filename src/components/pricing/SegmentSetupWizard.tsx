@@ -69,7 +69,6 @@ export default function SegmentSetupWizard({ isOpen, onClose, cities, onComplete
     parkingRate: 0,
     gstRate: 5,
     serviceType: 'LOCAL' as ServiceType,
-    bookingType: 'AIRPORT_TO_CITY',
   });
 
   // Phase 3: Peak Hour Slots

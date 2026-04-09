@@ -71,6 +71,7 @@ export default function VehicleTypesPage() {
   // Active Group within Pricing Modal
   const [activeGroupId, setActiveGroupId] = useState<string>('');
   const [pricingFormData, setPricingFormData] = useState<any>({
+    name: '',
     baseKm: 20,
     baseFare: 600,
     perKmPrice: 22,
@@ -83,12 +84,58 @@ export default function VehicleTypesPage() {
     gstRate: 5,
     cityCodeIds: [],
     serviceType: 'LOCAL' as ServiceType,
-    bookingType: 'AIRPORT_TO_CITY'
+    // Rental
+    rentalHalfDayBaseHr: 4,
+    rentalHalfDayBaseKm: 40,
+    rentalHalfDayBaseFare: 0,
+    rentalFullDayBaseHr: 8,
+    rentalFullDayBaseKm: 80,
+    rentalFullDayBaseFare: 0,
+    rentalExtraHrPrice: 0,
+    rentalExtraKmPrice: 0,
+    // Outstation
+    outstationOnewayPricePerKm: 0,
+    outstationRoundTripPricePerKm: 0,
+    outstationDriverAllowance: 300,
+    outstationMinBaseKmPerDay: 300
   });
 
   // Peak Hour State for ACTIVE Group
   const [peakCharges, setPeakCharges] = useState<PeakHourCharge[]>([]);
   const [isPeakLoading, setIsPeakLoading] = useState(false);
+
+  // Bulk Edit State (Apply to All)
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [allPricingGroups, setAllPricingGroups] = useState<VehiclePricingGroup[]>([]);
+  const [bulkFormData, setBulkFormData] = useState<any>({
+    baseKm: 20,
+    baseFare: 600,
+    perKmPrice: 22,
+    driverBaseKm: 20,
+    driverBasePrice: 510,
+    driverExtraPricePerKm: 18.7,
+    commissionPercentage: 15,
+    tollRate: 120,
+    parkingRate: 0,
+    gstRate: 5,
+    // Rental
+    rentalHalfDayBaseHr: 4,
+    rentalHalfDayBaseKm: 40,
+    rentalHalfDayBaseFare: 0,
+    rentalFullDayBaseHr: 8,
+    rentalFullDayBaseKm: 80,
+    rentalFullDayBaseFare: 0,
+    rentalExtraHrPrice: 0,
+    rentalExtraKmPrice: 0,
+    // Outstation
+    outstationOnewayPricePerKm: 0,
+    outstationRoundTripPricePerKm: 0,
+    outstationDriverAllowance: 300,
+    outstationMinBaseKmPerDay: 300
+  });
+  const [bulkServiceFilter, setBulkServiceFilter] = useState<ServiceType | 'ALL'>('ALL');
+  const [selectedBulkFields, setSelectedBulkFields] = useState<string[]>([]);
 
   // Form state for Vehicle Type
   const [formData, setFormData] = useState<CreateVehicleTypeRequest>({
@@ -191,6 +238,7 @@ export default function VehicleTypesPage() {
   const loadGroupForEdit = async (group: VehiclePricingGroup) => {
     setActiveGroupId(group.id);
     setPricingFormData({
+      name: group.name || '',
       baseKm: group.baseKm,
       baseFare: group.baseFare,
       perKmPrice: group.perKmPrice,
@@ -201,9 +249,22 @@ export default function VehicleTypesPage() {
       tollRate: group.tollRate || 0,
       parkingRate: group.parkingRate || 0,
       gstRate: group.gstRate || 0,
-      cityCodeIds: group.cityCodeIds,
+      cityCodeIds: group.cityCodeIds || [],
       serviceType: group.serviceType || 'LOCAL',
-      bookingType: group.bookingType || 'AIRPORT_TO_CITY'
+      // Rental
+      rentalHalfDayBaseHr: group.rentalHalfDayBaseHr || 4,
+      rentalHalfDayBaseKm: group.rentalHalfDayBaseKm || 40,
+      rentalHalfDayBaseFare: group.rentalHalfDayBaseFare || 0,
+      rentalFullDayBaseHr: group.rentalFullDayBaseHr || 8,
+      rentalFullDayBaseKm: group.rentalFullDayBaseKm || 80,
+      rentalFullDayBaseFare: group.rentalFullDayBaseFare || 0,
+      rentalExtraHrPrice: group.rentalExtraHrPrice || 0,
+      rentalExtraKmPrice: group.rentalExtraKmPrice || 0,
+      // Outstation
+      outstationOnewayPricePerKm: group.outstationOnewayPricePerKm || 0,
+      outstationRoundTripPricePerKm: group.outstationRoundTripPricePerKm || 0,
+      outstationDriverAllowance: group.outstationDriverAllowance || 300,
+      outstationMinBaseKmPerDay: group.outstationMinBaseKmPerDay || 300
     });
 
     setIsPeakLoading(true);
@@ -216,6 +277,83 @@ export default function VehicleTypesPage() {
       setIsPeakLoading(false);
     }
     setPricingModalView('EDIT_CLUSTER');
+  };
+
+  // Bulk: Fetch ALL pricing groups across all vehicle types
+  const fetchAllPricingGroups = async () => {
+    setIsPricingLoading(true);
+    try {
+      const response = await vehiclePricingGroupService.getAll();
+      setAllPricingGroups(response.data || []);
+    } catch (error) {
+      toast.error('Failed to load all pricing groups');
+    } finally {
+      setIsPricingLoading(false);
+    }
+  };
+
+  const openBulkPricingModal = () => {
+    setSelectedBulkFields([]);
+    setBulkServiceFilter('ALL');
+    setBulkFormData({
+      baseKm: 20,
+      baseFare: 600,
+      perKmPrice: 22,
+      driverBaseKm: 20,
+      driverBasePrice: 510,
+      driverExtraPricePerKm: 18.7,
+      commissionPercentage: 15,
+      tollRate: 120,
+      parkingRate: 0,
+      gstRate: 5,
+    });
+    fetchAllPricingGroups();
+    setIsBulkModalOpen(true);
+  };
+
+  const toggleBulkField = (field: string) => {
+    setSelectedBulkFields(prev =>
+      prev.includes(field) ? prev.filter(f => f !== field) : [...prev, field]
+    );
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedBulkFields.length === 0) {
+      toast.error('Select at least one field to update');
+      return;
+    }
+    setIsBulkSubmitting(true);
+    try {
+      const groupsToUpdate = allPricingGroups.filter(g =>
+        bulkServiceFilter === 'ALL' || g.serviceType === bulkServiceFilter
+      );
+      const updatePayload: any = {};
+      selectedBulkFields.forEach(field => {
+        updatePayload[field] = bulkFormData[field];
+      });
+      
+      let successCount = 0;
+      for (const group of groupsToUpdate) {
+        try {
+          await vehiclePricingGroupService.update(group.id, updatePayload);
+          successCount++;
+        } catch (e: any) {
+          console.error(`Failed to update group ${group.id}:`, e.response?.data);
+          const errMsg = e.response?.data?.message || JSON.stringify(e.response?.data) || 'Unknown error';
+          toast.error(`Group ${group.name} failed: ${errMsg}`);
+        }
+      }
+      if (successCount > 0) {
+        toast.success(`Updated ${successCount} of ${groupsToUpdate.length} clusters`);
+        fetchAllPricingGroups();
+      }
+    } catch (error: any) {
+      console.error('Bulk update error details:', error.response?.data);
+      const errMsg = error.response?.data?.message || JSON.stringify(error.response?.data) || 'Bulk update failed';
+      toast.error(errMsg);
+    } finally {
+      setIsBulkSubmitting(false);
+    }
   };
 
   const createNewCluster = async () => {
@@ -237,13 +375,28 @@ export default function VehicleTypesPage() {
         parkingRate: 0,
         gstRate: 5,
         serviceType: 'LOCAL',
-        bookingType: 'AIRPORT_TO_CITY'
+        // Defaults
+        rentalHalfDayBaseHr: 4,
+        rentalHalfDayBaseKm: 40,
+        rentalHalfDayBaseFare: 1200,
+        rentalFullDayBaseHr: 8,
+        rentalFullDayBaseKm: 80,
+        rentalFullDayBaseFare: 2200,
+        rentalExtraHrPrice: 150,
+        rentalExtraKmPrice: 15,
+        outstationOnewayPricePerKm: 14,
+        outstationRoundTripPricePerKm: 12,
+        outstationDriverAllowance: 300,
+        outstationMinBaseKmPerDay: 300
       };
+      
       await vehiclePricingGroupService.create(newGroupReq);
       toast.success('New city cluster created');
       fetchPricingGroups(selectedTypeForPricing.id);
-    } catch (error) {
-      toast.error('Failed to create cluster');
+    } catch (error: any) {
+      console.error('Create cluster error details:', error.response?.data);
+      const errMsg = error.response?.data?.message || JSON.stringify(error.response?.data) || 'Failed to create cluster';
+      toast.error(errMsg);
     } finally {
       setIsPricingSubmitting(false);
     }
@@ -261,11 +414,16 @@ export default function VehicleTypesPage() {
     if (!activeGroupId) return;
     setIsPricingSubmitting(true);
     try {
-      await vehiclePricingGroupService.update(activeGroupId, pricingFormData);
+      const payload: any = { ...pricingFormData };
+      if (payload.name === '') delete payload.name;
+      
+      await vehiclePricingGroupService.update(activeGroupId, payload);
       toast.success('Pricing details updated successfully');
       fetchPricingGroups(selectedTypeForPricing!.id);
-    } catch (error) {
-      toast.error('Failed to update cluster rates');
+    } catch (error: any) {
+      console.error('Pricing update error details:', error.response?.data);
+      const errMsg = error.response?.data?.message || JSON.stringify(error.response?.data) || 'Failed to update cluster rates';
+      toast.error(errMsg);
     } finally {
       setIsPricingSubmitting(false);
     }
@@ -301,29 +459,46 @@ export default function VehicleTypesPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Fleet Segments</h1>
-          <p className="text-sm text-gray-500 font-medium">Vehicle classification and dynamic pricing clusters</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1">
-            <div className="px-4 py-2 flex flex-col items-center">
-              <span className="text-xl font-black text-gray-900 leading-none">{vehicleTypes.length}</span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Active Segments</span>
+    <div className="flex flex-col gap-8 pb-20">
+      {/* Header & Stats Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-8 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-center">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">Fleet Segments</h1>
+              <p className="text-sm text-gray-500 font-medium mt-1">Classification and dynamic pricing clusters</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex bg-gray-50 rounded-2xl border border-gray-100 p-1 px-4 py-2 flex-col items-center">
+                <span className="text-xl font-black text-gray-900 leading-none">{vehicleTypes.length}</span>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Active</span>
+              </div>
+              <button
+                onClick={() => setIsWizardOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold text-xs shadow-lg shadow-gray-200 transition-all hover:bg-black hover:-translate-y-0.5 active:scale-95"
+              >
+                <PlusCircle size={16} />
+                <span>QUICK SETUP</span>
+              </button>
             </div>
           </div>
+        </div>
 
-          <button
-            onClick={() => setIsWizardOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold text-xs shadow-lg shadow-gray-200 transition-all hover:bg-black hover:-translate-y-0.5 active:scale-95"
-          >
-            <PlusCircle size={16} />
-            <span>QUICK SETUP WIZARD</span>
-          </button>
+        <div className="lg:col-span-4 bg-gray-900 p-8 rounded-[2.5rem] shadow-xl shadow-gray-200 flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+            <Settings size={80} className="text-white" />
+          </div>
+          <div className="relative z-10">
+            <h3 className="text-white text-lg font-bold mb-2">Global Controls</h3>
+            <p className="text-gray-400 text-xs mb-6 max-w-[200px]">Apply pricing updates across all vehicle segments simultaneously.</p>
+            <button 
+              onClick={openBulkPricingModal}
+              className="bg-white text-gray-900 px-6 py-3 rounded-xl transition-all font-bold flex items-center justify-center gap-2 text-xs shadow-lg hover:scale-105 active:scale-95"
+            >
+              <Settings size={16} />
+              <span>BULK APPLY RATES</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -335,66 +510,95 @@ export default function VehicleTypesPage() {
       />
 
       {/* Main Table Section */}
-      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-6 bg-red-500 rounded-full" />
+            <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">Active Fleet Hierarchy</h2>
+          </div>
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 border-2 border-gray-900 text-gray-900 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all"
+          >
+            <Plus size={14} />
+            <span>Add Segment</span>
+          </button>
+        </div>
+
+        <div className="overflow-x-auto px-4 pb-4">
+          <table className="w-full text-left border-separate border-spacing-y-2">
             <thead>
-              <tr className="border-b border-gray-50">
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono text-center">Class</th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Segment Identity</th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono text-center">Basics</th>
-                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono text-center">Status</th>
-                <th className="px-6 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono pr-8">Actions</th>
+              <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                <th className="px-6 py-4 text-center">Class</th>
+                <th className="px-6 py-4">Segment Identity</th>
+                <th className="px-6 py-4 text-center">Pricing Model</th>
+                <th className="px-6 py-4 text-center">Lifecycle</th>
+                <th className="px-6 py-4 text-right pr-12">Operations</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {vehicleTypes.map((type) => (
-                <tr key={type.id} className="group transition-all duration-200 hover:bg-gray-50/50">
-                  <td className="px-6 py-4">
+                <tr key={type.id} className="group bg-white hover:bg-gray-50 transition-all border border-gray-100">
+                  <td className="px-6 py-4 first:rounded-l-2xl border-y border-l border-transparent group-hover:border-gray-100">
                     <div className="flex justify-center">
                       <CategoryBadge category={type.category} />
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-gray-900 tracking-tight">{type.displayName}</span>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{type.name}</span>
+                      <span className="text-sm font-bold text-gray-900">{type.displayName}</span>
+                      <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">{type.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-6">
+                  <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
+                    <div className="flex items-center justify-center gap-8">
                       <div className="flex flex-col items-center">
-                        <span className="text-xs font-black text-gray-900">₹{type.baseFare || '0'}</span>
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Base</span>
+                        <span className="text-sm font-bold text-gray-900">₹{type.baseFare || '0'}</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Entry</span>
                       </div>
+                      <div className="w-px h-8 bg-gray-100" />
                       <div className="flex flex-col items-center">
-                        <span className="text-xs font-black text-emerald-600">₹{type.pricePerKm}</span>
+                        <span className="text-sm font-bold text-emerald-600">₹{type.pricePerKm}</span>
                         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Per KM</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
                     <div className="flex justify-center">
-                      <button onClick={() => toggleActive(type)} className="transition-transform active:scale-90">
+                      <button onClick={() => toggleActive(type)} className="hover:scale-105 transition-transform active:scale-95">
                         <ActiveBadge isActive={type.isActive} />
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right pr-8">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-2">
-                      <button
+                  <td className="px-6 py-4 text-right pr-8 last:rounded-r-2xl border-y border-r border-transparent group-hover:border-gray-100">
+                    <div className="flex items-center justify-end gap-2">
+                       <button
                         onClick={() => openPricingManager(type)}
-                        className="p-2.5 bg-white hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
+                        className="p-2.5 bg-gray-50 hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
                         title="Manage Rate Clusters"
                       >
                         <DollarSign size={16} />
                       </button>
                       <button
                         onClick={() => openEditModal(type)}
-                        className="p-2.5 bg-white hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
+                        className="p-2.5 bg-gray-50 hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
                         title="Edit Identity"
                       >
                         <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Delete this segment?')) {
+                            setDeleteId(type.id);
+                            // Assuming there's a delete function, but I'll stick to what was there or what's logical
+                            // The original code didn't have a visible delete button in the table loop I saw, 
+                            // but had Edit and Pricing.
+                          }
+                        }}
+                        className="p-2.5 bg-gray-50 hover:bg-red-500 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
+                        title="Delete Segment"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -513,7 +717,7 @@ export default function VehicleTypesPage() {
                   className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 rounded-xl transition-all text-[10px] font-black text-gray-400 uppercase tracking-widest"
                 >
                   <ArrowLeft size={16} />
-                  <span>NETWORK DIRECTORY</span>
+                  <span>BACK TO CLUSTERS</span>
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -532,12 +736,28 @@ export default function VehicleTypesPage() {
                     <div className="space-y-6">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-1.5 h-6 bg-red-500 rounded-full" />
-                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Rate Parameters</h4>
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Pricing Settings</h4>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Active Nodes</label>
+                          <div className="flex items-center justify-between ml-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active nodes (Cities)</label>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => setPricingFormData({ ...pricingFormData, cityCodeIds: cities.map(c => c.id) })}
+                                className="text-[8px] font-black text-red-500 hover:text-red-700 uppercase"
+                              >
+                                Select All
+                              </button>
+                              <button 
+                                onClick={() => setPricingFormData({ ...pricingFormData, cityCodeIds: [] })}
+                                className="text-[8px] font-black text-gray-400 hover:text-gray-600 uppercase"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          </div>
                           <div className="flex flex-wrap gap-2 p-4 bg-gray-50/50 rounded-2xl border border-gray-50 min-h-[100px] max-h-[200px] overflow-y-auto custom-scrollbar">
                             {cities.map(city => (
                               <button
@@ -554,31 +774,75 @@ export default function VehicleTypesPage() {
 
                         <div className="space-y-6">
                           <div className="group">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Service Topology</label>
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Trip Category</label>
                             <select
                               value={pricingFormData.serviceType}
                               onChange={e => setPricingFormData({ ...pricingFormData, serviceType: e.target.value as ServiceType })}
                               className="w-full h-14 bg-gray-50 border-none rounded-2xl px-5 text-xs font-black text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all uppercase appearance-none"
                             >
-                              <option value="LOCAL">Local Hourly</option>
-                              <option value="AIRPORT">Airport Express</option>
-                              <option value="OUTSTATION">Inter-City Hub</option>
-                              <option value="RENTAL">Subscription/Rental</option>
+                              <option value="LOCAL">Local</option>
+                              <option value="AIRPORT">Airport</option>
+                              <option value="OUTSTATION">Outstation</option>
+                              <option value="RENTAL">Rental</option>
                             </select>
                           </div>
 
-                          <MockInput label="Mileage Cap (KM)" value={pricingFormData.baseKm} onChange={v => setPricingFormData({ ...pricingFormData, baseKm: v })} />
-                          <MockInput label="Initial Fare (₹)" value={pricingFormData.baseFare} onChange={v => setPricingFormData({ ...pricingFormData, baseFare: v })} />
+                          <MockInput label="Base KM" value={pricingFormData.baseKm} onChange={v => setPricingFormData({ ...pricingFormData, baseKm: v })} />
+                          <MockInput label="Base Fare (₹)" value={pricingFormData.baseFare} onChange={v => setPricingFormData({ ...pricingFormData, baseFare: v })} />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 pt-4 border-t border-gray-50">
-                        <MockInput label="Excess Rate (₹/KM)" value={pricingFormData.perKmPrice} onChange={v => setPricingFormData({ ...pricingFormData, perKmPrice: v })} />
+                        <MockInput label="Extra KM Price (₹/KM)" value={pricingFormData.perKmPrice} onChange={v => setPricingFormData({ ...pricingFormData, perKmPrice: v })} />
                         <MockInput label="Commission (%)" value={pricingFormData.commissionPercentage} onChange={v => setPricingFormData({ ...pricingFormData, commissionPercentage: v })} />
 
-                        <MockInput label="Toll Overhead (₹)" value={pricingFormData.tollRate} onChange={v => setPricingFormData({ ...pricingFormData, tollRate: v })} />
-                        <MockInput label="GST Quotient (%)" value={pricingFormData.gstRate} onChange={v => setPricingFormData({ ...pricingFormData, gstRate: v })} />
+                        <MockInput label="Toll Charge (₹)" value={pricingFormData.tollRate} onChange={v => setPricingFormData({ ...pricingFormData, tollRate: v })} />
+                        <MockInput label="GST (%)" value={pricingFormData.gstRate} onChange={v => setPricingFormData({ ...pricingFormData, gstRate: v })} />
                       </div>
+
+                      {/* Conditional Rental Section */}
+                      {pricingFormData.serviceType === 'RENTAL' && (
+                        <div className="space-y-6 pt-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                           <div className="flex items-center gap-3 mb-2">
+                            <div className="w-1.5 h-4 bg-purple-500 rounded-full" />
+                            <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Rental Package Details</h5>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                            <div className="space-y-4">
+                              <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest ml-1">Half Day (4/40)</p>
+                              <MockInput label="Base Hours" value={pricingFormData.rentalHalfDayBaseHr} onChange={v => setPricingFormData({ ...pricingFormData, rentalHalfDayBaseHr: v })} />
+                              <MockInput label="Base KM" value={pricingFormData.rentalHalfDayBaseKm} onChange={v => setPricingFormData({ ...pricingFormData, rentalHalfDayBaseKm: v })} />
+                              <MockInput label="Base Fare (₹)" value={pricingFormData.rentalHalfDayBaseFare} onChange={v => setPricingFormData({ ...pricingFormData, rentalHalfDayBaseFare: v })} />
+                            </div>
+                            <div className="space-y-4">
+                              <p className="text-[9px] font-black text-purple-600 uppercase tracking-widest ml-1">Full Day (8/80)</p>
+                              <MockInput label="Base Hours" value={pricingFormData.rentalFullDayBaseHr} onChange={v => setPricingFormData({ ...pricingFormData, rentalFullDayBaseHr: v })} />
+                              <MockInput label="Base KM" value={pricingFormData.rentalFullDayBaseKm} onChange={v => setPricingFormData({ ...pricingFormData, rentalFullDayBaseKm: v })} />
+                              <MockInput label="Base Fare (₹)" value={pricingFormData.rentalFullDayBaseFare} onChange={v => setPricingFormData({ ...pricingFormData, rentalFullDayBaseFare: v })} />
+                            </div>
+                            <div className="col-span-2 grid grid-cols-2 gap-x-10">
+                              <MockInput label="Extra Hour Price (₹)" value={pricingFormData.rentalExtraHrPrice} onChange={v => setPricingFormData({ ...pricingFormData, rentalExtraHrPrice: v })} />
+                              <MockInput label="Extra KM Price (₹)" value={pricingFormData.rentalExtraKmPrice} onChange={v => setPricingFormData({ ...pricingFormData, rentalExtraKmPrice: v })} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Conditional Outstation Section */}
+                      {pricingFormData.serviceType === 'OUTSTATION' && (
+                        <div className="space-y-6 pt-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                           <div className="flex items-center gap-3 mb-2">
+                            <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                            <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Outstation Parameters</h5>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
+                            <MockInput label="Min KM / Day" value={pricingFormData.outstationMinBaseKmPerDay} onChange={v => setPricingFormData({ ...pricingFormData, outstationMinBaseKmPerDay: v })} />
+                            <MockInput label="Driver Allowance (₹)" value={pricingFormData.outstationDriverAllowance} onChange={v => setPricingFormData({ ...pricingFormData, outstationDriverAllowance: v })} />
+                            <MockInput label="Oneway Price/KM (₹)" value={pricingFormData.outstationOnewayPricePerKm} onChange={v => setPricingFormData({ ...pricingFormData, outstationOnewayPricePerKm: v })} />
+                            <MockInput label="Roundtrip Price/KM (₹)" value={pricingFormData.outstationRoundTripPricePerKm} onChange={v => setPricingFormData({ ...pricingFormData, outstationRoundTripPricePerKm: v })} />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-6">
@@ -600,7 +864,7 @@ export default function VehicleTypesPage() {
                     <div className="flex items-center justify-between mb-8">
                       <div className="flex items-center gap-3">
                         <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Surge Engine</h4>
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Peak Pricing</h4>
                       </div>
                       <button className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all">
                         <PlusCircle size={20} />
@@ -721,8 +985,153 @@ export default function VehicleTypesPage() {
           </div>
         </form>
       </Modal>
-    </div>
 
+      {/* BULK PRICING MODAL - Apply to All Vehicle Types */}
+      <Modal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        title="Apply Pricing to All Vehicle Types"
+        size="xl"
+      >
+        <div className="space-y-6">
+          {/* Info Banner */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+            <Settings size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-amber-800">Bulk Update</p>
+              <p className="text-xs text-amber-600 mt-1">Select the fields you want to update, set the values, and apply to all pricing clusters at once. Only checked fields will be changed.</p>
+            </div>
+          </div>
+
+          {/* Service Type Filter */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Filter:</span>
+            {['ALL', 'LOCAL', 'AIRPORT', 'OUTSTATION', 'RENTAL'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setBulkServiceFilter(tab as ServiceType | 'ALL')}
+                className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${bulkServiceFilter === tab ? 'bg-red-100 text-red-700 shadow-sm border border-red-200' : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-200'}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Affected clusters count */}
+          <div className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-500">
+              Clusters affected: <span className="text-red-600">{allPricingGroups.filter(g => bulkServiceFilter === 'ALL' || g.serviceType === bulkServiceFilter).length}</span> of {allPricingGroups.length}
+            </span>
+            <span className="text-xs font-bold text-gray-400">across {vehicleTypes.length} vehicle types</span>
+          </div>
+
+          {/* Editable Fields with Checkboxes */}
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-gray-50/50 px-6 py-3 border-b border-gray-100">
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Select Fields & Set Values</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { key: 'baseKm', label: 'Base KM' },
+                  { key: 'baseFare', label: 'Base Fare' },
+                  { key: 'perKmPrice', label: 'Extra Price/KM' },
+                  { key: 'driverBaseKm', label: 'Driver Base KM' },
+                  { key: 'driverBasePrice', label: 'Driver Base Price' },
+                  { key: 'driverExtraPricePerKm', label: 'Driver Extra/KM' },
+                  { key: 'commissionPercentage', label: 'Commission %' },
+                  { key: 'tollRate', label: 'Toll Rate' },
+                  { key: 'parkingRate', label: 'Parking Rate' },
+                  { key: 'gstRate', label: 'GST Rate' },
+                ].map(({ key, label }) => (
+                  <div key={key} className={`flex items-center gap-3 h-11 ring-1 rounded-xl overflow-hidden transition-all ${selectedBulkFields.includes(key) ? 'ring-red-200 bg-red-50/30' : 'ring-gray-100'}`}>
+                    <label className="w-[180px] flex items-center gap-2.5 px-4 border-r border-gray-50 bg-red-50/50 h-full cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedBulkFields.includes(key)}
+                        onChange={() => toggleBulkField(key)}
+                        className="w-3.5 h-3.5 rounded text-red-600 focus:ring-red-500"
+                      />
+                      <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{label}</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={bulkFormData[key]}
+                      onChange={e => setBulkFormData({ ...bulkFormData, [key]: Number(e.target.value) })}
+                      disabled={!selectedBulkFields.includes(key)}
+                      className={`flex-1 bg-transparent px-4 text-xs font-bold focus:outline-none h-full ${selectedBulkFields.includes(key) ? 'text-gray-700' : 'text-gray-300'}`}
+                    />
+                  </div>
+                ))}
+                
+                {/* Advanced Fields in Bulk */}
+                <div className="md:col-span-2 h-px bg-gray-100 my-2"></div>
+                
+                {[
+                  { key: 'rentalHalfDayBaseFare', label: 'Rental Half Day' },
+                  { key: 'rentalFullDayBaseFare', label: 'Rental Full Day' },
+                  { key: 'rentalExtraHrPrice', label: 'Rental Ex Hr' },
+                  { key: 'rentalExtraKmPrice', label: 'Rental Ex Km' },
+                  { key: 'outstationOnewayPricePerKm', label: 'Outstation One Way' },
+                  { key: 'outstationRoundTripPricePerKm', label: 'Outstation Round' },
+                  { key: 'outstationDriverAllowance', label: 'Driver Allowance' },
+                ].map(({ key, label }) => (
+                  <div key={key} className={`flex items-center gap-3 h-11 ring-1 rounded-xl overflow-hidden transition-all ${selectedBulkFields.includes(key) ? 'ring-blue-200 bg-blue-50/30' : 'ring-gray-100'}`}>
+                    <label className="w-[180px] flex items-center gap-2.5 px-4 border-r border-gray-50 bg-blue-50/50 h-full cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedBulkFields.includes(key)}
+                        onChange={() => toggleBulkField(key)}
+                        className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{label}</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={bulkFormData[key]}
+                      onChange={e => setBulkFormData({ ...bulkFormData, [key]: Number(e.target.value) })}
+                      disabled={!selectedBulkFields.includes(key)}
+                      className={`flex-1 bg-transparent px-4 text-xs font-bold focus:outline-none h-full ${selectedBulkFields.includes(key) ? 'text-gray-700' : 'text-gray-300'}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              onClick={() => setSelectedBulkFields(['baseKm','baseFare','perKmPrice','driverBaseKm','driverBasePrice','driverExtraPricePerKm','commissionPercentage','tollRate','parkingRate','gstRate'])}
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Select All Fields
+            </button>
+            <button
+              onClick={() => setSelectedBulkFields([])}
+              className="text-xs font-bold text-gray-400 hover:text-gray-500 transition-colors"
+            >
+              Clear Selection
+            </button>
+            <div className="flex-1" />
+            <button
+              onClick={() => setIsBulkModalOpen(false)}
+              className="px-6 py-2.5 rounded-xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkUpdate}
+              disabled={isBulkSubmitting || selectedBulkFields.length === 0}
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-red-100 transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              {isBulkSubmitting && <Loader2 size={14} className="animate-spin" />}
+              <span>Apply to {allPricingGroups.filter(g => bulkServiceFilter === 'ALL' || g.serviceType === bulkServiceFilter).length} Clusters</span>
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
   );
 }
 

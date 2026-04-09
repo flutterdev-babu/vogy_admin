@@ -268,6 +268,8 @@ export interface Agent {
   phone: string;
   email?: string;
   agentCode: string;
+  cityCodeId?: string;
+  cityCode?: CityCode;
   coupons?: Coupon[];
   createdAt: string;
   updatedAt?: string;
@@ -661,7 +663,6 @@ export interface VehiclePricingGroup {
   vehicleType?: VehicleType;
   name?: string;
   serviceType?: ServiceType;
-  bookingType?: string; // Kept for backward compatibility
   baseKm: number;
   baseFare: number;
   perKmPrice: number;
@@ -674,6 +675,22 @@ export interface VehiclePricingGroup {
   tollRate: number;
   parkingRate: number;
   gstRate: number;
+  
+  // Rental Package Metrics
+  rentalHalfDayBaseHr?: number;
+  rentalHalfDayBaseKm?: number;
+  rentalHalfDayBaseFare?: number;
+  rentalFullDayBaseHr?: number;
+  rentalFullDayBaseKm?: number;
+  rentalFullDayBaseFare?: number;
+  rentalExtraHrPrice?: number;
+  rentalExtraKmPrice?: number;
+
+  // Outstation Metrics
+  outstationOnewayPricePerKm?: number;
+  outstationRoundTripPricePerKm?: number;
+  outstationDriverAllowance?: number;
+  outstationMinBaseKmPerDay?: number;
 
   cityCodeIds: string[];
   cityCodes?: CityCode[];
@@ -686,7 +703,6 @@ export interface CreateVehiclePricingGroupRequest {
   vehicleTypeId: string;
   name?: string;
   serviceType?: ServiceType;
-  bookingType?: string;
   baseKm: number;
   baseFare: number;
   perKmPrice: number;
@@ -697,13 +713,29 @@ export interface CreateVehiclePricingGroupRequest {
   tollRate: number;
   parkingRate: number;
   gstRate: number;
+
+  // Rental
+  rentalHalfDayBaseHr?: number;
+  rentalHalfDayBaseKm?: number;
+  rentalHalfDayBaseFare?: number;
+  rentalFullDayBaseHr?: number;
+  rentalFullDayBaseKm?: number;
+  rentalFullDayBaseFare?: number;
+  rentalExtraHrPrice?: number;
+  rentalExtraKmPrice?: number;
+
+  // Outstation
+  outstationOnewayPricePerKm?: number;
+  outstationRoundTripPricePerKm?: number;
+  outstationDriverAllowance?: number;
+  outstationMinBaseKmPerDay?: number;
+
   cityCodeIds: string[];
 }
 
 export interface UpdateVehiclePricingGroupRequest {
   name?: string;
   serviceType?: ServiceType;
-  bookingType?: string;
   baseKm?: number;
   baseFare?: number;
   perKmPrice?: number;
@@ -714,6 +746,23 @@ export interface UpdateVehiclePricingGroupRequest {
   tollRate?: number;
   parkingRate?: number;
   gstRate?: number;
+
+  // Rental
+  rentalHalfDayBaseHr?: number;
+  rentalHalfDayBaseKm?: number;
+  rentalHalfDayBaseFare?: number;
+  rentalFullDayBaseHr?: number;
+  rentalFullDayBaseKm?: number;
+  rentalFullDayBaseFare?: number;
+  rentalExtraHrPrice?: number;
+  rentalExtraKmPrice?: number;
+
+  // Outstation
+  outstationOnewayPricePerKm?: number;
+  outstationRoundTripPricePerKm?: number;
+  outstationDriverAllowance?: number;
+  outstationMinBaseKmPerDay?: number;
+
   cityCodeIds?: string[];
   isActive?: boolean;
 }
@@ -1095,7 +1144,7 @@ export interface AuditTimelineItem {
 }
 
 // --- Attachment Governance ---
-export type AttachmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+export type AttachmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'VERIFIED' | 'UNVERIFIED';
 
 export interface Attachment {
   id: string;
