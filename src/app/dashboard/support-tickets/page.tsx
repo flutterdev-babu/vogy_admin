@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdvancedTable } from '@/components/ui/AdvancedTable';
-import { 
-    MessageSquare, 
-    Clock, 
-    AlertCircle, 
-    CheckCircle2, 
-    Filter, 
-    Search, 
+import {
+    MessageSquare,
+    Clock,
+    AlertCircle,
+    CheckCircle2,
+    Filter,
+    Search,
     RefreshCw,
     AlertTriangle,
     LifeBuoy
@@ -121,7 +121,7 @@ export default function SupportTicketsPage() {
             header: 'Created',
             accessor: (item: SupportTicket) => (
                 <div className="text-xs text-gray-500">
-                    {new Date(item.createdAt).toLocaleDateString()}<br/>
+                    {new Date(item.createdAt).toLocaleDateString()}<br />
                     {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
             )
@@ -140,124 +140,115 @@ export default function SupportTicketsPage() {
     ];
 
     return (
-        <div className="animate-fade-in space-y-6 pb-20">
+        <div className="space-y-8 pb-20">
+            {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Support Center</h1>
-                    <p className="text-sm text-gray-500">Manage customer queries, complaints, and technical issues.</p>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Support Center</h1>
+                    <p className="text-sm text-gray-500 font-medium">Resolution hub for customer and partner queries</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-3">
+                    <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1">
+                        <div className="px-4 py-2 border-r border-gray-50 flex flex-col items-center">
+                            <span className="text-xl font-black text-gray-900 leading-none">{stats?.open || 0}</span>
+                            <span className="text-[9px] font-bold text-red-500 uppercase tracking-tighter mt-1">Open</span>
+                        </div>
+                        <div className="px-4 py-2 flex flex-col items-center">
+                            <span className="text-xl font-black text-gray-900 leading-none">{stats?.total || 0}</span>
+                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Total</span>
+                        </div>
+                    </div>
                     <button
                         onClick={loadData}
-                        className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500"
+                        className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
                     >
                         <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
                     </button>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600">
-                        <AlertCircle size={24} />
+            {/* Premium Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="group bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all duration-300">
+                    <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+                        <AlertCircle size={28} />
                     </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Open Tickets</p>
-                        <p className="text-2xl font-black text-gray-900">{stats?.open || 0}</p>
-                    </div>
-                </div>
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                        <Clock size={24} />
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">In Progress</p>
-                        <p className="text-2xl font-black text-gray-900">{stats?.inProgress || 0}</p>
+                    <div className="mt-5">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Open Tickets</p>
+                        <p className="text-3xl font-black text-gray-900 mt-1">{stats?.open || 0}</p>
                     </div>
                 </div>
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
-                        <CheckCircle2 size={24} />
+                <div className="group bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all duration-300">
+                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                        <Clock size={28} />
                     </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Resolved Today</p>
-                        <p className="text-2xl font-black text-gray-900">{stats?.resolvedToday || 0}</p>
+                    <div className="mt-5">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">In Progress</p>
+                        <p className="text-3xl font-black text-gray-900 mt-1">{stats?.inProgress || 0}</p>
                     </div>
                 </div>
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
-                        <LifeBuoy size={24} />
+                <div className="group bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all duration-300">
+                    <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                        <CheckCircle2 size={28} />
                     </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Tickets</p>
-                        <p className="text-2xl font-black text-gray-900">{stats?.total || 0}</p>
+                    <div className="mt-5">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Resolved Today</p>
+                        <p className="text-3xl font-black text-gray-900 mt-1">{stats?.resolvedToday || 0}</p>
+                    </div>
+                </div>
+                <div className="group bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all duration-300">
+                    <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                        <LifeBuoy size={28} />
+                    </div>
+                    <div className="mt-5">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Overall Volume</p>
+                        <p className="text-3xl font-black text-gray-900 mt-1">{stats?.total || 0}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-wrap gap-3 items-center">
-                <div className="flex items-center gap-2 text-gray-400 mr-2">
-                    <Filter size={18} />
-                    <span className="text-sm font-bold uppercase tracking-tighter">Filters</span>
-                </div>
-                
-                <select 
-                    value={filters.status}
-                    onChange={e => setFilters({...filters, status: e.target.value})}
-                    className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500/10"
-                >
-                    <option value="">All Statuses</option>
-                    <option value="OPEN">Open</option>
-                    <option value="IN_PROGRESS">In Progress</option>
-                    <option value="WAITING_ON_CUSTOMER">Waiting on Customer</option>
-                    <option value="RESOLVED">Resolved</option>
-                </select>
-
-                <select 
-                    value={filters.priority}
-                    onChange={e => setFilters({...filters, priority: e.target.value})}
-                    className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500/10"
-                >
-                    <option value="">All Priorities</option>
-                    <option value="URGENT">Urgent</option>
-                    <option value="HIGH">High</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="LOW">Low</option>
-                </select>
-
-                <select 
-                    value={filters.category}
-                    onChange={e => setFilters({...filters, category: e.target.value})}
-                    className="px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500/10"
-                >
-                    <option value="">All Categories</option>
-                    <option value="RIDE_ISSUE">Ride Issue</option>
-                    <option value="PAYMENT_ISSUE">Payment Issue</option>
-                    <option value="PARTNER_COMPLAINT">Partner Complaint</option>
-                    <option value="ACCOUNT_ISSUE">Account Issue</option>
-                    <option value="APP_BUG">App Bug</option>
-                </select>
-
-                <button 
-                    onClick={() => setFilters({status: '', priority: '', category: ''})}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 ml-auto"
-                >
-                    Clear All
-                </button>
-            </div>
-
-            {/* Tickets Table */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden p-6">
-                <AdvancedTable
-                    data={tickets}
-                    columns={columns}
-                    itemsPerPage={10}
-                    isLoading={isLoading}
-                    searchPlaceholder="Search by ticket #, subject or customer name..."
-                />
-            </div>
+            {/* Tickets Table Section */}
+            <AdvancedTable
+                data={tickets}
+                columns={columns}
+                itemsPerPage={10}
+                isLoading={isLoading}
+                searchPlaceholder="Search by ticket #, subject or customer..."
+                filters={[
+                    {
+                        label: 'All Statuses',
+                        options: [
+                            { label: 'Open', value: 'OPEN' },
+                            { label: 'In Progress', value: 'IN_PROGRESS' },
+                            { label: 'Customer Action', value: 'WAITING_ON_CUSTOMER' },
+                            { label: 'Resolved', value: 'RESOLVED' },
+                            { label: 'Closed', value: 'CLOSED' }
+                        ],
+                        onFilterChange: (val) => setFilters({ ...filters, status: val })
+                    },
+                    {
+                        label: 'Priority',
+                        options: [
+                            { label: 'Urgent', value: 'URGENT' },
+                            { label: 'High', value: 'HIGH' },
+                            { label: 'Medium', value: 'MEDIUM' },
+                            { label: 'Low', value: 'LOW' }
+                        ],
+                        onFilterChange: (val) => setFilters({ ...filters, priority: val })
+                    },
+                    {
+                        label: 'Category',
+                        options: [
+                            { label: 'Ride Issue', value: 'RIDE_ISSUE' },
+                            { label: 'Payment', value: 'PAYMENT_ISSUE' },
+                            { label: 'Partner', value: 'PARTNER_COMPLAINT' },
+                            { label: 'Account', value: 'ACCOUNT_ISSUE' },
+                            { label: 'Technical', value: 'APP_BUG' }
+                        ],
+                        onFilterChange: (val) => setFilters({ ...filters, category: val })
+                    }
+                ]}
+            />
         </div>
     );
 }

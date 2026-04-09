@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Truck, Search, Filter, Plus, Eye, Car, Building2, UserCheck, MapPin, X, Loader2 } from 'lucide-react';
+import { Truck, Search, Filter, Plus, Eye, Car, Building2, UserCheck, MapPin, X, Loader2, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { vehicleService } from '@/services/vehicleService';
 import { vendorService } from '@/services/vendorService';
@@ -68,21 +68,21 @@ export default function VehiclesPage() {
     }
   };
 
-  useEffect(() => { 
-    fetchData(); 
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const filteredVehicles = vehicles.filter(v => {
     const searchLower = search.toLowerCase();
-    const matchesSearch = !search || 
+    const matchesSearch = !search ||
       v.registrationNumber.toLowerCase().includes(searchLower) ||
       v.vehicleModel.toLowerCase().includes(searchLower) ||
       v.customId.toLowerCase().includes(searchLower) ||
       v.vendor?.companyName?.toLowerCase().includes(searchLower) ||
       v.partner?.name?.toLowerCase().includes(searchLower);
-    
+
     const matchesVendor = !vendorFilter || v.vendor?.id === vendorFilter;
-    
+
     return matchesSearch && matchesVendor;
   });
 
@@ -156,157 +156,210 @@ export default function VehiclesPage() {
   };
 
   return (
-    <div className="animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Vehicles</h1>
-          <p className="text-gray-500 mt-1">Manage fleet vehicles and assignments</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight text-white/0 bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">Vehicles</h1>
+          <p className="text-sm text-gray-500 font-medium">Manage fleet inventory and driver assignments</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1.5 rounded-full bg-orange-100 text-orange-600 text-sm font-semibold">
-            {filteredVehicles.length} Vehicles
-          </span>
-          <button onClick={() => setShowCreateModal(true)}
-            className="btn-primary flex items-center gap-2 py-2.5 px-4">
-            <Plus size={18} /><span>Add Vehicle</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="card p-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 flex gap-2">
-            <div className="relative flex-1">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by registration number..." className="input pl-11" />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1">
+            <div className="px-4 py-2 flex flex-col items-center">
+              <span className="text-xl font-black text-gray-900 leading-none">{vehicles.length}</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Total Fleet</span>
             </div>
           </div>
-          <div className="relative">
-            <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <select value={vendorFilter} onChange={(e) => setVendorFilter(e.target.value)}
-              className="input pl-11 pr-10 appearance-none cursor-pointer min-w-[160px]">
-              <option value="">All Vendors</option>
-              {vendors.map(v => <option key={v.id} value={v.id}>{v.companyName}</option>)}
-            </select>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-2xl hover:bg-black shadow-lg shadow-gray-200 text-sm font-bold transition-all transform hover:-translate-y-0.5 active:scale-95"
+            >
+              <Plus size={18} />
+              Register Vehicle
+            </button>
+            <button
+              onClick={fetchData}
+              className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
+              title="Refresh Data"
+            >
+              <RotateCcw size={20} />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Vehicles Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      {/* Modern Filter Section */}
+      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex-1 min-w-[300px] relative">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by registration, model, or vehicle code..."
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-400"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <select
+                value={vendorFilter}
+                onChange={(e) => setVendorFilter(e.target.value)}
+                className="pl-9 pr-8 py-3 bg-gray-50 border-none rounded-2xl text-xs font-bold text-gray-600 appearance-none focus:ring-2 focus:ring-gray-200 outline-none cursor-pointer"
+              >
+                <option value="">Vendor: All</option>
+                {vendors.map(v => <option key={v.id} value={v.id}>{v.companyName || v.name}</option>)}
+              </select>
+            </div>
+
+            <button
+              onClick={() => { setSearch(''); setVendorFilter(''); }}
+              className="px-4 py-3 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Global Stats or Sub-filters if needed */}
+      </div>
+
+      {/* Table Section */}
+      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1200px]">
-            <thead className="bg-[#E32222] text-white">
-              <tr>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[120px]">Vehicle ID</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Reg No.</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Model / Type</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Owner (Vendor)</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">Assignment</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider">City</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[80px]">Status</th>
-                <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider w-[160px]">Actions</th>
+          <table className="w-full text-left border-collapse min-w-[1100px]">
+            <thead>
+              <tr className="border-b border-gray-50">
+                <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Reference</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Registration</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Model / Type</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Fleet Owner</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Assigned Partner</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Operational Hub</th>
+                <th className="px-4 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono">Status & Verify</th>
+                <th className="px-4 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest font-mono pr-8">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 italic text-gray-800">
+            <tbody className="divide-y divide-gray-50">
               {filteredVehicles.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500 italic not-italic">No vehicles found.</td>
+                  <td colSpan={8} className="px-6 py-20 text-center">
+                    <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                      <Truck size={24} className="text-gray-300" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-400">No vehicles matching your search criteria</p>
+                  </td>
                 </tr>
               ) : (
                 filteredVehicles.map((vehicle) => (
-                  <tr key={vehicle.id} className="hover:bg-red-50/20 transition-colors not-italic">
-                    <td className="px-3 py-4">
-                      <span className="text-[11px] font-bold text-orange-600 font-mono uppercase">
+                  <tr key={vehicle.id} className="group transition-all duration-200 hover:bg-gray-50/50">
+                    <td className="px-6 py-4">
+                      <span className="text-[11px] font-black text-orange-600 tracking-tight font-mono">
                         {vehicle.customId}
                       </span>
                     </td>
-                    <td className="px-3 py-4">
-                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-[#E32222]">
-                          <Car size={14} />
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-600 group-hover:scale-110 transition-transform">
+                          <Car size={16} />
                         </div>
-                        <span className="text-[11px] font-black text-gray-800 tracking-tight">{vehicle.registrationNumber}</span>
+                        <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{vehicle.registrationNumber}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-gray-700">{vehicle.vehicleModel}</span>
-                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{vehicle.vehicleType?.displayName}</span>
+                        <span className="text-[13px] font-black text-gray-800">{vehicle.vehicleModel}</span>
+                        <div className="inline-flex items-center gap-1 mt-0.5">
+                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{vehicle.vehicleType?.displayName}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-3 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-orange-600 font-mono">{vehicle.vendor?.customId}</span>
-                        <span className="text-[10px] text-gray-500 truncate max-w-[150px]">{vehicle.vendor?.companyName || vehicle.vendor?.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck size={10} className="text-gray-400" />
+                          <span className="text-[10px] font-black text-gray-700 tracking-tight">{vehicle.vendor?.customId}</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-400 truncate max-w-[140px] mt-0.5">{vehicle.vendor?.companyName}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-4">
-                       {vehicle.partner ? (
-                        <div className="flex items-center gap-2">
-                          <UserCheck size={12} className="text-blue-500" />
+                    <td className="px-4 py-4">
+                      {vehicle.partner ? (
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                            <UserCheck size={14} />
+                          </div>
                           <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-gray-700">{vehicle.partner.name}</span>
-                            <span className="text-[9px] text-emerald-600 font-mono font-bold tracking-tighter uppercase">{vehicle.partner.customId}</span>
+                            <span className="text-[11px] font-black text-gray-800">{vehicle.partner.name}</span>
+                            <span className="text-[9px] text-blue-600 font-mono font-bold tracking-tighter uppercase">{vehicle.partner.customId}</span>
                           </div>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-gray-400 italic">Unassigned</span>
+                        <div className="inline-flex px-2 py-0.5 bg-gray-100 rounded-md">
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Unassigned</span>
+                        </div>
                       )}
                     </td>
-                    <td className="px-3 py-4 text-[11px] font-medium text-gray-600">
-                      {vehicle.cityCode?.cityName}
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="flex flex-col gap-1 items-start">
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${activeStatusColors[vehicle.status] || 'bg-gray-100 text-gray-700'}`}>
-                          {vehicle.status}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase ${verificationStatusColors[vehicle.verificationStatus] || 'bg-gray-100 text-gray-700'}`}>
-                          {vehicle.verificationStatus}
-                        </span>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin size={12} className="text-gray-400" />
+                        <span className="text-[11px] font-black text-gray-700">{vehicle.cityCode?.cityName || 'Unset'}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-4">
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex gap-1">
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) handleStatusUpdate(vehicle, e.target.value as EntityActiveStatus);
-                            }}
-                            className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer flex-1"
-                          >
-                            <option value="">Status</option>
-                            <option value="ACTIVE">Activate</option>
-                            <option value="INACTIVE">Deactivate</option>
-                            <option value="SUSPENDED">Suspend</option>
-                            <option value="BANNED">Ban</option>
-                          </select>
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) handleVerifyHelper(vehicle, e.target.value as EntityVerificationStatus);
-                            }}
-                            className="text-[9px] p-1 border border-gray-200 rounded bg-white outline-none cursor-pointer flex-1"
-                          >
-                            <option value="">Verify</option>
-                            <option value="VERIFIED">Verify</option>
-                            <option value="REJECTED">Reject</option>
-                            <option value="UNDER_REVIEW">Review</option>
-                          </select>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-wrap gap-1.5 max-w-[160px]">
+                        <div className={`px-2 py-1 rounded-lg flex items-center gap-1.5 ${activeStatusColors[vehicle.status] || 'bg-gray-100 text-gray-700'}`}>
+                          <div className={`w-1 h-1 rounded-full ${vehicle.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <span className="text-[9px] font-black uppercase tracking-widest">{vehicle.status}</span>
                         </div>
-                        <div className="flex gap-2">
-                          <Link href={`/dashboard/vehicles/${vehicle.id}/edit`} className="p-1 px-2 text-blue-600 hover:bg-blue-50 rounded text-[9px] font-bold flex items-center gap-1">
-                            <Eye size={12} /> Edit
-                          </Link>
-                          <button onClick={() => handleDelete(vehicle)} className="p-1 px-2 text-red-600 hover:bg-red-50 rounded text-[9px] font-bold flex items-center gap-1">
-                            <Trash2 size={12} /> Delete
+                        <div className={`px-2 py-1 rounded-lg flex items-center gap-1.5 ${verificationStatusColors[vehicle.verificationStatus] || 'bg-gray-100 text-gray-700'}`}>
+                          <span className="text-[9px] font-black uppercase tracking-widest">{vehicle.verificationStatus}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-right pr-6">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 translate-x-2">
+                        <div className="relative group/actions">
+                          <button className="p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-400 hover:text-gray-900">
+                            <Filter size={16} />
                           </button>
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 hidden group-hover/actions:block z-20">
+                            <p className="px-4 py-1 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Update Status</p>
+                            {['ACTIVE', 'INACTIVE', 'SUSPENDED', 'BANNED'].map((s) => (
+                              <button key={s} onClick={() => handleStatusUpdate(vehicle, s as any)} className="w-full px-4 py-2 text-left text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-between">
+                                {s} {vehicle.status === s && <CheckCircle2 size={10} className="text-green-500" />}
+                              </button>
+                            ))}
+                            <div className="h-px bg-gray-100 my-1" />
+                            <p className="px-4 py-1 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 mt-1">Verification</p>
+                            {['VERIFIED', 'REJECTED', 'UNDER_REVIEW'].map((v) => (
+                              <button key={v} onClick={() => handleVerifyHelper(vehicle, v as any)} className="w-full px-4 py-2 text-left text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-between">
+                                {v.replace('_', ' ')} {vehicle.verificationStatus === v && <CheckCircle2 size={10} className="text-blue-500" />}
+                              </button>
+                            ))}
+                          </div>
                         </div>
+
+                        <Link
+                          href={`/dashboard/vehicles/${vehicle.id}/edit`}
+                          className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-xl transition-all shadow-sm"
+                          title="Edit Vehicle"
+                        >
+                          <Eye size={16} />
+                        </Link>
+
+                        <button
+                          onClick={() => handleDelete(vehicle)}
+                          className="p-2 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all shadow-sm"
+                          title="Remove Vehicle"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -315,11 +368,23 @@ export default function VehiclesPage() {
             </tbody>
           </table>
         </div>
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
-          <span className="text-xs text-gray-500">Showing <span className="font-bold text-[#E32222]">{vehicles.length}</span> fleet vehicles</span>
+
+        {/* Modern Footer */}
+        <div className="flex items-center justify-between px-8 py-5 border-t border-gray-50 bg-gray-50/30">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            Showing <span className="text-gray-900">{filteredVehicles.length}</span> fleet assets
+          </span>
+          <div className="flex items-center gap-3">
+            <button className="p-2 text-gray-400 hover:text-gray-900 disabled:opacity-30">
+              <ChevronLeft size={18} />
+            </button>
+            <button className="p-2 text-gray-400 hover:text-gray-900 disabled:opacity-30">
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
+
 
       {/* Create Modal */}
       {showCreateModal && (
@@ -332,86 +397,86 @@ export default function VehiclesPage() {
               </button>
             </div>
             <div className="overflow-y-auto flex-1 p-6 pt-4">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Partner ID</label>
-                <input type="text" value={formData.partnerId}
-                  onChange={(e) => setFormData({...formData, partnerId: e.target.value})}
-                  className="input" placeholder="Enter Partner ID" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reg No. *</label>
-                <input type="text" value={formData.registrationNumber}
-                  onChange={(e) => setFormData({...formData, registrationNumber: e.target.value.toUpperCase()})}
-                  className="input" placeholder="Enter Vehicle Registration Number" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Model Name *</label>
-                <input type="text" value={formData.vehicleModel}
-                  onChange={(e) => setFormData({...formData, vehicleModel: e.target.value})}
-                  className="input" placeholder="Enter Model Name" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                <input type="text" value={formData.color}
-                  onChange={(e) => setFormData({...formData, color: e.target.value})}
-                  className="input" placeholder="Enter Vehicle Color" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
-                <select value={formData.fuelType}
-                  onChange={(e) => setFormData({...formData, fuelType: e.target.value})}
-                  className="input">
-                  <option value="">Select Fuel Type</option>
-                  <option value="PETROL">Petrol</option>
-                  <option value="DIESEL">Diesel</option>
-                  <option value="CNG">CNG</option>
-                  <option value="ELECTRIC">Electric</option>
-                  <option value="HYBRID">Hybrid</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Group *</label>
-                <select value={formData.vehicleTypeId}
-                  onChange={(e) => setFormData({...formData, vehicleTypeId: e.target.value})}
-                  className="input">
-                  <option value="">Select Vehicle Type</option>
-                  {vehicleTypes.map(t => <option key={t.id} value={t.id}>{t.displayName}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City Code *</label>
-                <select value={formData.cityCodeId}
-                  onChange={(e) => setFormData({...formData, cityCodeId: e.target.value})}
-                  className="input">
-                  <option value="">Select City Code</option>
-                  {cityCodes.map(c => <option key={c.id} value={c.id}>{c.cityName} ({c.code})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">RC Number</label>
-                <input type="text" value={formData.rcNumber}
-                  onChange={(e) => setFormData({...formData, rcNumber: e.target.value.toUpperCase()})}
-                  className="input" placeholder="Enter RC Number" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Chassis Number</label>
-                <input type="text" value={formData.chassisNumber}
-                  onChange={(e) => setFormData({...formData, chassisNumber: e.target.value.toUpperCase()})}
-                  className="input" placeholder="Enter Chassis Number" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Number</label>
-                <input type="text" value={formData.insuranceNumber}
-                  onChange={(e) => setFormData({...formData, insuranceNumber: e.target.value})}
-                  className="input" placeholder="Enter Insurance Number" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Expiry Date</label>
-                <input type="date" value={formData.insuranceExpiryDate}
-                  onChange={(e) => setFormData({...formData, insuranceExpiryDate: e.target.value})}
-                  className="input" />
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Partner ID</label>
+                  <input type="text" value={formData.partnerId}
+                    onChange={(e) => setFormData({ ...formData, partnerId: e.target.value })}
+                    className="input" placeholder="Enter Partner ID" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reg No. *</label>
+                  <input type="text" value={formData.registrationNumber}
+                    onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value.toUpperCase() })}
+                    className="input" placeholder="Enter Vehicle Registration Number" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Model Name *</label>
+                  <input type="text" value={formData.vehicleModel}
+                    onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
+                    className="input" placeholder="Enter Model Name" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                  <input type="text" value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    className="input" placeholder="Enter Vehicle Color" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
+                  <select value={formData.fuelType}
+                    onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })}
+                    className="input">
+                    <option value="">Select Fuel Type</option>
+                    <option value="PETROL">Petrol</option>
+                    <option value="DIESEL">Diesel</option>
+                    <option value="CNG">CNG</option>
+                    <option value="ELECTRIC">Electric</option>
+                    <option value="HYBRID">Hybrid</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Group *</label>
+                  <select value={formData.vehicleTypeId}
+                    onChange={(e) => setFormData({ ...formData, vehicleTypeId: e.target.value })}
+                    className="input">
+                    <option value="">Select Vehicle Type</option>
+                    {vehicleTypes.map(t => <option key={t.id} value={t.id}>{t.displayName}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City Code *</label>
+                  <select value={formData.cityCodeId}
+                    onChange={(e) => setFormData({ ...formData, cityCodeId: e.target.value })}
+                    className="input">
+                    <option value="">Select City Code</option>
+                    {cityCodes.map(c => <option key={c.id} value={c.id}>{c.cityName} ({c.code})</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">RC Number</label>
+                  <input type="text" value={formData.rcNumber}
+                    onChange={(e) => setFormData({ ...formData, rcNumber: e.target.value.toUpperCase() })}
+                    className="input" placeholder="Enter RC Number" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chassis Number</label>
+                  <input type="text" value={formData.chassisNumber}
+                    onChange={(e) => setFormData({ ...formData, chassisNumber: e.target.value.toUpperCase() })}
+                    className="input" placeholder="Enter Chassis Number" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Number</label>
+                  <input type="text" value={formData.insuranceNumber}
+                    onChange={(e) => setFormData({ ...formData, insuranceNumber: e.target.value })}
+                    className="input" placeholder="Enter Insurance Number" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Insurance Expiry Date</label>
+                  <input type="date" value={formData.insuranceExpiryDate}
+                    onChange={(e) => setFormData({ ...formData, insuranceExpiryDate: e.target.value })}
+                    className="input" />
+                </div>
               </div>
             </div>
             <div className="flex gap-3 p-6 pt-4 border-t border-gray-100">

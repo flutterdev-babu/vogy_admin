@@ -82,11 +82,11 @@ export default function PartnerEarningsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
-              {earnings?.recentRides.map((item, i) => (
+              {earnings?.recentRides?.length ? earnings.recentRides.map((item, i) => (
                 <tr key={i} className="hover:bg-emerald-50/30 transition-colors">
                   <td className="py-4 px-6">
                     <p className="text-sm font-bold text-gray-800">{new Date(item.date).toLocaleDateString()}</p>
-                    <p className="text-[10px] text-gray-400 font-mono italic">#{item.rideId.slice(-6)}</p>
+                    <p className="text-[10px] text-gray-400 font-mono italic">#{item.rideId?.slice(-6) || 'N/A'}</p>
                   </td>
                   <td className="py-4 px-6">
                     <span className="text-[10px] font-bold px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg">COMPLETED</span>
@@ -95,7 +95,15 @@ export default function PartnerEarningsPage() {
                   <td className="py-4 px-6 text-right font-medium text-red-400">₹{item.commission}</td>
                   <td className="py-4 px-6 text-right font-bold text-emerald-600">₹{item.earning}</td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <Navigation className="mx-auto mb-3 text-gray-300" size={32} />
+                    <p className="text-sm font-bold text-gray-400">No ride payouts yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Complete rides to see your earnings here.</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { partnerService } from '@/services/partnerService';
 import { PartnerDashboardData, Partner, Ride } from '@/types';
 import { 
   MapPin, DollarSign, Star, Car, AlertCircle, 
   Navigation, Activity, RefreshCw, Power, 
-  Map as MapIcon, ChevronRight, Clock, ShieldCheck
+  Map as MapIcon, ChevronRight, Clock, ShieldCheck,
+  LocateFixed, ExternalLink
 } from 'lucide-react';
+import { useJsApiLoader } from '@react-google-maps/api';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { USER_KEYS } from '@/lib/api';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function PartnerDashboard() {
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -24,6 +27,25 @@ export default function PartnerDashboard() {
   const [startingKm, setStartingKm] = useState('');
   const [endingKm, setEndingKm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState<string | null>(null);
+  const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries: ['places']
+  });
+  
+  // Helper to check for stale rides (user requested 6h threshold)
+  const isRideStale = useCallback((ride: Ride) => {
+    const rideTime = new Date(ride.scheduledDateTime || ride.createdAt).getTime();
+    const diffMs = Date.now() - rideTime;
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    // If ride is in an 'active' status but more than 6 hours old
+    return ['ASSIGNED', 'ARRIVED', 'STARTED', 'ONGOING'].includes(ride.status) && diffHours > 6;
+  }, []);
 
   const fetchData = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
@@ -35,18 +57,25 @@ export default function PartnerDashboard() {
         setStats(response.data);
         
         // Check for active rides in history
+        let hasActiveValidRide = false;
         if (response.data.rides.active > 0) {
           const ridesRes = await partnerService.getRides();
           if (ridesRes.success) {
             const active = ridesRes.data.find(r => ['ASSIGNED', 'ARRIVED', 'STARTED', 'ONGOING'].includes(r.status));
-            setActiveRide(active || null);
+            // Only set if it's NOT stale
+            if (active && !isRideStale(active)) {
+               setActiveRide(active);
+               hasActiveValidRide = true;
+            } else {
+               setActiveRide(null);
+            }
           }
         } else {
           setActiveRide(null);
         }
 
-        // If online and no active ride, fetch available rides
-        if (response.data.status.isOnline && response.data.rides.active === 0) {
+        // If online and no VALID active ride, fetch available rides
+        if (response.data.status.isOnline && !hasActiveValidRide) {
           navigator.geolocation.getCurrentPosition(async (pos) => {
             const ridesRes = await partnerService.getAvailableRides(pos.coords.latitude, pos.coords.longitude);
             if (ridesRes.success) setAvailableRides(ridesRes.data);
@@ -82,6 +111,60 @@ export default function PartnerDashboard() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    if (!isLoaded) return;
+    const geocoder = new google.maps.Geocoder();
+    try {
+      const response = await geocoder.geocode({ location: { lat, lng } });
+      if (response.results[0]) {
+        setCurrentAddress(response.results[0].formatted_address);
+      }
+    } catch (error) {
+      console.error('Geocoding failed:', error);
+    }
+  }, [isLoaded]);
+
+  const updateServerLocation = useCallback(async (lat: number, lng: number) => {
+    try {
+      await partnerService.updateLocation(lat, lng);
+      // Also update address if needed
+      reverseGeocode(lat, lng);
+    } catch (err) {
+      console.error('Failed to update live location:', err);
+    }
+  }, [reverseGeocode]);
+
+  // Periodic location sync when online (Every 60s)
+  useEffect(() => {
+    if (!stats?.status.isOnline) {
+      setCurrentAddress(null);
+      setCurrentCoords(null);
+      return;
+    }
+
+    const syncLocation = () => {
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          setCurrentCoords({ lat, lng });
+          updateServerLocation(lat, lng);
+          setIsLocating(false);
+        },
+        (err) => {
+          console.error('Geolocation error:', err);
+          setIsLocating(false);
+        },
+        { enableHighAccuracy: true }
+      );
+    };
+
+    syncLocation(); // Immediate sync when going online
+    const interval = setInterval(syncLocation, 60000);
+
+    return () => clearInterval(interval);
+  }, [stats?.status.isOnline, updateServerLocation]);
+
   const handleToggleOnline = async () => {
     if (!stats) return;
     const newStatus = !stats.status.isOnline;
@@ -89,11 +172,14 @@ export default function PartnerDashboard() {
     try {
       let lat = 0, lng = 0;
       if (newStatus) {
+        setIsLocating(true);
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
         lat = position.coords.latitude;
         lng = position.coords.longitude;
+        setCurrentCoords({ lat, lng });
+        reverseGeocode(lat, lng);
       }
 
       const res = await partnerService.toggleOnlineStatus(newStatus, lat, lng);
@@ -104,10 +190,16 @@ export default function PartnerDashboard() {
         } : null);
         toast.success(`You are now ${newStatus ? 'ONLINE' : 'OFFLINE'}`);
         if (newStatus) fetchData(true);
-        else setAvailableRides([]);
+        else {
+          setAvailableRides([]);
+          setCurrentAddress(null);
+          setCurrentCoords(null);
+        }
       }
     } catch (err) {
       toast.error('Location access required to go online');
+    } finally {
+      setIsLocating(false);
     }
   };
 
@@ -245,22 +337,36 @@ export default function PartnerDashboard() {
               <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
             </button>
             
-            <div className={`flex items-center gap-4 p-2 pl-6 rounded-3xl border transition-all duration-500 backdrop-blur-xl shadow-lg ${stats?.status.isOnline ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/5 border-white/10'}`}>
-              <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-0.5">Live Status</p>
-                <p className={`text-md font-black tracking-tight ${stats?.status.isOnline ? 'text-emerald-400' : 'text-gray-400'}`}>
-                  {stats?.status.isOnline ? 'ONLINE' : 'OFFLINE'}
-                </p>
-              </div>
-              <button 
-                onClick={handleToggleOnline}
-                disabled={isSubmitting}
-                className={`w-16 h-9 rounded-[1.25rem] transition-all duration-500 relative flex items-center ${stats?.status.isOnline ? 'bg-emerald-500' : 'bg-white/10 shadow-inner'}`}
-              >
-                <div className={`absolute w-7 h-7 bg-white rounded-full transition-all duration-500 flex items-center justify-center shadow-xl ${stats?.status.isOnline ? 'left-8 scale-100' : 'left-1 scale-90 opacity-80'}`}>
-                  <Power size={14} className={stats?.status.isOnline ? 'text-emerald-600' : 'text-gray-400'} />
+            <div className={`flex flex-col gap-1 p-2 pl-4 pr-4 rounded-3xl border transition-all duration-500 backdrop-blur-xl shadow-lg ${stats?.status.isOnline ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-white/5 border-white/10'}`}>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-0.5">Live Status</p>
+                  <div className="flex items-center gap-2">
+                    <p className={`text-md font-black tracking-tight ${stats?.status.isOnline ? 'text-emerald-400' : 'text-gray-400'}`}>
+                      {stats?.status.isOnline ? 'ONLINE' : 'OFFLINE'}
+                    </p>
+                    {isLocating && <LocateFixed size={12} className="text-emerald-400 animate-pulse" />}
+                  </div>
                 </div>
-              </button>
+                <button 
+                  onClick={handleToggleOnline}
+                  disabled={isSubmitting || isLocating}
+                  className={`w-14 h-8 rounded-full transition-all duration-500 relative flex items-center shrink-0 ${stats?.status.isOnline ? 'bg-emerald-500' : 'bg-white/10 shadow-inner'}`}
+                >
+                  <div className={`absolute w-6 h-6 bg-white rounded-full transition-all duration-500 flex items-center justify-center shadow-xl ${stats?.status.isOnline ? 'left-7 scale-100' : 'left-1 scale-90 opacity-80'}`}>
+                    <Power size={12} className={stats?.status.isOnline ? 'text-emerald-600' : 'text-gray-400'} />
+                  </div>
+                </button>
+              </div>
+              
+              {stats?.status.isOnline && currentAddress && (
+                <div className="pt-2 mt-2 border-t border-emerald-500/10 flex flex-col gap-1">
+                   <div className="flex items-start gap-2 text-white/60">
+                      <MapPin size={10} className="text-emerald-400 shrink-0 mt-0.5" />
+                      <p className="text-[9px] font-bold break-words leading-relaxed max-w-[200px]">{currentAddress}</p>
+                   </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -306,24 +412,75 @@ export default function PartnerDashboard() {
           {activeRide && (
             <div className="bg-[#121212] rounded-[2rem] p-8 text-white shadow-2xl border border-white/5 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition-all duration-700" />
-              
+               
               <div className="relative z-10 space-y-6">
                 <div className="flex justify-between items-center">
                    <h2 className="text-2xl font-black italic flex items-center gap-3">
                       <span className="flex h-3 w-3 bg-emerald-500 rounded-full animate-ping" />
                       Active Ride
                    </h2>
-                   <div className="px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
-                      {activeRide.status}
+                   <div className="flex items-center gap-3">
+                     {activeRide.serviceType && (
+                       <div className="px-3 py-1 bg-blue-500/20 backdrop-blur-md rounded-full border border-blue-500/20 text-[10px] font-black uppercase tracking-widest text-blue-400">
+                         {activeRide.serviceType}
+                       </div>
+                     )}
+                     <div className="px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest">
+                       {activeRide.status}
+                     </div>
                    </div>
+                </div>
+
+                {/* Pickup Time & Customer Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-4 bg-white/5 rounded-2xl p-4 border border-white/5">
+                    <div className="p-3 rounded-xl bg-amber-500/10">
+                      <Clock size={20} className="text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Pickup Time</p>
+                      <p className="text-sm font-bold text-white">
+                        {new Date(activeRide.scheduledDateTime || activeRide.createdAt).toLocaleString('en-IN', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit', hour12: true
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-white/5 rounded-2xl p-4 border border-white/5">
+                    <div className="p-3 rounded-xl bg-purple-500/10">
+                      <MapPin size={20} className="text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Customer</p>
+                      <p className="text-sm font-bold text-white truncate">{activeRide.user?.name || 'Customer'}</p>
+                      {activeRide.user?.phone && (
+                        <a href={`tel:${activeRide.user.phone}`} className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
+                          📞 {activeRide.user.phone}
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
                     <ActiveRidePoint label="Pickup Address" address={activeRide.pickupAddress} color="emerald" />
                     <ActiveRidePoint label="Drop Address" address={activeRide.dropAddress} color="red" />
+                    {activeRide.distanceKm > 0 && (
+                      <div className="flex items-center gap-4 pl-6">
+                        <div className="flex items-center gap-2 text-xs font-bold text-white/50">
+                          <Navigation size={14} className="text-emerald-400" /> {activeRide.distanceKm.toFixed(1)} Km
+                        </div>
+                        {activeRide.vehicleType && (
+                          <div className="flex items-center gap-2 text-xs font-bold text-white/50">
+                            <Car size={14} className="text-white/30" /> {activeRide.vehicleType.displayName}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  
+                   
                   <div className="bg-white/5 rounded-2xl p-6 border border-white/5 space-y-6">
                     <div className="flex justify-between items-center">
                        <p className="text-sm font-bold text-white/50">Expected Fare</p>
@@ -630,8 +787,20 @@ function RideRequestCard({ ride, onAccept, loading }: { ride: Ride, onAccept: ()
                <Navigation size={14} /> {ride.distanceKm.toFixed(1)} Km
             </div>
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
-               <Clock size={14} /> Instant
+               <Clock size={14} /> {ride.scheduledDateTime 
+                 ? new Date(ride.scheduledDateTime).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })
+                 : 'Instant'}
             </div>
+            {ride.serviceType && (
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-500 uppercase">
+                {ride.serviceType}
+              </div>
+            )}
+            {ride.user?.name && (
+              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                👤 {ride.user.name}
+              </div>
+            )}
           </div>
         </div>
         <button 

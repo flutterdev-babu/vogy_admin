@@ -13,14 +13,14 @@ const containerStyle = {
   height: '100%'
 };
 
-// Default center (e.g., center of India or a default city like Bangalore)
+// Default center (center of India)
 const defaultCenter = {
   lat: 20.5937,
   lng: 78.9629
 };
 
 interface PartnerLocation {
-  id: string; // Using id or partnerId
+  id: string;
   partnerId?: string;
   customId: string;
   name: string;
@@ -28,9 +28,15 @@ interface PartnerLocation {
   lat: number;
   lng: number;
   vehicleType: string;
+  category: 'CAR' | 'BIKE' | 'AUTO';
+  isOnline: boolean;
 }
 
-export default function PartnerLocationsMap() {
+interface PartnerLocationsMapProps {
+  refreshTrigger?: number;
+}
+
+export default function PartnerLocationsMap({ refreshTrigger = 0 }: PartnerLocationsMapProps) {
   const [partners, setPartners] = useState<Map<string, PartnerLocation>>(new Map());
   const [selectedPartner, setSelectedPartner] = useState<PartnerLocation | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
@@ -53,7 +59,6 @@ export default function PartnerLocationsMap() {
         let count = 0;
 
         response.data.forEach((p: any) => {
-          // Normalize ID based on payload format
           const id = p.id || p.partnerId;
           if (id && p.lat && p.lng) {
             newPartnersMap.set(id, {
@@ -63,7 +68,9 @@ export default function PartnerLocationsMap() {
               phone: p.phone || 'N/A',
               lat: Number(p.lat),
               lng: Number(p.lng),
-              vehicleType: p.vehicleType || p.vehicle?.vehicleType?.displayName || 'Unknown'
+              vehicleType: p.vehicleType || 'Unknown',
+              category: p.category || 'CAR',
+              isOnline: !!p.isOnline
             });
             avgLat += Number(p.lat);
             avgLng += Number(p.lng);
@@ -78,6 +85,8 @@ export default function PartnerLocationsMap() {
             lat: avgLat / count,
             lng: avgLng / count
           });
+        } else {
+          setMapCenter(defaultCenter);
         }
       }
     } catch (error) {
@@ -87,52 +96,49 @@ export default function PartnerLocationsMap() {
   };
 
   useEffect(() => {
-    // 1. Initial Load of Partners via REST
     fetchInitialLocations();
 
-    // 2. Setup Socket.IO for Live Updates
     const token = localStorage.getItem(TOKEN_KEYS.admin);
     const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '');
-    if (!backendUrl) throw new Error("CRITICAL: NEXT_PUBLIC_API_URL is not defined");
+    if (!backendUrl) return;
 
     if (token) {
       socketRef.current = io(backendUrl, {
         transports: ['websocket'],
-        auth: {
-          token
-        }
+        auth: { token }
       });
 
       socketRef.current.on('connect', () => {
-        console.log('Admin Socket Connected for Live Map Map:', socketRef.current?.id);
+        console.log('Admin Socket Connected for Live Map:', socketRef.current?.id);
       });
 
       socketRef.current.on('partner:active_location', (data: any) => {
-        console.log('Partner moved (socket event received):', data);
         if (data && data.partnerId && data.lat && data.lng) {
           setPartners((prevMap) => {
             const newMap = new Map(prevMap);
             const id = data.partnerId;
             newMap.set(id, {
-              ...newMap.get(id), // Keep existing data if we had it, update with new
+              ...newMap.get(id),
               id,
               customId: data.customId || newMap.get(id)?.customId || 'N/A',
               name: data.name || newMap.get(id)?.name || 'Unknown',
               phone: data.phone || newMap.get(id)?.phone || 'N/A',
               lat: Number(data.lat),
               lng: Number(data.lng),
-              vehicleType: data.vehicleType || newMap.get(id)?.vehicleType || 'Unknown'
+              vehicleType: data.vehicleType || newMap.get(id)?.vehicleType || 'Unknown',
+              category: data.category || newMap.get(id)?.category || 'CAR',
+              isOnline: data.isOnline !== undefined ? !!data.isOnline : (newMap.get(id)?.isOnline ?? true)
             });
             return newMap;
           });
 
-          // Update info window if the currently selected partner moved
           setSelectedPartner((prevSelected) => {
             if (prevSelected && prevSelected.id === data.partnerId) {
               return {
                 ...prevSelected,
                 lat: Number(data.lat),
-                lng: Number(data.lng)
+                lng: Number(data.lng),
+                isOnline: data.isOnline !== undefined ? !!data.isOnline : prevSelected.isOnline
               };
             }
             return prevSelected;
@@ -143,17 +149,14 @@ export default function PartnerLocationsMap() {
       socketRef.current.on('connect_error', (err) => {
         console.error('Socket Connection Error:', err);
       });
-    } else {
-      console.warn("No admin token found for map socket connection.");
     }
 
-    // Cleanup on unmount
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
     };
-  }, []);
+  }, [refreshTrigger]);
 
   const onLoad = useCallback(function callback(map: google.maps.Map) {
     mapRef.current = map;
@@ -182,51 +185,53 @@ export default function PartnerLocationsMap() {
   }
 
   return (
-    <div className="w-full h-full min-h-[500px] relative rounded-2xl overflow-hidden shadow-sm border border-gray-200">
-      {/* Live Indicator overlay */}
-      <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-gray-100 flex items-center gap-3">
-        <span className="relative flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-        </span>
-        <span className="text-xs font-bold text-gray-700 tracking-wide uppercase">Live Partners: {partners.size}</span>
-      </div>
-
+    <>
       <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%', minHeight: '500px' }}
+        mapContainerStyle={{ width: '100%', height: '100%' }}
         center={mapCenter}
-        zoom={12}
+        zoom={partners.size > 0 ? 12 : 5}
         onLoad={onLoad}
         onUnmount={onUnmount}
         options={{
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
+          styles: [
+            { featureType: "poi", elementType: "all", stylers: [{ visibility: "off" }] },
+            { featureType: "transit", elementType: "all", stylers: [{ visibility: "off" }] }
+          ]
         }}
       >
-        {Array.from(partners.values()).map((partner) => (
-          <Marker
-            key={partner.id}
-            position={{ lat: partner.lat, lng: partner.lng }}
-            onClick={() => setSelectedPartner(partner)}
-            icon={{
-              path: google.maps?.SymbolPath?.CIRCLE || 0,
-              scale: 8,
-              fillColor: '#E32222',
-              fillOpacity: 1,
-              strokeColor: '#FFFFFF',
-              strokeWeight: 2,
-            }}
-          />
-        ))}
+        {Array.from(partners.values()).map((partner) => {
+          const emoji = partner.category === 'BIKE' ? '🏍️' : partner.category === 'AUTO' ? '🛺' : '🚗';
+          const strokeColor = partner.isOnline ? '#E32222' : '#6B7280';
+          const fillColor = partner.isOnline ? 'white' : '#DFDFDF';
+          const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+              <circle cx="20" cy="20" r="18" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
+              <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="20" style="filter: ${partner.isOnline ? 'none' : 'grayscale(1) opacity(0.7)'}">${emoji}</text>
+            </svg>
+          `;
+          
+          return (
+            <Marker
+              key={partner.id}
+              position={{ lat: partner.lat, lng: partner.lng }}
+              onClick={() => setSelectedPartner(partner)}
+              icon={{
+                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+                scaledSize: new google.maps.Size(40, 40),
+                anchor: new google.maps.Point(20, 20),
+              }}
+            />
+          );
+        })}
 
         {selectedPartner && (
           <InfoWindow
             position={{ lat: selectedPartner.lat, lng: selectedPartner.lng }}
             onCloseClick={() => setSelectedPartner(null)}
-            options={{
-              pixelOffset: new google.maps.Size(0, -10),
-            }}
+            options={{ pixelOffset: new google.maps.Size(0, -10) }}
           >
             <div className="p-1 min-w-[200px]">
               <div className="flex items-center gap-3 border-b border-gray-100 pb-3 mb-3">
@@ -234,11 +239,15 @@ export default function PartnerLocationsMap() {
                   <Navigation size={14} className="text-[#E32222]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">{selectedPartner.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-gray-900">{selectedPartner.name}</h3>
+                    <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${selectedPartner.isOnline ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>
+                      {selectedPartner.isOnline ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                   <p className="text-[10px] uppercase tracking-wider font-bold text-[#E32222] mt-0.5">{selectedPartner.customId}</p>
                 </div>
               </div>
-
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2.5 text-gray-600">
                   <Phone size={14} className="text-gray-400 shrink-0" />
@@ -253,6 +262,6 @@ export default function PartnerLocationsMap() {
           </InfoWindow>
         )}
       </GoogleMap>
-    </div>
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { partnerApi, adminApi, riderApi, rideApi, userApi } from '@/lib/api';
+import { partnerApi, adminApi, rideApi, userApi } from '@/lib/api';
 import {
   ApiResponse,
   Partner,
@@ -59,19 +59,19 @@ export const partnerService = {
   // =====================
 
   async getAvailableRides(lat: number, lng: number, vehicleTypeId?: string): Promise<ApiResponse<Ride[]>> {
-    const response = await riderApi.get('/rides/available', {
+    const response = await partnerApi.get('/rides/available', {
       params: { lat, lng, vehicleTypeId }
     });
     return response.data;
   },
 
   async acceptRide(id: string): Promise<ApiResponse<Ride>> {
-    const response = await riderApi.post(`/rides/${id}/accept`);
+    const response = await partnerApi.post(`/rides/${id}/accept`);
     return response.data;
   },
 
   async updateRideStatus(id: string, status: string, options?: { userOtp?: string; startingKm?: number; endingKm?: number }): Promise<ApiResponse<Ride>> {
-    const response = await riderApi.patch(`/rides/${id}/status`, { status, ...options });
+    const response = await partnerApi.patch(`/rides/${id}/status`, { status, ...options });
     return response.data;
   },
 
@@ -148,6 +148,11 @@ export const partnerService = {
   },
 
   async createPartner(data: PartnerRegisterRequest): Promise<ApiResponse<Partner>> {
+    const response = await adminApi.post('/partners/register', data);
+    return response.data;
+  },
+
+  async adminCreatePartner(data: { name: string, phone: string, cityCodeId?: string, vehicleTypeId?: string }): Promise<ApiResponse<Partner>> {
     const response = await adminApi.post('/partners', data);
     return response.data;
   },

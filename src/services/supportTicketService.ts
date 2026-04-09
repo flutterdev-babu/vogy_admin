@@ -81,5 +81,15 @@ export const supportTicketService = {
     async resolveTicket(id: string, resolution: string): Promise<ApiResponse<SupportTicket>> {
         const response = await adminApi.post(`/support-tickets/${id}/resolve`, { resolution });
         return response.data;
+    },
+
+    async getTicketByRideId(rideId: string): Promise<ApiResponse<SupportTicket>> {
+        const response = await adminApi.get('/support-tickets', { params: { rideId } });
+        if (response.data.success && response.data.data) {
+            const tickets = (response.data.data as any).tickets || response.data.data;
+            const rideTicket = Array.isArray(tickets) && tickets.length > 0 ? tickets[0] : null;
+            return { ...response.data, data: rideTicket };
+        }
+        return response.data;
     }
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MapPin, Search, Globe, Plus, RotateCcw } from 'lucide-react';
+import { MapPin, Search, Globe, Plus, RotateCcw, Edit2, Trash2 } from 'lucide-react';
 import { cityCodeService } from '@/services/cityCodeService';
 import { CityCode } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
@@ -16,33 +16,91 @@ export default function CityCodesPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedCity, setSelectedCity] = useState<CityCode | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState({ code: '', cityName: '' });
+  const [form, setForm] = useState({ code: '', cityName: '', isAvailable: true });
 
   const cityMappings = [
+    { cityName: 'Mumbai', code: 'BOM' },
     { cityName: 'Delhi', code: 'DEL' },
+    { cityName: 'Bangalore', code: 'BLR' },
+    { cityName: 'Hyderabad', code: 'HYD' },
+    { cityName: 'Ahmedabad', code: 'AMD' },
     { cityName: 'Chennai', code: 'MAA' },
     { cityName: 'Kolkata', code: 'CCU' },
-    { cityName: 'Ahmedabad', code: 'AMD' },
-    { cityName: 'Pune', code: 'PNQ' },
     { cityName: 'Surat', code: 'STV' },
+    { cityName: 'Pune', code: 'PNQ' },
     { cityName: 'Jaipur', code: 'JAI' },
     { cityName: 'Lucknow', code: 'LKO' },
     { cityName: 'Kanpur', code: 'KNU' },
     { cityName: 'Nagpur', code: 'NAG' },
-    { cityName: 'Visakhapatnam', code: 'VTZ' },
-    { cityName: 'Vijayawada', code: 'VGA' },
+    { cityName: 'Indore', code: 'IDR' },
+    { cityName: 'Thane', code: 'TNA' },
     { cityName: 'Bhopal', code: 'BHO' },
+    { cityName: 'Visakhapatnam', code: 'VTZ' },
+    { cityName: 'Pimpri-Chinchwad', code: 'PCW' },
     { cityName: 'Patna', code: 'PAT' },
-    { cityName: 'Chandigarh', code: 'IXC' },
+    { cityName: 'Vadodara', code: 'BDQ' },
+    { cityName: 'Ghaziabad', code: 'GZB' },
+    { cityName: 'Ludhiana', code: 'LUH' },
+    { cityName: 'Agra', code: 'AGR' },
+    { cityName: 'Nashik', code: 'ISK' },
+    { cityName: 'Faridabad', code: 'FDB' },
+    { cityName: 'Meerut', code: 'MUT' },
+    { cityName: 'Rajkot', code: 'RAJ' },
+    { cityName: 'Kalyan-Dombivli', code: 'KDL' },
+    { cityName: 'Vasai-Virar', code: 'VSR' },
+    { cityName: 'Varanasi', code: 'VNS' },
+    { cityName: 'Srinagar', code: 'SXR' },
+    { cityName: 'Aurangabad', code: 'IXU' },
+    { cityName: 'Dhanbad', code: 'DHN' },
+    { cityName: 'Amritsar', code: 'ATQ' },
+    { cityName: 'Navi Mumbai', code: 'NVM' },
+    { cityName: 'Allahabad', code: 'IXD' },
+    { cityName: 'Howrah', code: 'HWH' },
+    { cityName: 'Ranchi', code: 'IXR' },
+    { cityName: 'Gwalior', code: 'GWL' },
+    { cityName: 'Jabalpur', code: 'JLR' },
     { cityName: 'Coimbatore', code: 'CJB' },
+    { cityName: 'Vijayawada', code: 'VGA' },
+    { cityName: 'Jodhpur', code: 'JDH' },
+    { cityName: 'Madurai', code: 'IXM' },
+    { cityName: 'Raipur', code: 'RPR' },
+    { cityName: 'Kota', code: 'KOT' },
+    { cityName: 'Chandigarh', code: 'IXC' },
+    { cityName: 'Guwahati', code: 'GAU' },
+    { cityName: 'Solapur', code: 'SOL' },
+    { cityName: 'Hubli-Dharwad', code: 'HBL' },
+    { cityName: 'Mysore', code: 'MYS' },
+    { cityName: 'Tiruchirappalli', code: 'TRZ' },
+    { cityName: 'Bareilly', code: 'BEH' },
+    { cityName: 'Aligarh', code: 'ALI' },
+    { cityName: 'Tiruppur', code: 'TUP' },
+    { cityName: 'Gurgaon', code: 'GUR' },
+    { cityName: 'Moradabad', code: 'MOR' },
+    { cityName: 'Jalandhar', code: 'JAL' },
+    { cityName: 'Bhubaneswar', code: 'BBI' },
+    { cityName: 'Salem', code: 'SLM' },
+    { cityName: 'Warangal', code: 'WGL' },
+    { cityName: 'Guntur', code: 'GUN' },
+    { cityName: 'Bhiwandi', code: 'BHI' },
+    { cityName: 'Saharanpur', code: 'SAH' },
+    { cityName: 'Gorakhpur', code: 'GOP' },
+    { cityName: 'Bikaner', code: 'BIK' },
+    { cityName: 'Amravati', code: 'AMR' },
+    { cityName: 'Noida', code: 'NDA' },
+    { cityName: 'Jamshedpur', code: 'IXW' },
+    { cityName: 'Bhilai', code: 'BHN' },
+    { cityName: 'Cuttack', code: 'CTC' },
+    { cityName: 'Firozabad', code: 'FIR' },
     { cityName: 'Kochi', code: 'COK' },
+    { cityName: 'Nellore', code: 'NLR' },
+    { cityName: 'Dehradun', code: 'DED' },
     { cityName: 'Tirupati', code: 'TIR' },
   ];
 
   const fetchCityCodes = async () => {
     try {
       setIsLoading(true);
-      const response = await cityCodeService.getAll();
+      const response = await cityCodeService.getAllAdmin();
       if (response.success) {
         setCityCodes(response.data || []);
       }
@@ -69,15 +127,15 @@ export default function CityCodesPage() {
     try {
       let response;
       if (isEditMode && selectedCity) {
-        response = await cityCodeService.update(selectedCity.id, form.code.toUpperCase(), form.cityName);
+        response = await cityCodeService.update(selectedCity.id, form.code.toUpperCase(), form.cityName, form.isAvailable);
       } else {
-        response = await cityCodeService.create(form.code.toUpperCase(), form.cityName);
+        response = await cityCodeService.create(form.code.toUpperCase(), form.cityName, form.isAvailable);
       }
 
       if (response.success) {
         toast.success(isEditMode ? 'City code updated successfully' : 'City code created successfully');
         setIsModalOpen(false);
-        setForm({ code: '', cityName: '' });
+        setForm({ code: '', cityName: '', isAvailable: true });
         setIsEditMode(false);
         setSelectedCity(null);
         fetchCityCodes();
@@ -105,7 +163,7 @@ export default function CityCodesPage() {
       for (let i = 0; i < cityMappings.length; i++) {
         const city = cityMappings[i];
         toast.loading(`Adding ${city.cityName} (${i + 1}/${cityMappings.length})...`, { id: toastId });
-        
+
         try {
           // Check if already exists in local state to avoid redundant calls if possible
           const exists = cityCodes.some(c => c.code.toUpperCase() === city.code.toUpperCase());
@@ -124,7 +182,7 @@ export default function CityCodesPage() {
           console.error(`Failed to add ${city.cityName}:`, err);
           failCount++;
         }
-        
+
         // Small delay to prevent rate limiting or UI freezing
         await new Promise(resolve => setTimeout(resolve, 300));
       }
@@ -141,7 +199,7 @@ export default function CityCodesPage() {
 
   const handleEdit = (city: CityCode) => {
     setSelectedCity(city);
-    setForm({ code: city.code, cityName: city.cityName });
+    setForm({ code: city.code, cityName: city.cityName, isAvailable: city.isAvailable ?? true });
     setIsEditMode(true);
     setIsModalOpen(true);
   };
@@ -171,156 +229,192 @@ export default function CityCodesPage() {
   if (isLoading && cityCodes.length === 0) return <PageLoader />;
 
   return (
-    <div className="animate-fade-in space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+    <div className="space-y-8 pb-20">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-800">City Codes</h1>
-          <p className="text-xs text-gray-500 mt-0.5">View and manage city codes for operations</p>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Geographical Hub</h1>
+          <p className="text-sm text-gray-500 font-medium">Service area management and operational city nodes</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1.5 rounded-full bg-purple-100 text-purple-600 text-xs font-semibold">
-            {cityCodes.length} Cities
-          </span>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20 text-sm font-semibold transition-all"
-          >
-            <Plus size={16} />
-            Add City Code
-          </button>
-          <button
-            onClick={handleAutoAdd}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 text-sm font-semibold transition-all disabled:opacity-50"
-          >
-            <Globe size={16} />
-            Auto Add Cities
-          </button>
-          <button 
-            onClick={fetchCityCodes}
-            className="p-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20"
-          >
-            <RotateCcw size={18} />
-          </button>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1">
+            <div className="px-4 py-2 flex flex-col items-center">
+              <span className="text-xl font-black text-gray-900 leading-none">{cityCodes.length}</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Total Nodes</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleAutoAdd}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-5 py-3 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-100 font-bold text-xs hover:bg-indigo-100 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <Globe size={14} />
+              <span>BULK IMPORT</span>
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl font-bold text-xs shadow-lg shadow-gray-200 transition-all hover:bg-black hover:-translate-y-0.5 active:scale-95"
+            >
+              <Plus size={16} />
+              <span>ADD NEW CITY</span>
+            </button>
+            <button
+              onClick={fetchCityCodes}
+              className="p-3 bg-white text-gray-600 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+              title="Refresh Network"
+            >
+              <RotateCcw size={20} className={isLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-4">
-        <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+      {/* Search Bar Section */}
+      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+        <div className="max-w-2xl relative group">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-gray-900 transition-colors" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by city name or code..."
-            className="input pl-11 text-sm h-10"
+            placeholder="Filter by city name, IATA code, or region..."
+            className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-300 font-medium"
           />
         </div>
       </div>
 
-      {/* City Codes Grid */}
+      {/* City Nodes Grid */}
       {filteredCityCodes.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
-          <MapPin size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700">No city codes found</h3>
-          <p className="text-gray-500 mt-1">Add your first city code to get started</p>
+        <div className="bg-white border border-gray-100 rounded-[3rem] p-24 text-center shadow-sm">
+          <div className="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+            <MapPin size={40} className="text-gray-200" />
+          </div>
+          <h3 className="text-xl font-black text-gray-900 tracking-tight">No Active Nodes Found</h3>
+          <p className="text-sm text-gray-400 font-medium mt-2">Initialize your service network by adding city codes</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
           {filteredCityCodes.map((city) => (
             <div
               key={city.id}
-              className="bg-white border border-gray-200 rounded-xl p-5 hover:border-purple-300 transition-all group text-center shadow-sm relative"
+              className="group bg-white border border-gray-100 rounded-[2.5rem] p-6 hover:shadow-2xl hover:shadow-gray-100 transition-all duration-300 text-center relative overflow-hidden"
             >
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Individual Actions - Hover Triggered */}
+              <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
                 <button
                   onClick={() => handleEdit(city)}
-                  className="p-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
-                  title="Edit"
+                  className="p-2 bg-white/80 backdrop-blur-md text-gray-600 rounded-xl hover:bg-gray-900 hover:text-white shadow-sm transition-all border border-gray-50"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                  <Edit2 size={12} />
                 </button>
                 <button
                   onClick={() => handleDelete(city.id)}
-                  className="p-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors"
-                  title="Delete"
+                  className="p-2 bg-white/80 backdrop-blur-md text-red-500 rounded-xl hover:bg-red-500 hover:text-white shadow-sm transition-all border border-gray-50"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                  <Trash2 size={12} />
                 </button>
               </div>
-              <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-4 group-hover:scale-110 transition-transform">
-                <Globe size={24} className="text-white" />
+
+              {/* Status Indicator Dot */}
+              <div className={`absolute top-6 left-6 w-2 h-2 rounded-full ${city.isAvailable !== false ? 'bg-emerald-500' : 'bg-red-500'} shadow-[0_0_8px_rgba(16,185,129,0.5)]`} />
+
+              <div className="w-16 h-16 mx-auto rounded-[1.25rem] bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center shadow-xl shadow-gray-200 mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                <Globe size={28} className="text-white opacity-90" />
               </div>
-              <h3 className="font-bold text-gray-800 mb-1 text-sm truncate">{city.cityName}</h3>
-              <span className="inline-block px-3 py-1 bg-purple-100 text-purple-600 text-[11px] font-bold rounded-full">
-                {city.code}
-              </span>
+
+              <h3 className="font-black text-gray-900 text-sm tracking-tight truncate px-2">{city.cityName}</h3>
+
+              <div className="mt-4 flex flex-col items-center gap-3">
+                <span className="inline-block px-3 py-1 bg-gray-50 group-hover:bg-red-50 text-gray-500 group-hover:text-red-500 text-[10px] font-black rounded-lg border border-gray-100 transition-colors uppercase tracking-widest font-mono">
+                  {city.code}
+                </span>
+
+                <div className={`text-[9px] font-black uppercase tracking-[0.2em] ${city.isAvailable !== false ? 'text-emerald-500' : 'text-red-400'}`}>
+                  {city.isAvailable !== false ? 'Operating' : 'Suspended'}
+                </div>
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Add Modal */}
+      {/* Modernized Specialized Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setIsEditMode(false);
           setSelectedCity(null);
-          setForm({ code: '', cityName: '' });
+          setForm({ code: '', cityName: '', isAvailable: true });
         }}
-        title={isEditMode ? "Edit City Code" : "Add New City Code"}
+        title={isEditMode ? "Modify Node" : "Register Node"}
         size="sm"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
-              City Code (e.g. NYC, LDN)
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Enter code"
-              className="input text-sm"
-              value={form.code}
-              onChange={(e) => setForm({ ...form, code: e.target.value })}
-              maxLength={10}
-            />
+        <form onSubmit={handleSubmit} className="space-y-6 p-2">
+          <div className="space-y-5">
+            <div className="group">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Terminal Code (IATA)</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. BOM / DEL"
+                className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all uppercase placeholder:normal-case font-mono"
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+                maxLength={10}
+              />
+            </div>
+
+            <div className="group">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Geographical Name</label>
+              <input
+                type="text"
+                required
+                placeholder="Enter city name"
+                className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all"
+                value={form.cityName}
+                onChange={(e) => setForm({ ...form, cityName: e.target.value })}
+              />
+            </div>
+
+            <div className="group">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Live Status</label>
+              <div className="flex bg-gray-50 rounded-2xl p-1.5 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, isAvailable: true })}
+                  className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${form.isAvailable ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Active
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, isAvailable: false })}
+                  className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!form.isAvailable ? 'bg-white shadow-sm text-red-500' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Inactive
+                </button>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
-              City Name
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Enter city name"
-              className="input text-sm"
-              value={form.cityName}
-              onChange={(e) => setForm({ ...form, cityName: e.target.value })}
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setIsModalOpen(false);
-                setIsEditMode(false);
-                setSelectedCity(null);
-                setForm({ code: '', cityName: '' });
-              }}
-              className="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold transition-all"
-            >
-              Cancel
-            </button>
+
+          <div className="flex flex-col gap-3 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-[#E32222] text-white rounded-lg hover:bg-[#cc1f1f] shadow-lg shadow-red-500/20 text-sm font-semibold transition-all disabled:opacity-50"
+              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-gray-100 hover:bg-black transition-all active:scale-95 disabled:opacity-50"
             >
-              {isSubmitting ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update City Code' : 'Create City Code')}
+              {isSubmitting ? 'Processing Network...' : (isEditMode ? 'COMMIT NODE CHANGES' : 'AUTHORIZE NEW NODE')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="w-full py-4 rounded-2xl text-gray-400 font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all"
+            >
+              Dismiss
             </button>
           </div>
         </form>

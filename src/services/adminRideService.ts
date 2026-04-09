@@ -7,7 +7,7 @@ export const adminRideService = {
     if (filters?.status) params.append('status', filters.status);
     if (filters?.startDate) params.append('startDate', filters.startDate);
     if (filters?.endDate) params.append('endDate', filters.endDate);
-    
+
     const queryString = params.toString();
     const response = await api.get(`/rides${queryString ? `?${queryString}` : ''}`);
     return response.data;
@@ -25,6 +25,19 @@ export const adminRideService = {
 
   async updateStatus(id: string, status: string, options?: { userOtp?: string; startingKm?: number; endingKm?: number; manualDiscount?: number }): Promise<ApiResponse<any>> {
     const response = await api.patch(`/rides/${id}/status`, { status, ...options });
+    return response.data;
+  },
+
+  async updateRideDetails(id: string, data: {
+    taxes?: number;
+    tollCharges?: number;
+    additionalCharges?: number;
+    driverDiscount?: number;
+    partnerId?: string;
+    paymentStatus?: string;
+    isLocked?: boolean;
+  }): Promise<ApiResponse<Ride>> {
+    const response = await api.patch(`/rides/${id}/update`, data);
     return response.data;
   },
 

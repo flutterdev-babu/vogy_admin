@@ -19,6 +19,8 @@ import {
     Search,
     Home,
     Briefcase,
+    Globe,
+    AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -39,6 +41,7 @@ interface CityCode {
     code: string;
     cityName: string;
     isActive: boolean;
+    isAvailable: boolean;
 }
 
 interface FareEstimate {
@@ -56,7 +59,7 @@ export default function BookRidePage() {
     const [advanceAmount, setAdvanceAmount] = useState<number>(0);
     const [transactionId, setTransactionId] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
-    
+
     // Hardening: Idempotency & Intent State
     const [idempotencyKey, setIdempotencyKey] = useState<string>('');
     const [currentIntentId, setCurrentIntentId] = useState<string | null>(null);
@@ -119,7 +122,7 @@ export default function BookRidePage() {
                         intent = intentRes.data;
                     }
                 }
-                
+
                 if (intent) {
                     console.log('RECOVERED INTENT:', intent);
 
@@ -315,7 +318,7 @@ export default function BookRidePage() {
         if (!pickupCoords) return toast.error('Pickup coordinates are missing');
         if (!dropCoords) return toast.error('Drop coordinates are missing');
         if (!selectedVehicleTypeId) return toast.error('Please select a vehicle type');
-        
+
         if (!selectedFare) {
             return toast.error('Please wait for the fare estimate to calculate before booking.');
         }
@@ -323,7 +326,7 @@ export default function BookRidePage() {
         setIsLoading(true);
         try {
             const advance = Math.ceil(selectedFare.totalFare * 0.26);
-            
+
             // Step 1: Initiate Intent on Backend
             let key = idempotencyKey || crypto.randomUUID();
             setIdempotencyKey(key);
@@ -332,7 +335,7 @@ export default function BookRidePage() {
                 amount: advance,
                 idempotencyKey: key,
                 rideDetails: {
-                    pickupAddress, dropAddress, pickupCoords, dropCoords, 
+                    pickupAddress, dropAddress, pickupCoords, dropCoords,
                     distanceKm, rideType, selectedFare, selectedVehicleTypeId
                 }
             }));
@@ -342,7 +345,7 @@ export default function BookRidePage() {
                 setAdvanceAmount(advance);
                 setIntentExpiry(new Date(res.data.expiresAt));
                 setStep('payment');
-                
+
                 localStorage.setItem('vogy_booking_intent_id', res.data.id);
                 localStorage.setItem('vogy_booking_idempotency_key', key);
             }
@@ -404,7 +407,7 @@ export default function BookRidePage() {
                 setCreatedRide(res.data);
                 setStep('success');
                 toast.success('Ride confirmed and linked successfully!');
-                
+
                 // Clear state ONLY after success
                 localStorage.removeItem('vogy_booking_intent_id');
                 localStorage.removeItem('vogy_booking_idempotency_key');
@@ -465,7 +468,7 @@ export default function BookRidePage() {
                             <span className="text-green-400 text-[10px] font-bold tracking-widest uppercase">Confirmation Fee</span>
                             <span className="text-green-400 text-xl font-black italic tracking-tighter">₹{Math.round((selectedFare?.totalFare || 0) * 0.26)}</span>
                         </div>
-                         <div className="flex justify-between items-center px-6 py-5 bg-[#E32222]/10">
+                        <div className="flex justify-between items-center px-6 py-5 bg-[#E32222]/10">
                             <span className="text-[#E32222] text-[10px] font-black tracking-wider uppercase">Pay to Driver later</span>
                             <span className="text-[#E32222] text-2xl font-black italic tracking-tighter">₹{Math.round((selectedFare?.totalFare || 0) - Math.round((selectedFare?.totalFare || 0) * 0.26))}</span>
                         </div>
@@ -544,7 +547,7 @@ export default function BookRidePage() {
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Zap size={64} className="text-[#E32222]" />
                         </div>
-                        
+
                         <div className="space-y-4 pb-4 border-b border-white/5">
                             <div className="flex justify-between items-center">
                                 <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Official Ride ID</span>
@@ -572,7 +575,7 @@ export default function BookRidePage() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="pt-4 border-t border-white/10 space-y-3">
                             <div className="flex justify-between items-center px-2 py-3 rounded-xl bg-white/[0.03]">
                                 <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Total Value</span>
@@ -653,7 +656,33 @@ export default function BookRidePage() {
                         {/* Locations Module */}
                         <div className="space-y-6 relative">
                             {/* Visual Connector */}
-                            <div className="absolute left-[31px] top-[50px] bottom-[50px] w-0.5 border-l-2 border-dashed border-gray-800 hidden sm:block" />
+                            <div className="absolute left-[31px] top-[140px] bottom-[50px] w-0.5 border-l-2 border-dashed border-gray-800 hidden sm:block" />
+
+                            {/* City Selection */}
+                            <div className="space-y-3 relative z-20">
+                                <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-1">Select Operations City</label>
+                                <div className="relative group">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-focus-within:bg-purple-500 group-focus-within:text-white transition-all">
+                                        <Globe size={18} />
+                                    </div>
+                                    <select
+                                        value={selectedCityId}
+                                        onChange={(e) => setSelectedCityId(e.target.value)}
+                                        className="w-full bg-white/[0.02] border border-white/5 rounded-[24px] py-5 pl-16 pr-10 text-white text-sm focus:outline-none focus:border-purple-500 focus:bg-white/[0.05] transition-all font-medium appearance-none cursor-pointer"
+                                    >
+                                        <option value="" disabled className="bg-[#0F0F0F]">Select your city</option>
+                                        {cityCodes.filter(city => city.isAvailable !== false).map(city => (
+                                            <option key={city.id} value={city.id} className="bg-[#0F0F0F]">
+                                                {city.cityName} ({city.code})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                    </div>
+                                </div>
+
+                            </div>
 
                             {/* Pickup */}
                             <div className="space-y-3">
@@ -786,17 +815,23 @@ export default function BookRidePage() {
 
                         {/* Booking Action */}
                         <div className="pt-4">
-                            <button
-                                onClick={handleBookRide}
-                                disabled={isLoading || !distanceKm || !selectedFare}
-                                className="w-full relative group overflow-hidden py-6 rounded-[32px] bg-[#E32222] text-white font-black text-xl transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-30 disabled:grayscale disabled:scale-100"
-                            >
-                                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                                <div className="relative flex items-center justify-center gap-4 uppercase tracking-[0.2em]">
-                                    {isLoading ? <Loader2 className="animate-spin" size={24} /> : <Zap size={24} className="fill-current" />}
-                                    <span>{isLoading ? 'Processing...' : (distanceKm ? 'Book Now' : 'Finding Route...')}</span>
+                            {(!distanceKm || !selectedFare) ? (
+                                <div className="w-full py-6 rounded-[32px] bg-gray-800 text-gray-500 font-black text-center text-xs uppercase tracking-[0.2em] border border-white/5">
+                                    {!selectedCityId ? 'Select a city to continue' : 'Finding Route...'}
                                 </div>
-                            </button>
+                            ) : (
+                                <button
+                                    onClick={handleBookRide}
+                                    disabled={isLoading || !distanceKm || !selectedFare}
+                                    className="w-full relative group overflow-hidden py-6 rounded-[32px] bg-[#E32222] text-white font-black text-xl transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-30 disabled:grayscale disabled:scale-100"
+                                >
+                                    <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+                                    <div className="relative flex items-center justify-center gap-4 uppercase tracking-[0.2em]">
+                                        {isLoading ? <Loader2 className="animate-spin" size={24} /> : <Zap size={24} className="fill-current" />}
+                                        <span>{isLoading ? 'Processing...' : (distanceKm ? 'Book Now' : 'Finding Route...')}</span>
+                                    </div>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
