@@ -886,6 +886,7 @@ export interface Ride {
   partner?: PartnerSummary;
   vendor?: VendorSummary; // Expanded vendor field support
   corporate?: any; // New corporate reference support
+  corporateEmployeeId?: string; // Links ride to specific corporate staff
   vehicle?: any; // Expanded full vehicle support
   vehicleType: VehicleTypeSummary;
   couponCode?: string; // Agent discount code
@@ -1079,6 +1080,7 @@ export interface PartnerVehicleData {
 export interface PartnerEarningsData {
   total: number;
   totalFare: number;
+  totalRides: number;
   sessionEarnings: number;
   todayEarnings: number;
   recentRides: Array<{

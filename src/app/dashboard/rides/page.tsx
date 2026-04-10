@@ -72,23 +72,28 @@ export default function RidesPage() {
   });
 
   const handleExport = () => {
-    const dataToExport = filteredRides.map(ride => ({
-      'Req ID': ride.customId || 'N/A',
-      'Source': ride.pickupAddress || 'N/A',
-      'Destination': ride.dropAddress || 'N/A',
-      'Date': new Date(ride.createdAt).toLocaleDateString(),
-      'Name': ride.user?.name || 'N/A',
-      'Mobile': ride.user?.phone || 'N/A',
-      'Service': ride.serviceType || 'City To Airport',
-      'Payment Mode': ride.paymentMode || 'Cash',
-      'Vehicle': ride.vehicleType?.displayName || 'SEDAN',
-      'Distance (km)': ride.distanceKm?.toFixed(1) || '0',
-      'Driver': ride.partner?.name || 'N/A',
-      'Total Cost': ride.totalFare?.toFixed(2) || '0',
-      'Conf. Fee Paid': ride.advanceAmount?.toFixed(2) || '0',
-      'Ref No.': ride.transactionId || 'N/A',
-      'Status': ride.status
-    }));
+    const dataToExport = filteredRides.map(ride => {
+      const displayDate = ride.scheduledDateTime || ride.createdAt;
+      return {
+        'Req ID': ride.customId || 'N/A',
+        'Source': ride.pickupAddress || 'N/A',
+        'Destination': ride.dropAddress || 'N/A',
+        'Travel Date': new Date(displayDate).toLocaleDateString(),
+        'Travel Time': new Date(displayDate).toLocaleTimeString(),
+        'Booked On': new Date(ride.createdAt).toLocaleDateString(),
+        'Name': ride.user?.name || 'N/A',
+        'Mobile': ride.user?.phone || 'N/A',
+        'Service': ride.serviceType || 'City To Airport',
+        'Payment Mode': ride.paymentMode || 'Cash',
+        'Vehicle': ride.vehicleType?.displayName || 'SEDAN',
+        'Distance (km)': ride.distanceKm?.toFixed(1) || '0',
+        'Driver': ride.partner?.name || 'N/A',
+        'Total Cost': ride.totalFare?.toFixed(2) || '0',
+        'Conf. Fee Paid': ride.advanceAmount?.toFixed(2) || '0',
+        'Ref No.': ride.transactionId || 'N/A',
+        'Status': ride.status
+      };
+    });
     exportToCSV(dataToExport, `Rides_Export_${new Date().toISOString().slice(0, 10)}`);
   };
 
@@ -228,12 +233,12 @@ export default function RidesPage() {
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5 mb-3">
-                    <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <Calendar size={12} className="text-gray-400" />
-                      {new Date(ride.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    <span className="text-xs font-black text-red-600 flex items-center gap-1.5" title="Travel Time">
+                      <Calendar size={12} className="text-red-400" />
+                      {new Date(ride.scheduledDateTime || ride.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </span>
-                    <span className="text-[11px] font-medium text-gray-500 flex items-center gap-1.5 ml-4">
-                      {new Date(ride.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1.5 ml-4">
+                      {new Date(ride.scheduledDateTime || ride.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </span>
                   </div>
                 </div>

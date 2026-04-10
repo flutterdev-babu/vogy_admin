@@ -78,7 +78,7 @@ export default function CorporateBillingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="card p-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white border-0 shadow-lg shadow-blue-500/30">
                     <p className="text-blue-100 text-sm font-medium mb-1">Total Outstanding</p>
-                    <h3 className="text-3xl font-bold">₹{summary.outstanding.toLocaleString()}</h3>
+                    <h3 className="text-3xl font-bold">₹{(summary.outstanding || 0).toLocaleString()}</h3>
                     <p className="text-xs text-blue-200 mt-2 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
                         Due by Nov 5, 2023
@@ -86,11 +86,11 @@ export default function CorporateBillingPage() {
                 </div>
                 <div className="card p-6">
                     <p className="text-gray-500 text-sm font-medium mb-1">Credit Limit</p>
-                    <h3 className="text-3xl font-bold text-gray-900">₹{summary.creditLimit.toLocaleString()}</h3>
+                    <h3 className="text-3xl font-bold text-gray-900">₹{(summary.creditLimit || 0).toLocaleString()}</h3>
                     <div className="w-full bg-gray-100 rounded-full h-2 mt-3 overflow-hidden">
-                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min(summary.utilizedPercentage, 100)}%` }}></div>
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min(summary.utilizedPercentage || 0, 100)}%` }}></div>
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">{summary.utilizedPercentage.toFixed(1)}% utilized</p>
+                    <p className="text-xs text-gray-400 mt-2">{(summary.utilizedPercentage || 0).toFixed(1)}% utilized</p>
                 </div>
                 <div className="card p-6 flex flex-col justify-center items-center text-center">
                     <CreditCard className="w-10 h-10 text-gray-300 mb-2" />

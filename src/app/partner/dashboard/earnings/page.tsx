@@ -35,32 +35,32 @@ export default function PartnerEarningsPage() {
         </div>
         <div className="text-right">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Today's Payout</p>
-          <p className="text-4xl font-black">₹{earnings?.todayEarnings?.toLocaleString('en-IN') || '0'}</p>
+          <p className="text-4xl font-black">₹{Math.floor(earnings?.todayEarnings || 0).toLocaleString('en-IN')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <EarningCard 
           label="Total Earnings" 
-          value={`₹${earnings?.total?.toLocaleString('en-IN') || '0'}`} 
+          value={`₹${Math.floor(earnings?.total || 0).toLocaleString('en-IN')}`} 
           trend="+8%" 
           isPositive={true}
           description="Life-time earnings on platform"
         />
         <EarningCard 
           label="Session Earnings" 
-          value={`₹${earnings?.sessionEarnings?.toLocaleString('en-IN') || '0'}`} 
+          value={`₹${Math.floor(earnings?.sessionEarnings || 0).toLocaleString('en-IN')}`} 
           trend="+15%" 
           isPositive={true}
           description="Earnings from current session"
           highlight={true}
         />
         <EarningCard 
-          label="Total Gross Fare" 
-          value={`₹${earnings?.totalFare?.toLocaleString('en-IN') || '0'}`} 
+          label="Total Rides" 
+          value={`${earnings?.totalRides || '0'}`} 
           trend="+5%" 
           isPositive={true}
-          description="Gross amount collected"
+          description="Total rides completed"
         />
       </div>
 
@@ -76,8 +76,6 @@ export default function PartnerEarningsPage() {
               <tr className="bg-white">
                 <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400">Date & Ride ID</th>
                 <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400">Status</th>
-                <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400 text-right">Total Fare</th>
-                <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400 text-right">Commission</th>
                 <th className="text-left py-4 px-6 font-bold text-[10px] uppercase tracking-wider text-gray-400 text-right text-emerald-600">Your Earning</th>
               </tr>
             </thead>
@@ -91,13 +89,12 @@ export default function PartnerEarningsPage() {
                   <td className="py-4 px-6">
                     <span className="text-[10px] font-bold px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg">COMPLETED</span>
                   </td>
-                  <td className="py-4 px-6 text-right font-medium text-gray-800">₹{item.totalFare}</td>
-                  <td className="py-4 px-6 text-right font-medium text-red-400">₹{item.commission}</td>
-                  <td className="py-4 px-6 text-right font-bold text-emerald-600">₹{item.earning}</td>
+                  <td className="py-4 px-6 text-right font-bold text-emerald-600">₹{Math.floor(item.earning)}</td>
+
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center">
+                  <td colSpan={3} className="py-12 text-center">
                     <Navigation className="mx-auto mb-3 text-gray-300" size={32} />
                     <p className="text-sm font-bold text-gray-400">No ride payouts yet</p>
                     <p className="text-xs text-gray-400 mt-1">Complete rides to see your earnings here.</p>
