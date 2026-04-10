@@ -25,11 +25,13 @@ interface PartnerLocation {
   customId: string;
   name: string;
   phone: string;
+  registrationNumber: string;
   lat: number;
   lng: number;
   vehicleType: string;
   category: 'CAR' | 'BIKE' | 'AUTO';
   isOnline: boolean;
+  isOnRide: boolean;
 }
 
 interface PartnerLocationsMapProps {
@@ -70,7 +72,9 @@ export default function PartnerLocationsMap({ refreshTrigger = 0 }: PartnerLocat
               lng: Number(p.lng),
               vehicleType: p.vehicleType || 'Unknown',
               category: p.category || 'CAR',
-              isOnline: !!p.isOnline
+              isOnline: !!p.isOnline,
+              isOnRide: !!p.isOnRide,
+              registrationNumber: p.registrationNumber || 'N/A'
             });
             avgLat += Number(p.lat);
             avgLng += Number(p.lng);
@@ -127,7 +131,9 @@ export default function PartnerLocationsMap({ refreshTrigger = 0 }: PartnerLocat
               lng: Number(data.lng),
               vehicleType: data.vehicleType || newMap.get(id)?.vehicleType || 'Unknown',
               category: data.category || newMap.get(id)?.category || 'CAR',
-              isOnline: data.isOnline !== undefined ? !!data.isOnline : (newMap.get(id)?.isOnline ?? true)
+              isOnline: data.isOnline !== undefined ? !!data.isOnline : (newMap.get(id)?.isOnline ?? true),
+              isOnRide: data.isOnRide !== undefined ? !!data.isOnRide : (newMap.get(id)?.isOnRide ?? false),
+              registrationNumber: data.registrationNumber || newMap.get(id)?.registrationNumber || 'N/A'
             });
             return newMap;
           });
@@ -138,7 +144,9 @@ export default function PartnerLocationsMap({ refreshTrigger = 0 }: PartnerLocat
                 ...prevSelected,
                 lat: Number(data.lat),
                 lng: Number(data.lng),
-                isOnline: data.isOnline !== undefined ? !!data.isOnline : prevSelected.isOnline
+                isOnline: data.isOnline !== undefined ? !!data.isOnline : prevSelected.isOnline,
+                isOnRide: data.isOnRide !== undefined ? !!data.isOnRide : prevSelected.isOnRide,
+                registrationNumber: data.registrationNumber || prevSelected.registrationNumber || 'N/A'
               };
             }
             return prevSelected;
@@ -204,10 +212,20 @@ export default function PartnerLocationsMap({ refreshTrigger = 0 }: PartnerLocat
       >
         {Array.from(partners.values()).map((partner) => {
           const emoji = partner.category === 'BIKE' ? '🏍️' : partner.category === 'AUTO' ? '🛺' : '🚗';
-          const strokeColor = partner.isOnline ? '#E32222' : '#6B7280';
-          const fillColor = partner.isOnline ? 'white' : '#DFDFDF';
+          const isRed = partner.isOnline && partner.isOnRide;
+          const isGreen = partner.isOnline && !partner.isOnRide;
+          // Inactive is when not online
+          const strokeColor = isRed ? '#E32222' : isGreen ? '#10B981' : '#6B7280';
+          const fillColor = isRed || isGreen ? 'white' : '#DFDFDF';
+          
           const svg = `
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+              ${isRed ? `
+              <circle cx="20" cy="20" r="14" fill="#E32222">
+                <animate attributeName="r" from="14" to="20" dur="1.5s" begin="0s" repeatCount="indefinite" />
+                <animate attributeName="opacity" from="0.4" to="0" dur="1.5s" begin="0s" repeatCount="indefinite" />
+              </circle>
+              ` : ''}
               <circle cx="20" cy="20" r="18" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
               <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-size="20" style="filter: ${partner.isOnline ? 'none' : 'grayscale(1) opacity(0.7)'}">${emoji}</text>
             </svg>
@@ -241,11 +259,19 @@ export default function PartnerLocationsMap({ refreshTrigger = 0 }: PartnerLocat
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-gray-900">{selectedPartner.name}</h3>
-                    <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${selectedPartner.isOnline ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-gray-100 text-gray-500 border border-gray-200'}`}>
-                      {selectedPartner.isOnline ? 'Active' : 'Inactive'}
+                    <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${
+                      !selectedPartner.isOnline 
+                        ? 'bg-gray-100 text-gray-500 border border-gray-200' 
+                        : selectedPartner.isOnRide 
+                          ? 'bg-red-500/10 text-red-500 border border-red-500/20' 
+                          : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                    }`}>
+                      {!selectedPartner.isOnline ? 'Offline' : selectedPartner.isOnRide ? 'On Ride' : 'Available'}
                     </span>
                   </div>
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-[#E32222] mt-0.5">{selectedPartner.customId}</p>
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-[#E32222] mt-0.5">
+                    {selectedPartner.customId} • {selectedPartner.registrationNumber}
+                  </p>
                 </div>
               </div>
               <div className="space-y-2.5">

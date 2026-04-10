@@ -198,4 +198,22 @@ export const partnerService = {
     });
     return response.data;
   },
+
+  // =====================
+  // Admin Endpoints for Partner (NEW)
+  // =====================
+  async getEarningsStats(id: string): Promise<ApiResponse<any>> {
+    const response = await adminApi.get(`/partners/${id}/earnings-stats`);
+    return response.data;
+  },
+
+  async verifyPartnerDocument(id: string, documentId: string, status: 'APPROVED' | 'REJECTED'): Promise<ApiResponse<any>> {
+    const response = await adminApi.patch(`/partners/${id}/verify-document`, { documentId, status });
+    return response.data;
+  },
+
+  async sendPartnerNotification(id: string, message: string): Promise<ApiResponse<any>> {
+    const response = await adminApi.post(`/partners/${id}/notify`, { message });
+    return response.data;
+  },
 };

@@ -426,9 +426,9 @@ export default function PartnersPage() {
                         </div>
 
                         <Link
-                          href={`/dashboard/partners/${partner.id}/edit`}
+                          href={`/dashboard/partners/${partner.id}/view`}
                           className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 rounded-xl transition-all shadow-sm"
-                          title="View & Edit Partner"
+                          title="View Partner Profile"
                         >
                           <Eye size={16} />
                         </Link>
