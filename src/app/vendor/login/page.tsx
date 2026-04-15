@@ -32,7 +32,9 @@ export default function VendorLoginPage() {
         router.push('/vendor/dashboard');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid phone or password');
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || 'Invalid phone or password';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

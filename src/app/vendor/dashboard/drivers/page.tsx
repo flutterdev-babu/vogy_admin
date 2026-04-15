@@ -34,7 +34,9 @@ export default function VendorDriversPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {attachments.map((item) => (
+        {attachments
+          .filter(item => item.partner && item.vehicle) // Only show actual assignments
+          .map((item) => (
           <div key={item.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
             <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -52,11 +54,11 @@ export default function VendorDriversPage() {
             <div className="p-6 space-y-6">
               <div className="flex gap-4">
                 <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center font-black text-gray-400 text-xl overflow-hidden border-2 border-white shadow-sm">
-                  {item.partner.name[0]}
+                  {item.partner?.name?.[0] || '?'}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-bold text-gray-800 truncate">{item.partner.name}</h3>
-                  <p className="text-xs font-bold text-emerald-600 font-mono">{item.partner.customId}</p>
+                  <h3 className="text-lg font-bold text-gray-800 truncate">{item.partner?.name || 'Unknown Partner'}</h3>
+                  <p className="text-xs font-bold text-emerald-600 font-mono">{item.partner?.customId || 'N/A'}</p>
                 </div>
               </div>
 
@@ -66,22 +68,22 @@ export default function VendorDriversPage() {
                     <Car size={12} />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Vehicle</span>
                   </div>
-                  <p className="text-xs font-bold text-gray-800 truncate">{item.vehicle.vehicleModel}</p>
-                  <p className="text-[10px] font-medium text-gray-500 font-mono">{item.vehicle.registrationNumber}</p>
+                  <p className="text-xs font-bold text-gray-800 truncate">{item.vehicle?.vehicleModel || 'No Model'}</p>
+                  <p className="text-[10px] font-medium text-gray-500 font-mono">{item.vehicle?.registrationNumber || 'No Plate'}</p>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 text-gray-400 mb-1">
                     <Phone size={12} />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Contact</span>
                   </div>
-                  <p className="text-xs font-bold text-gray-800">{item.partner.phone}</p>
+                  <p className="text-xs font-bold text-gray-800">{item.partner?.phone || 'No Phone'}</p>
                 </div>
               </div>
 
               <div className="flex justify-between items-center pt-4 border-t border-gray-50 italic">
                 <div className="flex items-center gap-1.5 text-gray-400">
                   <Calendar size={12} />
-                  <span className="text-[10px] font-medium">Assigned: {new Date(item.assignedAt).toLocaleDateString()}</span>
+                  <span className="text-[10px] font-medium">Assigned: {item.assignedAt ? new Date(item.assignedAt).toLocaleDateString() : 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-blue-500">
                   <ShieldCheck size={12} />
