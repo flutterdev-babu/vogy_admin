@@ -150,7 +150,20 @@ export default function VehicleTypesPage() {
   const fetchVehicleTypes = async () => {
     try {
       const response = await vehicleTypeService.getAll();
-      setVehicleTypes(response.data || []);
+      const sortedTypes = (response.data || []).sort((a: any, b: any) => {
+        const baseA = a.baseFare || 0;
+        const baseB = b.baseFare || 0;
+        
+        if (baseA !== baseB) {
+          return baseA - baseB;
+        }
+        
+        const perKmA = a.pricePerKm || 0;
+        const perKmB = b.pricePerKm || 0;
+        return perKmA - perKmB;
+      });
+      
+      setVehicleTypes(sortedTypes);
     } catch (error) {
       toast.error('Failed to load vehicle types');
     } finally {
@@ -437,6 +450,50 @@ export default function VehicleTypesPage() {
     } catch (error) {
       toast.error('Failed to update peak timings');
     }
+  };
+
+  const createNewPeakCharge = async () => {
+    if (!selectedTypeForPricing) return;
+    try {
+      const newCharge: CreatePeakHourChargeRequest = {
+        name: `Peak Surge ${peakCharges.length + 1}`,
+        vehicleTypeId: selectedTypeForPricing.id,
+        cityCodeIds: pricingFormData.cityCodeIds || [],
+        days: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
+        slots: [
+          {
+            startTime: '08:00',
+            endTime: '11:00',
+            dayAdjustments: { MONDAY: 0, TUESDAY: 0, WEDNESDAY: 0, THURSDAY: 0, FRIDAY: 0, SATURDAY: 0, SUNDAY: 0 }
+          }
+        ]
+      };
+      await peakHourChargeService.create(newCharge);
+      toast.success('Peak pricing charge added');
+      const peakRes = await peakHourChargeService.getAll(selectedTypeForPricing.id);
+      setPeakCharges(peakRes.data || []);
+    } catch (e: any) {
+      toast.error('Failed to create peak charge');
+    }
+  };
+
+  const updateSlotTime = (chargeId: string, slotIndex: number, field: 'startTime' | 'endTime', value: string) => {
+    setPeakCharges(prev => prev.map(charge => {
+      if (charge.id !== chargeId) return charge;
+      const newSlots = [...charge.slots];
+      newSlots[slotIndex] = { ...newSlots[slotIndex], [field]: value };
+      return { ...charge, slots: newSlots };
+    }));
+  };
+
+  const updateDayAdjustment = (chargeId: string, slotIndex: number, day: DayOfWeek, value: number) => {
+    setPeakCharges(prev => prev.map(charge => {
+      if (charge.id !== chargeId) return charge;
+      const newSlots = [...charge.slots];
+      const newDayAdj = { ...newSlots[slotIndex].dayAdjustments, [day]: value };
+      newSlots[slotIndex] = { ...newSlots[slotIndex], dayAdjustments: newDayAdj };
+      return { ...charge, slots: newSlots };
+    }));
   };
 
   const toggleCityInForm = (cityId: string) => {
@@ -878,7 +935,7 @@ export default function VehicleTypesPage() {
                         <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
                         <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Peak Pricing</h4>
                       </div>
-                      <button className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all">
+                      <button onClick={createNewPeakCharge} className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all">
                         <PlusCircle size={20} />
                       </button>
                     </div>
@@ -891,9 +948,9 @@ export default function VehicleTypesPage() {
                               <div className="bg-white/80 backdrop-blur-sm px-6 py-3 border-b border-gray-50 flex items-center justify-between">
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Slot {sIdx + 1}</span>
                                 <div className="flex items-center gap-3">
-                                  <input type="time" value={slot.startTime} className="bg-transparent text-[10px] font-black text-gray-900" readOnly />
+                                  <input type="time" value={slot.startTime} onChange={(e) => updateSlotTime(charge.id, sIdx, 'startTime', e.target.value)} className="bg-transparent text-[10px] font-black text-gray-900" />
                                   <span className="text-gray-300">/</span>
-                                  <input type="time" value={slot.endTime} className="bg-transparent text-[10px] font-black text-gray-900" readOnly />
+                                  <input type="time" value={slot.endTime} onChange={(e) => updateSlotTime(charge.id, sIdx, 'endTime', e.target.value)} className="bg-transparent text-[10px] font-black text-gray-900" />
                                 </div>
                               </div>
                               <div className="p-5">
@@ -908,7 +965,7 @@ export default function VehicleTypesPage() {
                                               type="number"
                                               value={slot.dayAdjustments?.[day] || 0}
                                               className="w-8 text-right bg-transparent text-[10px] font-black text-gray-900 focus:outline-none"
-                                              onChange={() => { }}
+                                              onChange={(e) => updateDayAdjustment(charge.id, sIdx, day, Number(e.target.value))}
                                             />
                                             <span className="text-gray-300 text-[10px] font-bold">%</span>
                                           </div>
@@ -1179,15 +1236,15 @@ export default function VehicleTypesPage() {
 function MockInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="space-y-2">
-      <div className="flex h-11 ring-1 ring-gray-100 rounded-xl overflow-hidden focus-within:ring-red-100 transition-all">
-        <div className="w-[140px] bg-red-50/50 flex items-center px-4 border-r border-gray-50">
-          <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{label}</span>
+      <div className="flex min-h-[44px] ring-1 ring-gray-100 rounded-xl overflow-hidden focus-within:ring-red-100 transition-all">
+        <div className="w-[150px] shrink-0 bg-red-50/50 flex items-center px-4 py-2 border-r border-gray-50">
+          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest leading-tight">{label}</span>
         </div>
         <input
           type="number"
           value={value}
           onChange={e => onChange(Number(e.target.value))}
-          className="flex-1 bg-white px-4 text-xs font-bold text-gray-700 focus:outline-none"
+          className="flex-1 min-w-0 bg-white px-4 py-2 text-xs font-bold text-gray-700 focus:outline-none"
         />
       </div>
     </div>
