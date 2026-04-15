@@ -13,8 +13,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ARA Travels | Dashboard",
-  description: "Admin panel for ARA Travels ride-hailing platform",
+  title: "ARA Travels | Taxi Booking",
+  description: "Experience high-quality cab services with a focus on comfort, safety, and dependable travel across all major cities.",
 };
 
 

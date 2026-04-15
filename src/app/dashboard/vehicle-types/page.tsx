@@ -36,7 +36,8 @@ import {
   PeakHourCharge,
   PeakHourSlot,
   DayOfWeek,
-  ServiceType
+  ServiceType,
+  CreatePeakHourChargeRequest
 } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { ActiveBadge } from '@/components/ui/Badge';
@@ -217,20 +218,26 @@ export default function VehicleTypesPage() {
     setIsSubmitting(true);
     try {
       if (editingType) {
-        await vehicleTypeService.update(editingType.id, {
+        const response = await vehicleTypeService.update(editingType.id, {
+          name: formData.name,
+          category: formData.category,
           displayName: formData.displayName,
           pricePerKm: formData.pricePerKm,
           baseFare: formData.baseFare,
         });
+        console.log('Update response:', response);
         toast.success('Vehicle type updated');
       } else {
-        await vehicleTypeService.create(formData);
+        const response = await vehicleTypeService.create(formData);
+        console.log('Create response:', response);
         toast.success('Vehicle type created');
       }
       setIsModalOpen(false);
-      fetchVehicleTypes();
-    } catch (error) {
-      toast.error('Operation failed');
+      resetForm();
+      await fetchVehicleTypes();
+    } catch (error: any) {
+      console.error('Operation failed:', error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'Operation failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -611,8 +618,8 @@ export default function VehicleTypesPage() {
                   </td>
                   <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-gray-900">{type.displayName}</span>
-                      <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">{type.name}</span>
+                      <span className="text-sm font-bold text-gray-900">{type.name}</span>
+                      <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">{type.displayName}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
@@ -1014,9 +1021,8 @@ export default function VehicleTypesPage() {
                 <button
                   key={c}
                   type="button"
-                  disabled={!!editingType}
-                  onClick={() => !editingType && setFormData({ ...formData, category: c as any })}
-                  className={`flex-1 py-3.5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${formData.category === c ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-100' : 'text-gray-400 hover:text-gray-600'} ${editingType ? 'cursor-not-allowed opacity-60' : ''}`}
+                  onClick={() => setFormData({ ...formData, category: c as any })}
+                  className={`flex-1 py-3.5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${formData.category === c ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                   {c}
                 </button>
@@ -1042,7 +1048,6 @@ export default function VehicleTypesPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all font-mono"
                 placeholder="e.g. premium_sedan"
-                disabled={!!editingType}
               />
             </div>
 
