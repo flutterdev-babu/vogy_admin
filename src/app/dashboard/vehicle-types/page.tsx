@@ -34,6 +34,7 @@ import {
   CreateVehiclePricingGroupRequest,
   UpdateVehiclePricingGroupRequest,
   PeakHourCharge,
+  CreatePeakHourChargeRequest,
   PeakHourSlot,
   DayOfWeek,
   ServiceType,
