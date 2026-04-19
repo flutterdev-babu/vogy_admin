@@ -9,12 +9,7 @@ import { vendorService } from '@/services/vendorService';
 import { cityCodeService } from '@/services/cityCodeService';
 import { PremiumSelect, PremiumSelectOption } from '@/components/ui/PremiumSelect';
 
-const FALLBACK_CITIES = [
-  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
-  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
-  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
-  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
-];
+
 
 const VENDOR_TYPE_OPTIONS: PremiumSelectOption[] = [
   { id: 'BUSINESS', label: 'Business Entity', subLabel: 'Registered Company / LLC' },
@@ -49,11 +44,11 @@ export default function VendorRegisterPage() {
         if (res.success && res.data && res.data.length > 0) {
           setCityCodes(res.data);
         } else {
-          setCityCodes(FALLBACK_CITIES);
+          toast.error('No operating cities found. Please contact support.');
         }
       } catch (err) {
-        console.error('Failed to load cities, using fallback:', err);
-        setCityCodes(FALLBACK_CITIES);
+        console.error('Failed to load cities:', err);
+        toast.error('Service error: Could not load operating cities');
       }
     };
     loadCities();
@@ -146,7 +141,7 @@ export default function VendorRegisterPage() {
               </div>
               <div className="space-y-1">
                 <label className={labelClass}>Email Address</label>
-                <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className={inputClass} placeholder="admin@vogy.com" />
+                <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className={inputClass} placeholder="admin@ara-travels.com" />
               </div>
             </div>
 

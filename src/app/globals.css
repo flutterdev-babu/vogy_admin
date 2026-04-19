@@ -134,7 +134,17 @@ input::placeholder {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
   margin-top: 4px;
   font-family: var(--font-sans);
+  width: calc(100% - 32px) !important;
+  max-width: 500px !important;
 }
+
+@media (max-width: 640px) {
+  .pac-container {
+    left: 16px !important;
+    right: 16px !important;
+  }
+}
+
 .pac-item {
   padding: 8px 14px;
   font-size: 13px;
@@ -145,5 +155,65 @@ input::placeholder {
 }
 .pac-item-selected {
   background-color: #FEE2E2;
+}
+
+/* Autofill fixes for Dark Mode consistency */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0px 1000px #0f0f0f inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Toast responsiveness */
+.go2135831778 { /* react-hot-toast container class override */
+  padding: 16px !important;
+}
+
+@media (max-width: 640px) {
+  .go2135831778 { 
+    top: 80px !important; /* Move below fixed nav */
+    left: 16px !important;
+    right: 16px !important;
+    bottom: auto !important;
+  }
+}
+
+/* Scrollbar Hide Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Liquid Typography for Mobile Accessibility */
+@layer base {
+  html {
+    @apply text-[14px] sm:text-[16px];
+  }
+}
+
+/* Custom Scrollbar Utilities */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 

@@ -199,13 +199,13 @@ export default function SegmentSetupWizard({ isOpen, onClose, cities, onComplete
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Display Name (e.g. Vogy Hatchback)</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Display Name (e.g. ARA Travels Hatchback)</label>
                   <input 
                     type="text" 
                     value={typeData.displayName}
                     onChange={(e) => setTypeData({ ...typeData, displayName: e.target.value })}
                     className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                    placeholder="Vogy Hatchback"
+                    placeholder="ARA Travels Hatchback"
                   />
                 </div>
               </div>

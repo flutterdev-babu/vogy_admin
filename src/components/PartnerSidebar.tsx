@@ -84,7 +84,7 @@ export default function PartnerSidebar() {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">ARA</h1>
+              <h1 className="text-xl font-bold text-gray-800">ARA TRAVELS</h1>
               <p className="text-xs text-emerald-500 font-medium">Partner Portal</p>
             </div>
           </div>
