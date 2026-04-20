@@ -131,7 +131,7 @@ export default function Navbar() {
                 Dashboard
               </Link>
             ) : (
-              <Link href="/user/login" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-all border border-white/10">
+              <Link href="/user/login" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E32222] hover:bg-[#cc1f1f] text-white text-sm font-semibold transition-all shadow-lg shadow-red-900/20 hover:shadow-red-900/40">
                 <UserCircle size={16} />
                 User Login
               </Link>

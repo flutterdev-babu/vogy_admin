@@ -59,6 +59,7 @@ export default function BookRidePage() {
     const [advanceAmount, setAdvanceAmount] = useState<number>(0);
     const [transactionId, setTransactionId] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
+    const [scheduledDateTime, setScheduledDateTime] = useState('');
 
     // Hardening: Idempotency & Intent State
     const [idempotencyKey, setIdempotencyKey] = useState<string>('');
@@ -323,6 +324,10 @@ export default function BookRidePage() {
             return toast.error('Please wait for the fare estimate to calculate before booking.');
         }
 
+        if (!scheduledDateTime) {
+            return toast.error('Please select a pickup date and time.');
+        }
+
         setIsLoading(true);
         try {
             const advance = Math.ceil(selectedFare.totalFare * 0.26);
@@ -336,7 +341,8 @@ export default function BookRidePage() {
                 idempotencyKey: key,
                 rideDetails: {
                     pickupAddress, dropAddress, pickupCoords, dropCoords,
-                    distanceKm, rideType, selectedFare, selectedVehicleTypeId
+                    distanceKm, rideType, selectedFare, selectedVehicleTypeId,
+                    scheduledDateTime
                 }
             }));
 
@@ -395,6 +401,7 @@ export default function BookRidePage() {
                 rideType: rideType,
                 advanceAmount: advanceAmount,
                 transactionId: transactionId.trim(),
+                scheduledDateTime: scheduledDateTime || null,
                 // FINAL HARDENING
                 idempotencyKey: idempotencyKey,
                 paymentVerificationId: currentIntentId
@@ -446,7 +453,14 @@ export default function BookRidePage() {
 
     if (step === 'payment') {
         const upiId = "7569645049@slc";
-        const upiDeepLink = `upi://pay?pa=${upiId}&pn=ARA%20Travels&am=${advanceAmount}&cu=INR`;
+        const upiDeepLink = `upi://pay?pa=${upiId}&pn=ARA%20Travels&am=${advanceAmount}&cu=INR&tn=Booking%20Advance`;
+
+        const handleUPIClick = (e: React.MouseEvent) => {
+            // Enhanced redirection logic for mobile browsers
+            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                window.location.assign(upiDeepLink);
+            }
+        };
 
         return (
             <div className="max-w-md mx-auto py-10 animate-fade-in">
@@ -487,6 +501,7 @@ export default function BookRidePage() {
 
                         <a
                             href={upiDeepLink}
+                            onClick={handleUPIClick}
                             className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-widest transition-all hover:bg-gray-200 active:scale-95"
                         >
                             <Smartphone size={20} /> Pay via UPI App
@@ -708,7 +723,7 @@ export default function BookRidePage() {
 
                     {/* Ride Type Switcher - 2x2 Grid for Mobile */}
                     <div className="bg-[#0D0D0D] p-2 rounded-2xl sm:rounded-3xl border border-white/5 grid grid-cols-2 gap-2 shadow-2xl">
-                        {['LOCAL', 'RENTAL', 'OUTSTATION', 'AIRPORT'].map((type) => (
+                        {['AIRPORT', 'LOCAL', 'OUTSTATION', 'RENTAL'].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => setRideType(type)}
@@ -815,6 +830,37 @@ export default function BookRidePage() {
                                         onChange={(e) => setDropAddress(e.target.value)}
                                         className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3.5 sm:py-5 pl-14 sm:pl-16 pr-4 text-white text-xs placeholder-gray-800 focus:outline-none focus:border-red-500 transition-all font-medium"
                                         placeholder="Where do you want to go?"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Scheduled Time Selection */}
+                            <div className="space-y-3 pt-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Pickup Date & Time (Min 2 hrs slack)</label>
+                                    <span className="text-[9px] text-[#E32222] font-black italic">Required</span>
+                                </div>
+                                <div className="relative group/time">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-focus-within/time:bg-blue-500 group-focus-within/time:text-white transition-all">
+                                        <Zap size={18} />
+                                    </div>
+                                    <input
+                                        type="datetime-local"
+                                        value={scheduledDateTime}
+                                        onChange={(e) => {
+                                            const selected = new Date(e.target.value);
+                                            const minTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
+                                            if (selected < minTime) {
+                                                toast.error('Please select a time at least 2 hours from now');
+                                                // Reset or adjust
+                                                setScheduledDateTime(minTime.toISOString().slice(0, 16));
+                                            } else {
+                                                setScheduledDateTime(e.target.value);
+                                            }
+                                        }}
+                                        min={new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16)}
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3.5 sm:py-5 pl-14 pr-4 text-white text-xs focus:outline-none focus:border-blue-500 transition-all font-bold [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                                        required
                                     />
                                 </div>
                             </div>

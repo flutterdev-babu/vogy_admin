@@ -40,6 +40,8 @@ export default function Footer() {
           <ul className="space-y-4 text-neutral-500 text-sm">
             <li><Link href="/services" className="hover:text-[#E32222] transition-colors">Local Rides</Link></li>
             <li><Link href="/services" className="hover:text-[#E32222] transition-colors">Outstation</Link></li>
+            <li><Link href="/services" className="hover:text-[#E32222] transition-colors">Airport Transfers</Link></li>
+            <li><Link href="/services" className="hover:text-[#E32222] transition-colors">Rentals</Link></li>
             <li><Link href="/services" className="hover:text-[#E32222] transition-colors">Corporate</Link></li>
           </ul>
         </div>
