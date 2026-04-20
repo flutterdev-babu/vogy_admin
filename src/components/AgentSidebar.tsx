@@ -130,7 +130,7 @@ export default function AgentSidebar() {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">ARA</h1>
+              <h1 className="text-xl font-bold text-gray-800">ARA TRAVELS</h1>
               <p className="text-xs text-purple-500 font-medium">Agent Portal</p>
             </div>
           </div>

@@ -46,7 +46,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl lg:text-8xl font-bold leading-tight"
+              className="text-4xl sm:text-6xl lg:text-8xl font-bold leading-[1.1] sm:leading-tight"
             >
               Travel Better with <br />
               <span className="text-[#E32222] drop-shadow-[0_0_30px_rgba(227,34,34,0.3)]">ARA TRAVELS</span>
@@ -86,7 +86,7 @@ export default function LandingPage() {
             <p className="text-neutral-400 max-w-2xl mx-auto">Whether you're a driver, fleet owner, or business, we have the perfect solution for you.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <RoleCard
               title="Partner"
               subtitle="Drive & Earn"
@@ -132,7 +132,7 @@ export default function LandingPage() {
                 Experience fast, safe, and affordable rides with reliable service wherever you go.
               </p>
 
-              <div className="grid sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <FeatureCard icon={<Clock />} title="Advanced Pickups" desc="No Peak Hour Charges" />
                 <FeatureCard icon={<Shield />} title="Safe Rides" desc="Verified drivers & tracking" />
                 <FeatureCard icon={<Smartphone />} title="Easy Booking" desc="3-tap booking process" />

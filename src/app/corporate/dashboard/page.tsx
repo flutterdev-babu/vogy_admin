@@ -6,10 +6,25 @@ import { Briefcase, Users, CreditCard, FileText } from 'lucide-react';
 
 export default function CorporateDashboard() {
   const [corporate, setCorporate] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(USER_KEYS.corporate);
     if (stored) setCorporate(JSON.parse(stored));
+
+    // Fetch live stats
+    const fetchStats = async () => {
+      try {
+        const { corporateService } = await import('@/services/corporateService');
+        const res = await corporateService.getDashboardStats();
+        if (res.success && res.data) {
+          setStats(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard stats", err);
+      }
+    };
+    fetchStats();
   }, []);
 
   return (
@@ -20,10 +35,10 @@ export default function CorporateDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Active Bookings" value="2" icon={<Briefcase className="text-blue-500" />} />
-        <StatCard title="Employees" value="128" icon={<Users className="text-green-500" />} />
-        <StatCard title="Monthly Spend" value="₹45k" icon={<CreditCard className="text-yellow-500" />} />
-        <StatCard title="Reports Pending" value="1" icon={<FileText className="text-purple-500" />} />
+        <StatCard title="Active Bookings" value={stats?.activeRides?.toString() || "0"} icon={<Briefcase className="text-blue-500" />} />
+        <StatCard title="Employees" value={stats?.employeeCount?.toString() || "0"} icon={<Users className="text-green-500" />} />
+        <StatCard title="Monthly Spend" value={`₹${stats?.monthlySpend || 0}`} icon={<CreditCard className="text-yellow-500" />} />
+        <StatCard title="Reports Pending" value={stats?.pendingReports?.toString() || "0"} icon={<FileText className="text-purple-500" />} />
       </div>
 
        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[300px] flex items-center justify-center text-gray-400">

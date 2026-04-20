@@ -394,15 +394,15 @@ export default function CleanAdminRideDetailsPage() {
           <div className="space-y-2">
             <div className={detailRow}>
               <span className={detailLabelClass}>Full Name</span>
-              <span className={detailValueClass}>{ride.user?.name || '-'}</span>
+              <span className={detailValueClass}>{ride.user?.name || (ride as any).corporateEmployee?.name || '-'}</span>
             </div>
             <div className={detailRow}>
-              <span className={detailLabelClass}>Mobile</span>
-              <span className={detailValueClass}>+{((ride.user?.phone || '')).toString().replace(/^\+/, '')}</span>
+              <span className={detailLabelClass}>Mobile / Acc</span>
+              <span className={detailValueClass}>{(ride.user?.phone || '').toString() ? '+' + (ride.user?.phone || '').toString().replace(/^\+/, '') : ((ride as any).corporate?.companyName || '-')}</span>
             </div>
             <div className={detailRow}>
               <span className={detailLabelClass}>Email Address</span>
-              <span className={detailValueClass}>{ride.user?.email || '-'}</span>
+              <span className={detailValueClass}>{ride.user?.email || (ride as any).corporateEmployee?.email || '-'}</span>
             </div>
             {ride.altMobile && (
               <div className={detailRow}>
@@ -660,7 +660,7 @@ export default function CleanAdminRideDetailsPage() {
                       } else {
                         // Create a new support ticket for this ride
                         const createRes = await supportTicketService.createTicket({
-                          category: 'TRIP_ISSUE',
+                          category: 'RIDE_ISSUE',
                           priority: 'MEDIUM',
                           subject: `Internal Chat for Ride #${ride.customId}`,
                           description: `Internal chat initiated for ride ${ride.customId} with partner ${ride.partner?.name}`,

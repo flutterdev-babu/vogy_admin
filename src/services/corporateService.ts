@@ -60,6 +60,11 @@ export const corporateService = {
     return response.data;
   },
 
+  async getDashboardStats(): Promise<ApiResponse<any>> {
+    const response = await corporateApi.get('/dashboard/stats');
+    return response.data;
+  },
+
   // =====================
   // Employee Management
   // =====================

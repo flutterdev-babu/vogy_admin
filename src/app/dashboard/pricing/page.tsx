@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Save, Loader2, DollarSign, Percent, Info, Clock, Plus, Zap, Shield, TrendingUp } from 'lucide-react';
+import { Save, Loader2, DollarSign, Percent, Info, Clock, Plus, Zap, Shield, TrendingUp, CreditCard, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { pricingService } from '@/services/pricingService';
 import { PricingConfig } from '@/types';
@@ -17,6 +17,9 @@ export default function PricingPage() {
   const [baseFare, setBaseFare] = useState(20);
   const [riderPercentage, setRiderPercentage] = useState(80);
   const [appCommission, setAppCommission] = useState(20);
+  const [payLaterSurcharge, setPayLaterSurcharge] = useState(2);
+  const [onlinePayDiscount, setOnlinePayDiscount] = useState(2);
+  const [assignmentBufferMinutes, setAssignmentBufferMinutes] = useState(120);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -27,6 +30,9 @@ export default function PricingPage() {
           setBaseFare(response.data.baseFare);
           setRiderPercentage(response.data.partnerPercentage);
           setAppCommission(response.data.appCommission);
+          setPayLaterSurcharge(response.data.payLaterSurchargePercent ?? 2);
+          setOnlinePayDiscount(response.data.onlinePayDiscountPercent ?? 2);
+          setAssignmentBufferMinutes(response.data.assignmentBufferMinutes ?? 120);
         }
       } catch (error) {
         console.error('Failed to fetch pricing config:', error);
@@ -63,6 +69,9 @@ export default function PricingPage() {
         baseFare,
         partnerPercentage: riderPercentage,
         appCommission,
+        payLaterSurchargePercent: payLaterSurcharge,
+        onlinePayDiscountPercent: onlinePayDiscount,
+        assignmentBufferMinutes,
       });
       setConfig(response.data);
       toast.success('System yield configuration successfully updated', { id: toastId });
@@ -82,8 +91,12 @@ export default function PricingPage() {
   const exampleDistance = 10;
   const examplePricePerKm = 15;
   const exampleTotal = baseFare + (examplePricePerKm * exampleDistance);
-  const exampleRiderEarnings = (exampleTotal * riderPercentage) / 100;
-  const exampleAppEarnings = (exampleTotal * appCommission) / 100;
+  const exampleRiderEarnings = !isNaN(riderPercentage) ? (exampleTotal * riderPercentage) / 100 : 0;
+  const exampleAppEarnings = !isNaN(appCommission) ? (exampleTotal * appCommission) / 100 : 0;
+
+  // Pay Later / Online Pay calculations
+  const payLaterFare = Math.round(exampleTotal * (1 + payLaterSurcharge / 100));
+  const onlinePayFare = Math.round(exampleTotal * (1 - onlinePayDiscount / 100));
 
   return (
     <div className="space-y-10 pb-20 max-w-7xl mx-auto">
@@ -172,9 +185,113 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className={`p-4 rounded-2xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest ${riderPercentage + appCommission === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+            <div className={`p-4 rounded-2xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest ${!isNaN(riderPercentage + appCommission) && riderPercentage + appCommission === 100 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
               <span>Yield Integrity Status</span>
-              <span>Total Distribution: {riderPercentage + appCommission}% {riderPercentage + appCommission === 100 ? '✓' : '(Must Equal 100%)'}</span>
+              <span>Total Distribution: {isNaN(riderPercentage + appCommission) ? '—' : `${riderPercentage + appCommission}%`} {!isNaN(riderPercentage + appCommission) && riderPercentage + appCommission === 100 ? '✓' : '(Must Equal 100%)'}</span>
+            </div>
+
+            {/* Partial Payment / Pay Later Section */}
+            <div className="space-y-8 pt-8 border-t border-gray-100">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Partial Payment Protocol</h3>
+                </div>
+                <p className="text-[11px] text-gray-400 font-medium ml-5 leading-relaxed">
+                  Configure surcharge for pay-later and discount for online prepayment at booking time.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Pay Later Surcharge */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block ml-1">
+                    Pay Later Surcharge (%)
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-amber-500">
+                      <Wallet size={18} />
+                    </div>
+                    <input
+                      type="number"
+                      value={payLaterSurcharge}
+                      onChange={(e) => setPayLaterSurcharge(Number(e.target.value))}
+                      className="w-full pl-14 pr-6 py-5 bg-amber-50/30 border border-amber-100/50 rounded-[1.5rem] text-lg font-black text-amber-700 focus:ring-2 focus:ring-amber-100 outline-none transition-all"
+                      placeholder="2"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 font-medium ml-1 leading-relaxed">
+                    Extra % added to fare when rider opts for cash / pay-later.
+                  </p>
+                </div>
+
+                {/* Online Pay Discount */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block ml-1">
+                    Online Pay Discount (%)
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500">
+                      <CreditCard size={18} />
+                    </div>
+                    <input
+                      type="number"
+                      value={onlinePayDiscount}
+                      onChange={(e) => setOnlinePayDiscount(Number(e.target.value))}
+                      className="w-full pl-14 pr-6 py-5 bg-emerald-50/30 border border-emerald-100/50 rounded-[1.5rem] text-lg font-black text-emerald-700 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
+                      placeholder="2"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 font-medium ml-1 leading-relaxed">
+                    Discount % applied when rider prepays via online mode.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ride Expiry Configuration Section */}
+            <div className="space-y-8 pt-8 border-t border-gray-100">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-1.5 h-6 bg-rose-500 rounded-full" />
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Assignment Window</h3>
+                </div>
+                <p className="text-[11px] text-gray-400 font-medium ml-5 leading-relaxed">
+                  Configure the maximum time allowed for a ride to be assigned to a partner before it expires.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Assignment Buffer (minutes) */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block ml-1">
+                    Assignment Buffer (minutes)
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-rose-500">
+                      <Clock size={18} />
+                    </div>
+                    <input
+                      type="number"
+                      value={assignmentBufferMinutes}
+                      onChange={(e) => setAssignmentBufferMinutes(Number(e.target.value))}
+                      className="w-full pl-14 pr-6 py-5 bg-rose-50/30 border border-rose-100/50 rounded-[1.5rem] text-lg font-black text-rose-700 focus:ring-2 focus:ring-rose-100 outline-none transition-all"
+                      placeholder="120"
+                      min="0"
+                      step="5"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400 font-medium ml-1 leading-relaxed">
+                    Time added to pickup time. Rides outside this window will automatically expire.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <button
@@ -223,13 +340,38 @@ export default function PricingPage() {
                   <div className="text-xl font-black text-indigo-400">₹{exampleAppEarnings.toFixed(2)}</div>
                 </div>
               </div>
+
+              {/* Pay Later / Online Pay simulation */}
+              <div className="space-y-3 pt-4 border-t border-gray-700/50">
+                <span className="text-[10px] font-black text-gray-500 tracking-widest uppercase">Payment Mode Impact</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <Wallet size={12} className="text-amber-400" />
+                      <span className="text-[9px] font-black text-amber-400 uppercase">Pay Later</span>
+                    </div>
+                    <div className="text-lg font-black text-amber-400">₹{payLaterFare}</div>
+                    <span className="text-[9px] font-bold text-amber-400/60">+{payLaterSurcharge}% surcharge</span>
+                  </div>
+                  <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <CreditCard size={12} className="text-emerald-400" />
+                      <span className="text-[9px] font-black text-emerald-400 uppercase">Pay Now</span>
+                    </div>
+                    <div className="text-lg font-black text-emerald-400">₹{onlinePayFare}</div>
+                    <span className="text-[9px] font-bold text-emerald-400/60">-{onlinePayDiscount}% discount</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="p-4 bg-gray-800/50 rounded-xl flex gap-3">
               <Info size={16} className="text-gray-500 shrink-0 mt-0.5" />
               <p className="text-[9px] text-gray-500 uppercase leading-relaxed font-mono">
                 Formula: Total = Base + (UnitRate × Volume) <br />
-                Net = Total × (Yield% / 100)
+                Net = Total × (Yield% / 100) <br />
+                Pay Later = Total × (1 + Surcharge%) <br />
+                Pay Now = Total × (1 - Discount%)
               </p>
             </div>
           </div>

@@ -9,12 +9,7 @@ import { partnerService } from '@/services/partnerService';
 import { agentService } from '@/services/agentService';
 import { PremiumSelect, PremiumSelectOption } from '@/components/ui/PremiumSelect';
 
-const FALLBACK_CITIES = [
-  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
-  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
-  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
-  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
-];
+
 
 const GENDER_OPTIONS: PremiumSelectOption[] = [
   { id: 'MALE', label: 'Male' },
@@ -96,20 +91,30 @@ export default function PartnerRegisterPage() {
 
   useEffect(() => {
     const loadLookups = async () => {
+      // Load Vehicle Types
       try {
-        const [vtRes, cityRes] = await Promise.all([
-          agentService.getVehicleTypesLookup(),
-          agentService.getCityCodes(),
-        ]);
-        if (vtRes.success) setVehicleTypes(vtRes.data || []);
+        const vtRes = await agentService.getVehicleTypesLookup();
+        if (vtRes.success) {
+          setVehicleTypes(vtRes.data || []);
+        } else {
+          toast.error('Failed to load vehicle categories');
+        }
+      } catch (err) {
+        console.error('Failed to load vehicle types:', err);
+        toast.error('Service error: Could not load vehicle categories');
+      }
+
+      // Load City Codes
+      try {
+        const cityRes = await agentService.getCityCodes();
         if (cityRes.success && cityRes.data && cityRes.data.length > 0) {
           setCityCodes(cityRes.data);
         } else {
-          setCityCodes(FALLBACK_CITIES);
+          toast.error('No operating cities found. Please contact support.');
         }
       } catch (err) {
-        console.error('Failed to load lookups, using fallback cities:', err);
-        setCityCodes(FALLBACK_CITIES);
+        console.error('Failed to load city codes:', err);
+        toast.error('Service error: Could not load operating cities');
       }
     };
     loadLookups();

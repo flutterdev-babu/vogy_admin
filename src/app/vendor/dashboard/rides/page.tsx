@@ -5,7 +5,7 @@ import { AdvancedTable } from '@/components/ui/AdvancedTable';
 import { ExportButton } from '@/components/ui/ExportButton';
 import { StatusBadge } from '@/components/ui/Badge';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { rideService } from '@/services/rideService';
+import { vendorService } from '@/services/vendorService';
 import { Ride } from '@/types';
 
 export default function VendorRidesPage() {
@@ -17,7 +17,7 @@ export default function VendorRidesPage() {
         // utilizing a service method like rideService.getByVendor(vendorId)
         const fetchRides = async () => {
             try {
-                const response = await rideService.getAll();
+                const response = await vendorService.getRides();
                 setRides(response.data || []);
             } catch (error) {
                 console.error('Failed to fetch rides', error);

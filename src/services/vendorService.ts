@@ -62,6 +62,22 @@ export const vendorService = {
     return response.data;
   },
 
+  async uploadAttachment(data: { fileType: string, fileUrl: string }): Promise<ApiResponse<VendorAttachment>> {
+    const response = await vendorApi.post('/attachments', data);
+    return response.data;
+  },
+
+  async uploadFile(file: File): Promise<ApiResponse<{ fileUrl: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await vendorApi.post('/attachments/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   async getRideById(id: string): Promise<ApiResponse<Ride>> {
     const response = await vendorApi.get(`/rides/${id}`);
     return response.data;

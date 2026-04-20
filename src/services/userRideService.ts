@@ -45,6 +45,7 @@ export interface CreateRidePayload {
     cityCodeId?: string;
     advanceAmount?: number;
     transactionId?: string;
+    scheduledDateTime?: string | null;
 }
 
 export interface FareEstimatePayload {

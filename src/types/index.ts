@@ -641,6 +641,9 @@ export interface PricingConfig {
   baseFare: number;
   partnerPercentage: number;
   appCommission: number;
+  payLaterSurchargePercent: number;
+  onlinePayDiscountPercent: number;
+  assignmentBufferMinutes: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -649,6 +652,9 @@ export interface UpdatePricingConfigRequest {
   baseFare?: number;
   partnerPercentage: number;
   appCommission: number;
+  payLaterSurchargePercent?: number;
+  onlinePayDiscountPercent?: number;
+  assignmentBufferMinutes?: number;
 }
 
 // =====================================
@@ -675,7 +681,7 @@ export interface VehiclePricingGroup {
   tollRate: number;
   parkingRate: number;
   gstRate: number;
-  
+
   // Rental Package Metrics
   rentalHalfDayBaseHr?: number;
   rentalHalfDayBaseKm?: number;
@@ -886,6 +892,7 @@ export interface Ride {
   partner?: PartnerSummary;
   vendor?: VendorSummary; // Expanded vendor field support
   corporate?: any; // New corporate reference support
+  corporateEmployeeId?: string; // Links ride to specific corporate staff
   vehicle?: any; // Expanded full vehicle support
   vehicleType: VehicleTypeSummary;
   couponCode?: string; // Agent discount code
@@ -995,7 +1002,7 @@ export interface VendorDashboardData {
 export interface VendorAttachment {
   id: string;
   vendorId: string;
-  partner: {
+  partner?: {
     id: string;
     customId: string;
     name: string;
@@ -1004,7 +1011,7 @@ export interface VendorAttachment {
     verificationStatus: EntityVerificationStatus;
     isOnline: boolean;
   };
-  vehicle: {
+  vehicle?: {
     id: string;
     customId: string;
     registrationNumber: string;
@@ -1012,9 +1019,12 @@ export interface VendorAttachment {
     isAvailable: boolean;
     vehicleType: VehicleTypeSummary;
   };
+  fileType?: string;
+  fileUrl?: string;
+  verificationStatus?: EntityVerificationStatus;
   createdAt: string;
   status: string;
-  assignedAt: string;
+  assignedAt?: string;
 }
 
 export interface VendorEarningsData {
@@ -1079,6 +1089,7 @@ export interface PartnerVehicleData {
 export interface PartnerEarningsData {
   total: number;
   totalFare: number;
+  totalRides: number;
   sessionEarnings: number;
   todayEarnings: number;
   recentRides: Array<{

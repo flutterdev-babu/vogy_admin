@@ -22,7 +22,7 @@ export default function InvoiceExport({ ride, computedTotal, computedGst }: Invo
     };
 
     // Header section
-    addText('VOGY', margin, y, 24, true, [211, 47, 47]);
+    addText('ARA TRAVELS', margin, y, 24, true, [211, 47, 47]);
     addText('INVOICE', 190, y, 12, true, [100, 100, 100]);
     doc.text(`#${ride?.customId || ride?.id || ''}`, 190, y + 8, { align: 'right' });
     y += 25;
@@ -32,10 +32,10 @@ export default function InvoiceExport({ ride, computedTotal, computedGst }: Invo
     addText('From:', 120, y, 9, true, [150, 150, 150]);
     y += 6;
     addText(ride?.user?.name || 'Customer', margin, y, 11, true);
-    addText('VOGY Ride Hailing', 120, y, 11, true);
+    addText('ARA Travels Ride Hailing', 120, y, 11, true);
     y += 5;
     addText(`+${ride?.user?.phone || ''}`, margin, y, 10);
-    addText('Contact: support@vogy.com', 120, y, 10);
+    addText('Contact: support@ara-travels.com', 120, y, 10);
     y += 20;
 
     // Ride Details
@@ -89,7 +89,7 @@ export default function InvoiceExport({ ride, computedTotal, computedGst }: Invo
     doc.text('TOTAL AMOUNT', margin + 5, y + 8);
     doc.text(`Rs. ${Number(computedTotal || 0).toFixed(2)}`, 188, y + 8, { align: 'right' });
 
-    doc.save(`VOGY_Invoice_${ride?.customId || 'Ride'}.pdf`);
+    doc.save(`ARA_Travels_Invoice_${ride?.customId || 'Ride'}.pdf`);
   };
 
   return (

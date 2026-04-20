@@ -13,6 +13,11 @@ export const adminRideService = {
     return response.data;
   },
 
+  async getLiveUnassignedRides(): Promise<ApiResponse<Ride[]> & { meta?: { totalCount: number; bufferMinutes: number } }> {
+    const response = await api.get(`/rides/live-unassigned`);
+    return response.data;
+  },
+
   async getRideById(id: string): Promise<ApiResponse<Ride>> {
     const response = await api.get(`/rides/${id}`);
     return response.data;

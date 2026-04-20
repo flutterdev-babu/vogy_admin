@@ -363,7 +363,7 @@ export default function PermissionsPage() {
                                     type="email"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="john@vogy.com"
+                                    placeholder="john@ara-travels.com"
                                     className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all"
                                 />
                             </div>

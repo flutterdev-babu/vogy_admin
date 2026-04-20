@@ -80,11 +80,9 @@ export default function PartnerRidesPage() {
             )
         },
         {
-            header: 'Fare Breakup', accessor: (ride: Ride) => (
-                <div className="flex flex-col text-xs">
-                    <span className="font-bold text-gray-800">₹{ride.totalFare}</span>
-                    <span className="text-[10px] text-gray-400 font-medium">Fee: ₹{ride.commission || 0}</span>
-                </div>
+            header: 'Ride Earnings', accessor: (ride: Ride) => (
+                    <span className="font-bold text-green-600">₹{Math.floor(ride.riderEarnings ?? ride.partnerEarnings ?? 0)}</span>
+
             )
         },
         {
@@ -95,7 +93,6 @@ export default function PartnerRidesPage() {
                 </div>
             )
         },
-        { header: 'My Earnings', accessor: (ride: Ride) => <span className="font-bold text-green-600">₹{ride.riderEarnings ?? ride.partnerEarnings ?? 0}</span> },
         { header: 'Status', accessor: (ride: Ride) => <StatusBadge status={ride.status} /> },
         {
             header: 'Actions', accessor: (ride: Ride) => (
@@ -167,8 +164,9 @@ function RideDetailsModal({ ride, onClose }: { ride: Ride; onClose: () => void }
                             <StatusBadge status={ride.status} />
                         </div>
                         <div className="text-right">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Fare</p>
-                            <p className="text-2xl font-black text-emerald-600">₹{ride.totalFare}</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">My Earnings</p>
+                            <p className="text-2xl font-black text-emerald-600">₹{Math.floor(ride.riderEarnings ?? ride.partnerEarnings ?? 0)}</p>
+
                         </div>
                     </div>
 
@@ -223,25 +221,10 @@ function RideDetailsModal({ ride, onClose }: { ride: Ride; onClose: () => void }
                                 </div>
                             </div>
                             <div className="p-4 space-y-3">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Base Fare</span>
-                                    <span className="font-semibold">₹{ride.baseFare || 0}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Distance Fare</span>
-                                    <span className="font-semibold">₹{((ride.totalFare || 0) - (ride.baseFare || 0)).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm border-t border-gray-100 pt-3">
-                                    <span className="text-gray-800 font-bold">Total Collected Fare</span>
-                                    <span className="font-bold">₹{ride.totalFare}</span>
-                                </div>
-                                <div className="flex justify-between text-sm text-red-500">
-                                    <span>Platform Commission</span>
-                                    <span>-₹{ride.commission || 0}</span>
-                                </div>
-                                <div className="flex justify-between text-lg font-black text-emerald-600 border-t border-gray-100 pt-3">
-                                    <span>My Net Earnings</span>
-                                    <span>₹{ride.riderEarnings ?? ride.partnerEarnings ?? 0}</span>
+                                <div className="flex justify-between text-lg font-black text-emerald-600">
+                                    <span>My Earnings</span>
+                                    <span>₹{Math.floor(ride.riderEarnings ?? ride.partnerEarnings ?? 0)}</span>
+
                                 </div>
                             </div>
                         </div>

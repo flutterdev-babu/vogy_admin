@@ -383,9 +383,9 @@ export default function PartnerDashboard() {
         />
         <ModernStatCard 
           title="Earnings" 
-          value={`₹${stats?.earnings.todayEarnings.toLocaleString('en-IN') || '0'}`} 
+          value={`₹${Math.floor(stats?.earnings.todayEarnings || 0).toLocaleString('en-IN')}`} 
           icon={<DollarSign className="text-[#10b981]" />}
-          footer={`₹${stats?.earnings.total.toLocaleString('en-IN') || '0'} total career`}
+          footer={`₹${Math.floor(stats?.earnings.total || 0).toLocaleString('en-IN')} total career`}
           color="emerald"
         />
         <ModernStatCard 
@@ -482,10 +482,10 @@ export default function PartnerDashboard() {
                   </div>
                    
                   <div className="bg-white/5 rounded-2xl p-6 border border-white/5 space-y-6">
-                    <div className="flex justify-between items-center">
-                       <p className="text-sm font-bold text-white/50">Expected Fare</p>
-                       <p className="text-2xl font-black text-emerald-400">₹{activeRide.totalFare}</p>
-                    </div>
+                     <div className="flex justify-between items-center">
+                        <p className="text-sm font-bold text-white/50">My Earnings</p>
+                        <p className="text-2xl font-black text-emerald-400">₹{Math.floor(activeRide.riderEarnings ?? activeRide.partnerEarnings ?? 0)}</p>
+                     </div>
 
                     {(activeRide.status === 'STARTED') && (
                       <div className="space-y-4">
@@ -646,8 +646,8 @@ export default function PartnerDashboard() {
               <InsightRow label="Cancelled Rides" value={stats?.rides.cancelled.toString() || '0'} color="red" />
               <div className="pt-5 border-t border-white/10 flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Gross Turnaround</p>
-                  <p className="text-3xl font-black text-white italic">₹{stats?.earnings.totalFare.toLocaleString('en-IN') || '0'}</p>
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">My Total Earnings</p>
+                  <p className="text-3xl font-black text-white italic">₹{Math.floor(stats?.earnings.total || 0).toLocaleString('en-IN')}</p>
                 </div>
                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors pointer-events-auto cursor-pointer">
                   <ChevronRight size={20} />
@@ -766,8 +766,8 @@ function RideRequestCard({ ride, onAccept, loading }: { ride: Ride, onAccept: ()
               <h4 className="text-lg font-black text-gray-800 tracking-tight italic">#{ride.customId}</h4>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-black text-emerald-600">₹{ride.totalFare}</p>
-              <p className="text-[10px] font-bold text-gray-400">Fixed Fare</p>
+              <p className="text-2xl font-black text-emerald-600">₹{Math.floor(ride.riderEarnings ?? ride.partnerEarnings ?? 0)}</p>
+              <p className="text-[10px] font-bold text-gray-400">My Earnings</p>
             </div>
           </div>
           

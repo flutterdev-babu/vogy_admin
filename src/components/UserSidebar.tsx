@@ -37,7 +37,7 @@ export default function UserSidebar() {
     const isActive = (href: string) => pathname === href;
 
     const SidebarContent = () => (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full pt-20 lg:pt-0">
             {/* Header */}
             <div className="p-6 border-b border-white/10">
                 <div className="flex items-center gap-3">
@@ -102,10 +102,9 @@ export default function UserSidebar() {
 
     return (
         <>
-            {/* Mobile Toggle */}
+            {/* Mobile Toggle - Integrated with Sticky Navbar */}
             <button
-                className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-xl text-white"
-                style={{ background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(10px)' }}
+                className="lg:hidden fixed top-[12px] left-4 z-[80] p-2 text-white active:scale-90 transition-all"
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
             >
                 {isMobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -114,16 +113,16 @@ export default function UserSidebar() {
             {/* Mobile Overlay */}
             {isMobileOpen && (
                 <div
-                    className="lg:hidden fixed inset-0 bg-black/60 z-40"
+                    className="lg:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[50]"
                     onClick={() => setIsMobileOpen(false)}
                 />
             )}
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-0 left-0 h-full w-72 z-40 transition-transform duration-300 lg:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed top-0 left-0 h-full w-72 z-[55] flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
-                style={{ background: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a2e 100%)', borderRight: '1px solid rgba(255, 255, 255, 0.08)' }}
+                style={{ background: 'linear-gradient(180deg, #0f0f0f 0%, #050505 100%)', borderRight: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '20px 0 50px rgba(0,0,0,0.5)' }}
             >
                 <SidebarContent />
             </aside>

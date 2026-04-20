@@ -212,22 +212,22 @@ export default function Sidebar() {
       {/* Mobile toggle button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl bg-white shadow-lg border border-red-100 hover:bg-red-50 transition-colors"
+        className="lg:hidden fixed top-5 left-4 z-[60] p-2.5 rounded-xl bg-white shadow-xl border border-red-100 hover:bg-red-50 transition-all active:scale-90"
       >
-        {isMobileOpen ? <X size={24} className="text-red-500" /> : <Menu size={24} className="text-red-500" />}
+        {isMobileOpen ? <X size={20} className="text-[#E32222]" /> : <Menu size={20} className="text-[#E32222]" />}
       </button>
 
       {/* Overlay for mobile */}
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[50]"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 shadow-sm z-40 flex flex-col transform transition-transform duration-300 lg:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 shadow-2xl z-[55] flex flex-col transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] lg:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         {/* Logo */}
@@ -242,7 +242,7 @@ export default function Sidebar() {
               />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ARA</h1>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ARA TRAVELS</h1>
               <p className="text-[11px] text-red-600 font-bold uppercase tracking-wider">Admin Panel</p>
             </div>
           </div>

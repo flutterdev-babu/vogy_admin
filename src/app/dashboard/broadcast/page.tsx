@@ -147,7 +147,7 @@ export default function BroadcastPage() {
                     type="url"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://assets.vogy.app/promo/banner-1.jpg"
+                    placeholder="https://assets.ara-travels.com/promo/banner-1.jpg"
                     className="w-full pl-14 pr-6 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all placeholder:text-gray-300"
                   />
                 </div>

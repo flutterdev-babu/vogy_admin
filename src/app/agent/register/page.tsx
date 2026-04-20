@@ -8,12 +8,7 @@ import toast from 'react-hot-toast';
 import { agentService } from '@/services/agentService';
 import { PremiumSelect, PremiumSelectOption } from '@/components/ui/PremiumSelect';
 
-const FALLBACK_CITIES = [
-  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
-  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
-  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
-  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
-];
+
 
 export default function AgentRegisterPage() {
   const [formData, setFormData] = useState({
@@ -35,11 +30,11 @@ export default function AgentRegisterPage() {
         if (response.success && response.data && response.data.length > 0) {
           setCityCodes(response.data);
         } else {
-          setCityCodes(FALLBACK_CITIES);
+          toast.error('No operating cities found. Please contact support.');
         }
       } catch (error) {
-        console.error('Failed to load city codes, using fallback:', error);
-        setCityCodes(FALLBACK_CITIES);
+        console.error('Failed to load city codes:', error);
+        toast.error('Service error: Could not load operating cities');
       }
     };
     loadCityCodes();

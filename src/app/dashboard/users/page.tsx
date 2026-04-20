@@ -286,7 +286,7 @@ export default function UsersPage() {
                     value={editForm.email}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                     className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-gray-200 outline-none transition-all"
-                    placeholder="user@vogy.com"
+                    placeholder="user@ara-travels.com"
                   />
                 </div>
               </div>

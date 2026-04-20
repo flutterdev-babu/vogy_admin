@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Clock,
   Car,
+  Bike,
   Settings,
   RefreshCw,
   PlusCircle,
@@ -33,12 +34,13 @@ import {
   CreateVehiclePricingGroupRequest,
   UpdateVehiclePricingGroupRequest,
   PeakHourCharge,
+  CreatePeakHourChargeRequest,
   PeakHourSlot,
   DayOfWeek,
   ServiceType
 } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
-import { CategoryBadge, ActiveBadge } from '@/components/ui/Badge';
+import { ActiveBadge } from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
 import SegmentSetupWizard from '@/components/pricing/SegmentSetupWizard';
 import toast from 'react-hot-toast';
@@ -149,7 +151,20 @@ export default function VehicleTypesPage() {
   const fetchVehicleTypes = async () => {
     try {
       const response = await vehicleTypeService.getAll();
-      setVehicleTypes(response.data || []);
+      const sortedTypes = (response.data || []).sort((a: any, b: any) => {
+        const baseA = a.baseFare || 0;
+        const baseB = b.baseFare || 0;
+        
+        if (baseA !== baseB) {
+          return baseA - baseB;
+        }
+        
+        const perKmA = a.pricePerKm || 0;
+        const perKmB = b.pricePerKm || 0;
+        return perKmA - perKmB;
+      });
+      
+      setVehicleTypes(sortedTypes);
     } catch (error) {
       toast.error('Failed to load vehicle types');
     } finally {
@@ -331,7 +346,7 @@ export default function VehicleTypesPage() {
       selectedBulkFields.forEach(field => {
         updatePayload[field] = bulkFormData[field];
       });
-      
+
       let successCount = 0;
       for (const group of groupsToUpdate) {
         try {
@@ -389,7 +404,7 @@ export default function VehicleTypesPage() {
         outstationDriverAllowance: 300,
         outstationMinBaseKmPerDay: 300
       };
-      
+
       await vehiclePricingGroupService.create(newGroupReq);
       toast.success('New city cluster created');
       fetchPricingGroups(selectedTypeForPricing.id);
@@ -416,7 +431,7 @@ export default function VehicleTypesPage() {
     try {
       const payload: any = { ...pricingFormData };
       if (payload.name === '') delete payload.name;
-      
+
       await vehiclePricingGroupService.update(activeGroupId, payload);
       toast.success('Pricing details updated successfully');
       fetchPricingGroups(selectedTypeForPricing!.id);
@@ -436,6 +451,50 @@ export default function VehicleTypesPage() {
     } catch (error) {
       toast.error('Failed to update peak timings');
     }
+  };
+
+  const createNewPeakCharge = async () => {
+    if (!selectedTypeForPricing) return;
+    try {
+      const newCharge: CreatePeakHourChargeRequest = {
+        name: `Peak Surge ${peakCharges.length + 1}`,
+        vehicleTypeId: selectedTypeForPricing.id,
+        cityCodeIds: pricingFormData.cityCodeIds || [],
+        days: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
+        slots: [
+          {
+            startTime: '08:00',
+            endTime: '11:00',
+            dayAdjustments: { MONDAY: 0, TUESDAY: 0, WEDNESDAY: 0, THURSDAY: 0, FRIDAY: 0, SATURDAY: 0, SUNDAY: 0 }
+          }
+        ]
+      };
+      await peakHourChargeService.create(newCharge);
+      toast.success('Peak pricing charge added');
+      const peakRes = await peakHourChargeService.getAll(selectedTypeForPricing.id);
+      setPeakCharges(peakRes.data || []);
+    } catch (e: any) {
+      toast.error('Failed to create peak charge');
+    }
+  };
+
+  const updateSlotTime = (chargeId: string, slotIndex: number, field: 'startTime' | 'endTime', value: string) => {
+    setPeakCharges(prev => prev.map(charge => {
+      if (charge.id !== chargeId) return charge;
+      const newSlots = [...charge.slots];
+      newSlots[slotIndex] = { ...newSlots[slotIndex], [field]: value };
+      return { ...charge, slots: newSlots };
+    }));
+  };
+
+  const updateDayAdjustment = (chargeId: string, slotIndex: number, day: DayOfWeek, value: number) => {
+    setPeakCharges(prev => prev.map(charge => {
+      if (charge.id !== chargeId) return charge;
+      const newSlots = [...charge.slots];
+      const newDayAdj = { ...newSlots[slotIndex].dayAdjustments, [day]: value };
+      newSlots[slotIndex] = { ...newSlots[slotIndex], dayAdjustments: newDayAdj };
+      return { ...charge, slots: newSlots };
+    }));
   };
 
   const toggleCityInForm = (cityId: string) => {
@@ -491,7 +550,7 @@ export default function VehicleTypesPage() {
           <div className="relative z-10">
             <h3 className="text-white text-lg font-bold mb-2">Global Controls</h3>
             <p className="text-gray-400 text-xs mb-6 max-w-[200px]">Apply pricing updates across all vehicle segments simultaneously.</p>
-            <button 
+            <button
               onClick={openBulkPricingModal}
               className="bg-white text-gray-900 px-6 py-3 rounded-xl transition-all font-bold flex items-center justify-center gap-2 text-xs shadow-lg hover:scale-105 active:scale-95"
             >
@@ -516,7 +575,7 @@ export default function VehicleTypesPage() {
             <div className="w-2 h-6 bg-red-500 rounded-full" />
             <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest">Active Fleet Hierarchy</h2>
           </div>
-          <button 
+          <button
             onClick={() => { resetForm(); setIsModalOpen(true); }}
             className="flex items-center gap-2 px-4 py-2 border-2 border-gray-900 text-gray-900 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-900 hover:text-white transition-all"
           >
@@ -541,7 +600,14 @@ export default function VehicleTypesPage() {
                 <tr key={type.id} className="group bg-white hover:bg-gray-50 transition-all border border-gray-100">
                   <td className="px-6 py-4 first:rounded-l-2xl border-y border-l border-transparent group-hover:border-gray-100">
                     <div className="flex justify-center">
-                      <CategoryBadge category={type.category} />
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
+                        type.category === 'CAR' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                        type.category === 'AUTO' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                        'bg-emerald-50 text-emerald-600 border-emerald-100'
+                      }`}>
+                        {type.category === 'CAR' ? <Car size={12} /> : type.category === 'BIKE' ? <Bike size={12} /> : null}
+                        {type.category}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 border-y border-transparent group-hover:border-gray-100">
@@ -572,7 +638,7 @@ export default function VehicleTypesPage() {
                   </td>
                   <td className="px-6 py-4 text-right pr-8 last:rounded-r-2xl border-y border-r border-transparent group-hover:border-gray-100">
                     <div className="flex items-center justify-end gap-2">
-                       <button
+                      <button
                         onClick={() => openPricingManager(type)}
                         className="p-2.5 bg-gray-50 hover:bg-gray-900 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
                         title="Manage Rate Clusters"
@@ -587,12 +653,16 @@ export default function VehicleTypesPage() {
                         <Edit2 size={16} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm('Delete this segment?')) {
-                            setDeleteId(type.id);
-                            // Assuming there's a delete function, but I'll stick to what was there or what's logical
-                            // The original code didn't have a visible delete button in the table loop I saw, 
-                            // but had Edit and Pricing.
+                        onClick={async () => {
+                          if (confirm('Delete this segment? This action cannot be undone.')) {
+                            try {
+                              await vehicleTypeService.delete(type.id);
+                              toast.success('Vehicle segment deleted successfully');
+                              fetchVehicleTypes();
+                            } catch (error: any) {
+                              const errMsg = error.response?.data?.message || 'Failed to delete segment';
+                              toast.error(errMsg);
+                            }
                           }
                         }}
                         className="p-2.5 bg-gray-50 hover:bg-red-500 text-gray-400 hover:text-white rounded-xl transition-all border border-gray-100 shadow-sm"
@@ -744,13 +814,13 @@ export default function VehicleTypesPage() {
                           <div className="flex items-center justify-between ml-1">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active nodes (Cities)</label>
                             <div className="flex gap-2">
-                              <button 
+                              <button
                                 onClick={() => setPricingFormData({ ...pricingFormData, cityCodeIds: cities.map(c => c.id) })}
                                 className="text-[8px] font-black text-red-500 hover:text-red-700 uppercase"
                               >
                                 Select All
                               </button>
-                              <button 
+                              <button
                                 onClick={() => setPricingFormData({ ...pricingFormData, cityCodeIds: [] })}
                                 className="text-[8px] font-black text-gray-400 hover:text-gray-600 uppercase"
                               >
@@ -803,7 +873,7 @@ export default function VehicleTypesPage() {
                       {/* Conditional Rental Section */}
                       {pricingFormData.serviceType === 'RENTAL' && (
                         <div className="space-y-6 pt-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-300">
-                           <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-3 mb-2">
                             <div className="w-1.5 h-4 bg-purple-500 rounded-full" />
                             <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Rental Package Details</h5>
                           </div>
@@ -831,7 +901,7 @@ export default function VehicleTypesPage() {
                       {/* Conditional Outstation Section */}
                       {pricingFormData.serviceType === 'OUTSTATION' && (
                         <div className="space-y-6 pt-6 border-t border-gray-50 animate-in fade-in slide-in-from-top-2 duration-300">
-                           <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-3 mb-2">
                             <div className="w-1.5 h-4 bg-orange-500 rounded-full" />
                             <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Outstation Parameters</h5>
                           </div>
@@ -866,7 +936,7 @@ export default function VehicleTypesPage() {
                         <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
                         <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Peak Pricing</h4>
                       </div>
-                      <button className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all">
+                      <button onClick={createNewPeakCharge} className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-all">
                         <PlusCircle size={20} />
                       </button>
                     </div>
@@ -879,9 +949,9 @@ export default function VehicleTypesPage() {
                               <div className="bg-white/80 backdrop-blur-sm px-6 py-3 border-b border-gray-50 flex items-center justify-between">
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Slot {sIdx + 1}</span>
                                 <div className="flex items-center gap-3">
-                                  <input type="time" value={slot.startTime} className="bg-transparent text-[10px] font-black text-gray-900" readOnly />
+                                  <input type="time" value={slot.startTime} onChange={(e) => updateSlotTime(charge.id, sIdx, 'startTime', e.target.value)} className="bg-transparent text-[10px] font-black text-gray-900" />
                                   <span className="text-gray-300">/</span>
-                                  <input type="time" value={slot.endTime} className="bg-transparent text-[10px] font-black text-gray-900" readOnly />
+                                  <input type="time" value={slot.endTime} onChange={(e) => updateSlotTime(charge.id, sIdx, 'endTime', e.target.value)} className="bg-transparent text-[10px] font-black text-gray-900" />
                                 </div>
                               </div>
                               <div className="p-5">
@@ -896,7 +966,7 @@ export default function VehicleTypesPage() {
                                               type="number"
                                               value={slot.dayAdjustments?.[day] || 0}
                                               className="w-8 text-right bg-transparent text-[10px] font-black text-gray-900 focus:outline-none"
-                                              onChange={() => { }}
+                                              onChange={(e) => updateDayAdjustment(charge.id, sIdx, day, Number(e.target.value))}
                                             />
                                             <span className="text-gray-300 text-[10px] font-bold">%</span>
                                           </div>
@@ -945,8 +1015,9 @@ export default function VehicleTypesPage() {
                 <button
                   key={c}
                   type="button"
-                  onClick={() => setFormData({ ...formData, category: c as any })}
-                  className={`flex-1 py-3.5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${formData.category === c ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-100' : 'text-gray-400 hover:text-gray-600'}`}
+                  disabled={!!editingType}
+                  onClick={() => !editingType && setFormData({ ...formData, category: c as any })}
+                  className={`flex-1 py-3.5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${formData.category === c ? 'bg-white text-gray-900 shadow-md ring-1 ring-gray-100' : 'text-gray-400 hover:text-gray-600'} ${editingType ? 'cursor-not-allowed opacity-60' : ''}`}
                 >
                   {c}
                 </button>
@@ -975,10 +1046,38 @@ export default function VehicleTypesPage() {
                 disabled={!!editingType}
               />
             </div>
+
+            {/* Pricing Fields */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+              <div className="group">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Price Per KM (₹)</label>
+                <input
+                  type="number"
+                  value={formData.pricePerKm}
+                  onChange={(e) => setFormData({ ...formData, pricePerKm: Number(e.target.value) })}
+                  className="w-full px-5 py-4 bg-emerald-50/30 border border-emerald-100/50 rounded-2xl text-sm font-black text-emerald-700 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
+                  placeholder="15"
+                  min="0"
+                  step="0.5"
+                />
+              </div>
+              <div className="group">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Base Fare (₹)</label>
+                <input
+                  type="number"
+                  value={formData.baseFare || ''}
+                  onChange={(e) => setFormData({ ...formData, baseFare: e.target.value ? Number(e.target.value) : undefined })}
+                  className="w-full px-5 py-4 bg-blue-50/30 border border-blue-100/50 rounded-2xl text-sm font-black text-blue-700 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
-            <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-gray-100 hover:bg-black transition-all">
+            <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-gray-100 hover:bg-black transition-all flex items-center justify-center gap-2">
+              {isSubmitting && <Loader2 size={14} className="animate-spin" />}
               {editingType ? 'COMMIT REFINEMENTS' : 'AUTHORIZE SEGMENT'}
             </button>
             <button type="button" onClick={() => setIsModalOpen(false)} className="w-full py-4 text-gray-400 font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 rounded-2xl transition-all">Dismiss</button>
@@ -1063,10 +1162,10 @@ export default function VehicleTypesPage() {
                     />
                   </div>
                 ))}
-                
+
                 {/* Advanced Fields in Bulk */}
                 <div className="md:col-span-2 h-px bg-gray-100 my-2"></div>
-                
+
                 {[
                   { key: 'rentalHalfDayBaseFare', label: 'Rental Half Day' },
                   { key: 'rentalFullDayBaseFare', label: 'Rental Full Day' },
@@ -1102,7 +1201,7 @@ export default function VehicleTypesPage() {
           {/* Actions */}
           <div className="flex items-center gap-3 pt-2">
             <button
-              onClick={() => setSelectedBulkFields(['baseKm','baseFare','perKmPrice','driverBaseKm','driverBasePrice','driverExtraPricePerKm','commissionPercentage','tollRate','parkingRate','gstRate'])}
+              onClick={() => setSelectedBulkFields(['baseKm', 'baseFare', 'perKmPrice', 'driverBaseKm', 'driverBasePrice', 'driverExtraPricePerKm', 'commissionPercentage', 'tollRate', 'parkingRate', 'gstRate'])}
               className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
             >
               Select All Fields
@@ -1138,15 +1237,15 @@ export default function VehicleTypesPage() {
 function MockInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="space-y-2">
-      <div className="flex h-11 ring-1 ring-gray-100 rounded-xl overflow-hidden focus-within:ring-red-100 transition-all">
-        <div className="w-[140px] bg-red-50/50 flex items-center px-4 border-r border-gray-50">
-          <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{label}</span>
+      <div className="flex min-h-[44px] ring-1 ring-gray-100 rounded-xl overflow-hidden focus-within:ring-red-100 transition-all">
+        <div className="w-[150px] shrink-0 bg-red-50/50 flex items-center px-4 py-2 border-r border-gray-50">
+          <span className="text-[9px] font-black text-red-500 uppercase tracking-widest leading-tight">{label}</span>
         </div>
         <input
           type="number"
           value={value}
           onChange={e => onChange(Number(e.target.value))}
-          className="flex-1 bg-white px-4 text-xs font-bold text-gray-700 focus:outline-none"
+          className="flex-1 min-w-0 bg-white px-4 py-2 text-xs font-bold text-gray-700 focus:outline-none"
         />
       </div>
     </div>
