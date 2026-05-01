@@ -19,9 +19,6 @@ const GENDER_OPTIONS: PremiumSelectOption[] = [
 
 // Logic for document input within the dark theme
 const PublicDocInput = ({ label, value, onChange, required }: { label: string, value: string, onChange: (v: string) => void, required?: boolean }) => {
-  const [mode, setMode] = useState<'URL' | 'UPLOAD'>('URL');
-  const inputClass = "w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/20 transition-all hover:bg-white/[0.05] text-sm";
-
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) onChange(URL.createObjectURL(file));
@@ -33,25 +30,14 @@ const PublicDocInput = ({ label, value, onChange, required }: { label: string, v
         <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
           {label} {required && <span className="text-[#E32222]">*</span>}
         </label>
-        <div className="flex gap-1 bg-white/5 p-0.5 rounded-lg border border-white/5">
-          <button type="button" onClick={() => setMode('URL')} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase transition-all ${mode === 'URL' ? 'bg-[#E32222] text-white shadow-lg shadow-red-900/40' : 'text-neutral-500 hover:text-neutral-300'}`}>URL</button>
-          <button type="button" onClick={() => setMode('UPLOAD')} className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase transition-all ${mode === 'UPLOAD' ? 'bg-[#E32222] text-white shadow-lg shadow-red-900/40' : 'text-neutral-500 hover:text-neutral-300'}`}>Upload</button>
+      </div>
+      <div className="relative border border-dashed border-white/10 rounded-xl py-3 px-4 hover:border-[#E32222]/40 transition-all group cursor-pointer bg-white/[0.01] hover:bg-white/[0.03]">
+        <input type="file" accept="image/*" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">{value ? 'File Selected' : 'Choose local file'}</span>
+          <Upload size={14} className="text-neutral-600 group-hover:text-[#E32222] transition-colors" />
         </div>
       </div>
-      {mode === 'URL' ? (
-        <div className="relative group">
-          <input type="text" value={value.startsWith('blob:') ? '' : value} onChange={e => onChange(e.target.value)} placeholder="Paste image link..." className={inputClass} />
-          <LinkIcon size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-[#E32222] transition-colors" />
-        </div>
-      ) : (
-        <div className="relative border border-dashed border-white/10 rounded-xl py-3 px-4 hover:border-[#E32222]/40 transition-all group cursor-pointer bg-white/[0.01] hover:bg-white/[0.03]">
-          <input type="file" accept="image/*" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">{value.startsWith('blob:') ? 'File Selected' : 'Choose local file'}</span>
-            <Upload size={14} className="text-neutral-600 group-hover:text-[#E32222] transition-colors" />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -147,6 +133,7 @@ export default function PartnerRegisterPage() {
         bankName: formData.bankName || undefined,
         accountNumber: formData.accountNumber || undefined,
         ifscCode: formData.ifscCode || undefined,
+        vendorCustomId: formData.vendorCustomId || undefined,
       };
 
       if (hasOwnVehicle) {
@@ -205,22 +192,27 @@ export default function PartnerRegisterPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1">
                   <label className={labelClass}>First Name *</label>
-                  <input type="text" required value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className={inputClass} placeholder="First" />
+                  <input type="text" required value={formData.firstName || ''} onChange={e => setFormData({...formData, firstName: e.target.value})} className={inputClass} placeholder="First" />
                 </div>
                 <div className="space-y-1">
                   <label className={labelClass}>Last Name *</label>
-                  <input type="text" required value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className={inputClass} placeholder="Last" />
+                  <input type="text" required value={formData.lastName || ''} onChange={e => setFormData({...formData, lastName: e.target.value})} className={inputClass} placeholder="Last" />
                 </div>
                 <div className="space-y-1">
                   <label className={labelClass}>Phone *</label>
                   <div className="flex">
                     <span className="px-4 py-3 bg-white/5 border border-white/10 border-r-0 rounded-l-xl text-[10px] font-black text-neutral-500 flex items-center tracking-widest">+91</span>
-                    <input type="tel" required value={formData.phone} onChange={(e) => {
+                    <input type="tel" required value={formData.phone || ''} onChange={(e) => {
                       let v = e.target.value.replace(/\D/g, '');
                       if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
                       setFormData({...formData, phone: v.slice(0, 10)});
                     }} className={inputClass + " rounded-l-none"} placeholder="10 Digit Number" maxLength={10} />
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className={labelClass}>Vendor ID (Optional)</label>
+                  <input type="text" value={formData.vendorCustomId || ''} onChange={e => setFormData({...formData, vendorCustomId: e.target.value.toUpperCase()})} className={inputClass} placeholder="e.g. ACVBLR01" />
                 </div>
               </div>
 
@@ -228,7 +220,7 @@ export default function PartnerRegisterPage() {
                 <div className="space-y-1">
                   <label className={labelClass}>Password *</label>
                   <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className={inputClass + " pr-12"} placeholder="Security Key" />
+                    <input type={showPassword ? 'text' : 'password'} required value={formData.password || ''} onChange={e => setFormData({...formData, password: e.target.value})} className={inputClass + " pr-12"} placeholder="Security Key" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-white transition-colors">
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -269,7 +261,7 @@ export default function PartnerRegisterPage() {
                     <ShieldCheck size={14} className="text-[#E32222] group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">PAN Detail</span>
                   </div>
-                  <input type="text" value={formData.panNumber} onChange={e => setFormData({...formData, panNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="PAN NO" maxLength={10} />
+                  <input type="text" value={formData.panNumber || ''} onChange={e => setFormData({...formData, panNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="PAN NO" maxLength={10} />
                   <PublicDocInput label="Upload PAN" value={formData.panImage} onChange={v => setFormData({...formData, panImage: v})} />
                 </div>
 
@@ -278,7 +270,7 @@ export default function PartnerRegisterPage() {
                     <ShieldCheck size={14} className="text-[#E32222] group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Aadhaar Card</span>
                   </div>
-                  <input type="text" value={formData.aadhaarNumber} onChange={e => setFormData({...formData, aadhaarNumber: e.target.value.replace(/\D/g, '')})} className={inputClass} placeholder="12 DIGITS" maxLength={12} />
+                  <input type="text" value={formData.aadhaarNumber || ''} onChange={e => setFormData({...formData, aadhaarNumber: e.target.value.replace(/\D/g, '')})} className={inputClass} placeholder="12 DIGITS" maxLength={12} />
                   <PublicDocInput label="Upload Aadhaar" value={formData.aadhaarImage} onChange={v => setFormData({...formData, aadhaarImage: v})} />
                 </div>
 
@@ -287,7 +279,7 @@ export default function PartnerRegisterPage() {
                     <ShieldCheck size={14} className="text-[#E32222] group-hover:scale-110 transition-transform" />
                     <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">DL (Required) *</span>
                   </div>
-                  <input type="text" required value={formData.licenseNumber} onChange={e => setFormData({...formData, licenseNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="DL NUMBER" />
+                  <input type="text" required value={formData.licenseNumber || ''} onChange={e => setFormData({...formData, licenseNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="DL NUMBER" />
                   <PublicDocInput label="Upload DL" value={formData.licenseImage} onChange={v => setFormData({...formData, licenseImage: v})} required />
                 </div>
               </div>
@@ -313,7 +305,7 @@ export default function PartnerRegisterPage() {
                   <div className="space-y-4 animate-in slide-in-from-top-4 duration-500">
                     <div className="space-y-1">
                       <label className={labelClass}>Registration NO</label>
-                      <input type="text" value={ownVehicleNumber} onChange={e => setOwnVehicleNumber(e.target.value.toUpperCase())} className={inputClass} placeholder="KA 01 AB 1234" />
+                      <input type="text" value={ownVehicleNumber || ''} onChange={e => setOwnVehicleNumber(e.target.value.toUpperCase())} className={inputClass} placeholder="KA 01 AB 1234" />
                     </div>
                     <PremiumSelect 
                       label="Vehicle Model Type" 
@@ -337,16 +329,16 @@ export default function PartnerRegisterPage() {
                 <div className="grid grid-cols-1 gap-5">
                   <div className="space-y-1">
                     <label className={labelClass}>Bank Name</label>
-                    <input type="text" value={formData.bankName} onChange={e => setFormData({...formData, bankName: e.target.value})} className={inputClass} placeholder="Full Name of Bank" />
+                    <input type="text" value={formData.bankName || ''} onChange={e => setFormData({...formData, bankName: e.target.value})} className={inputClass} placeholder="Full Name of Bank" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className={labelClass}>Account NO</label>
-                      <input type="text" value={formData.accountNumber} onChange={e => setFormData({...formData, accountNumber: e.target.value})} className={inputClass} placeholder="Digits" />
+                      <input type="text" value={formData.accountNumber || ''} onChange={e => setFormData({...formData, accountNumber: e.target.value})} className={inputClass} placeholder="Digits" />
                     </div>
                     <div className="space-y-1">
                       <label className={labelClass}>IFSC CODE</label>
-                      <input type="text" value={formData.ifscCode} onChange={e => setFormData({...formData, ifscCode: e.target.value.toUpperCase()})} className={inputClass} placeholder="XXXX0123456" />
+                      <input type="text" value={formData.ifscCode || ''} onChange={e => setFormData({...formData, ifscCode: e.target.value.toUpperCase()})} className={inputClass} placeholder="XXXX0123456" />
                     </div>
                   </div>
                 </div>

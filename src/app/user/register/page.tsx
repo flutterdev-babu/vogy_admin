@@ -49,7 +49,7 @@ export default function UserRegisterPage() {
             toast.error('Please enter a valid 10-digit phone number');
             return;
         }
-        if (!email.trim() || !isValidEmail(email)) {
+        if (email.trim() && !isValidEmail(email)) {
             toast.error('Please enter a valid email address');
             return;
         }
@@ -147,7 +147,7 @@ export default function UserRegisterPage() {
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-300 mb-2">
-                                Email Address <span className="text-[#E32222]">*</span>
+                                Email Address
                             </label>
                             <div className="relative">
                                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -157,9 +157,7 @@ export default function UserRegisterPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="w-full pl-12 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 transition-all focus:ring-2 focus:ring-[#E32222] focus:outline-none"
                                     style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
-                                    placeholder="you@example.com"
                                     disabled={isLoading}
-                                    required
                                 />
                             </div>
                         </div>
