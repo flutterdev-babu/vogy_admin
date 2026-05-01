@@ -56,9 +56,12 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
                             localStorage.setItem(USER_KEYS.user, JSON.stringify(latestUser));
                         }
                     }
-                } catch (err) {
+                } catch (err: any) {
                     console.error('Background profile sync failed:', err);
-                    // Do not block UI if non-critical sync fails
+                    // If the error is 401 Unauthorized, the session is likely expired
+                    if (err.response?.status === 401) {
+                        handleLogout();
+                    }
                 }
             };
             syncProfile();
