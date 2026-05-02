@@ -1,45 +1,93 @@
 import { publicApi } from '@/lib/api';
 
-/**
- * Shared upload service for all registration forms.
- * Handles the presigned URL flow: get URL → upload to R2 → return public URL.
- */
+export interface UploadPresignedUrlResponse {
+  success: boolean;
+  data: {
+    presignedUrl: string;
+    finalUrl: string;
+    objectKey: string;
+  };
+}
+
+export interface DeleteFileResponse {
+  success: boolean;
+  message: string;
+  deletedKey: string;
+}
+
 export const uploadService = {
   /**
-   * Upload a file to Cloudflare R2 via presigned URL.
-   * @param file - The File object to upload
-   * @param folder - The folder in R2 to store the file (e.g., 'partner_documents', 'pan_cards')
-   * @returns The final public URL of the uploaded file
+   * Uploads a file using the pre-signed URL approach.
+   *
+   * @param file The literal File object to upload
+   * @param folder The folder path to store the file in (e.g. 'profile_pictures')
+   * @param oldFileUrl Optional old file URL to delete.
+   * @returns The final public URL to save in the database
    */
-  async uploadFile(file: File, folder: string = 'documents'): Promise<string> {
-    // Step 1: Get presigned URL from backend
-    const presignedRes = await publicApi.post('/upload/presigned-url', {
-      fileName: file.name,
-      fileType: file.type,
-      folder,
-      fileSize: file.size,
-    });
+  async uploadFile(file: File, folder: string, oldFileUrl?: string): Promise<string> {
+    try {
+      // 1. Get the pre-signed URL
+      const { data: presignedData } = await publicApi.post<UploadPresignedUrlResponse>('/upload/presigned-url', {
+        fileName: file.name,
+        fileType: file.type || 'application/octet-stream',
+        folder,
+        fileSize: file.size,
+      });
 
-    if (!presignedRes.data?.success || !presignedRes.data?.data) {
-      throw new Error(presignedRes.data?.error || 'Failed to get upload URL');
+      if (!presignedData.success || !presignedData.data) {
+        throw new Error('Failed to get presigned URL from backend');
+      }
+
+      const { presignedUrl, finalUrl } = presignedData.data;
+
+      // 2. Upload file directly to the presigned URL
+      const uploadResponse = await fetch(presignedUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Failed to upload file to storage: ${uploadResponse.statusText}`);
+      }
+
+      // 3. Delete the old file if provided
+      if (oldFileUrl) {
+        // Run delete asynchronously in the background so it doesn't block the upload process
+        this.deleteFile(oldFileUrl).catch((err) => {
+          console.error('[UploadService] Failed to delete old file:', err);
+        });
+      }
+
+      // 4. Return the new final URL to save into the DB
+      return finalUrl;
+    } catch (error) {
+      console.error('[UploadService] Upload failed:', error);
+      throw error;
     }
+  },
 
-    const { presignedUrl, finalUrl } = presignedRes.data.data;
+  /**
+   * Deletes a file from storage.
+   *
+   * @param fileUrl The full URL of the file to delete
+   */
+  async deleteFile(fileUrl: string): Promise<void> {
+    if (!fileUrl) return;
 
-    // Step 2: Upload file directly to R2 using the presigned URL
-    const uploadRes = await fetch(presignedUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': file.type,
-      },
-      body: file,
-    });
+    try {
+      const { data } = await publicApi.post<DeleteFileResponse>('/upload/delete', {
+        fileUrl,
+      });
 
-    if (!uploadRes.ok) {
-      throw new Error(`Upload failed with status ${uploadRes.status}`);
+      if (!data.success) {
+        throw new Error('Failed to delete file');
+      }
+    } catch (error) {
+      console.error('[UploadService] Delete failed:', error);
+      throw error;
     }
-
-    // Step 3: Return the final public URL
-    return finalUrl;
   },
 };
