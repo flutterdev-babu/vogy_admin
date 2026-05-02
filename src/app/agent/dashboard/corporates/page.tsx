@@ -4,15 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Briefcase, Search, Eye, Phone, MapPin, Plus, RotateCcw, DollarSign } from 'lucide-react';
 import { agentService } from '@/services/agentService';
-import { Corporate, EntityActiveStatus } from '@/types';
+import { Corporate, EntityStatus } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
-const statusColors: Record<EntityActiveStatus, string> = {
+const statusColors: Record<EntityStatus, string> = {
   ACTIVE: 'bg-green-100 text-green-700',
   INACTIVE: 'bg-gray-100 text-gray-700',
   SUSPENDED: 'bg-yellow-100 text-yellow-700',
   BANNED: 'bg-red-100 text-red-700',
+  PENDING: 'bg-orange-100 text-orange-700',
+  APPROVED: 'bg-blue-100 text-blue-700',
 };
 
 export default function AgentCorporatesPage() {
@@ -128,7 +130,7 @@ export default function AgentCorporatesPage() {
                       <div className="flex items-center gap-2">
                         <div className="px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl">
                            <p className="text-[9px] font-black text-blue-400 uppercase tracking-tighter">Balance</p>
-                           <p className="text-xs font-black text-blue-700">₹{corp.creditBalance?.toLocaleString() || 0}</p>
+                           <p className="text-xs font-black text-blue-700">₹{corp.currentBalance?.toLocaleString() || 0}</p>
                         </div>
                         <div className="px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-xl">
                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Limit</p>
