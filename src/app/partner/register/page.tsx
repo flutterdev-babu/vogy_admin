@@ -50,44 +50,31 @@ const PublicDocInput = ({ label, value, onChange, required, folder = 'documents'
           {label} {required && <span className="text-[#E32222]">*</span>}
         </label>
       </div>
-      <div className={`relative border border-dashed rounded-xl py-3 px-4 transition-all group cursor-pointer bg-white/[0.01] ${
-        error ? 'border-red-500/50 hover:border-red-400/60' :
-        value ? 'border-green-500/40 hover:border-green-400/50' :
-        'border-white/10 hover:border-[#E32222]/40'
-      } ${uploading ? 'pointer-events-none opacity-60' : 'hover:bg-white/[0.03]'}`}>
-        <input type="file" accept="image/*,application/pdf" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={uploading} />
-        <div className="flex items-center justify-between">
-          {uploading ? (
-            <span className="text-xs text-neutral-400 flex items-center gap-2 font-medium">
-              <Loader2 size={14} className="animate-spin text-[#E32222]" /> Uploading...
-            </span>
-          ) : value ? (
-            <span className="text-xs text-green-400 truncate max-w-[180px] font-medium flex items-center gap-1.5">
-              <Check size={12} /> {fileName || 'Uploaded'}
-            </span>
-          ) : (
-            <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">Choose local file</span>
-          )}
-          <Upload size={14} className={`transition-colors ${value ? 'text-green-500' : 'text-neutral-600 group-hover:text-[#E32222]'}`} />
-        </div>
-      </div>
+      
       {mode === 'URL' ? (
         <div className="relative group">
           <input type="text" value={value.startsWith('blob:') ? '' : value} onChange={e => onChange(e.target.value)} placeholder="Paste image link..." className={inputClass} />
           <LinkIcon size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-[#E32222] transition-colors" />
         </div>
       ) : (
-        <div className="relative border border-dashed border-white/10 rounded-xl py-3 px-4 hover:border-[#E32222]/40 transition-all group cursor-pointer bg-white/[0.01] hover:bg-white/[0.03]">
-          <input type="file" accept="image/*" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={isUploading} />
+        <div className={`relative border border-dashed rounded-xl py-3 px-4 transition-all group cursor-pointer bg-white/[0.01] ${
+          value ? 'border-green-500/40 hover:border-green-400/50' :
+          'border-white/10 hover:border-[#E32222]/40'
+        } ${isUploading ? 'pointer-events-none opacity-60' : 'hover:bg-white/[0.03]'}`}>
+          <input type="file" accept="image/*,application/pdf" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={isUploading} />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">
-              {isUploading ? 'Uploading...' : (value && !value.startsWith('blob:') ? 'Replace File' : 'Choose local file')}
-            </span>
             {isUploading ? (
-               <Loader2 size={14} className="text-[#E32222] animate-spin" />
+              <span className="text-xs text-neutral-400 flex items-center gap-2 font-medium">
+                <Loader2 size={14} className="animate-spin text-[#E32222]" /> Uploading...
+              </span>
+            ) : value ? (
+              <span className="text-xs text-green-400 truncate max-w-[180px] font-medium flex items-center gap-1.5">
+                <Check size={12} /> {value.split('/').pop() || 'Uploaded'}
+              </span>
             ) : (
-               <Upload size={14} className="text-neutral-600 group-hover:text-[#E32222] transition-colors" />
+              <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">Choose local file</span>
             )}
+            <Upload size={14} className={`transition-colors ${value ? 'text-green-500' : 'text-neutral-600 group-hover:text-[#E32222]'}`} />
           </div>
         </div>
       )}
