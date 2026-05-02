@@ -71,7 +71,7 @@ export const agentService = {
   },
 
   async getVehicleTypesLookup(): Promise<ApiResponse<any[]>> {
-    const response = await agentApi.get('/vehicle-types');
+    const response = await publicApi.get('/vehicle-types');
     return response.data;
   },
 

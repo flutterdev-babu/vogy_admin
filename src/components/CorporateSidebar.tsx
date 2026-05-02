@@ -77,7 +77,7 @@ export default function CorporateSidebar() {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">ARA</h1>
+              <h1 className="text-xl font-bold text-gray-800">ARA TRAVELS</h1>
               <p className="text-xs text-blue-500 font-medium">Corporate Portal</p>
             </div>
           </div>

@@ -246,12 +246,12 @@ export default function AttachmentDetailsPage() {
              </div>
              <div>
                 <label className={labelClass}>Company Name</label>
-                <p className="text-[11px] font-black uppercase text-gray-900">{attachment.vendor?.companyName || 'VOGY CAB'}</p>
+                <p className="text-[11px] font-black uppercase text-gray-900">{attachment.vendor?.companyName || 'ARA TRAVELS'}</p>
              </div>
              <div className="grid grid-cols-1 gap-3 p-4 bg-gray-50/50 rounded-2xl border border-gray-50">
                 <div>
                    <label className={labelClass}>Primary Email</label>
-                   <p className="text-[10px] font-bold text-gray-700">{attachment.vendor?.email || 'saurabh.kumar@vogy.com'}</p>
+                   <p className="text-[10px] font-bold text-gray-700">{attachment.vendor?.email || 'saurabh.kumar@ara-travels.com'}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                    <div>

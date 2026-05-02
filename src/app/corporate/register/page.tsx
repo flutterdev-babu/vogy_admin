@@ -9,12 +9,7 @@ import { corporateService } from '@/services/corporateService';
 import { cityCodeService } from '@/services/cityCodeService';
 import { PremiumSelect, PremiumSelectOption } from '@/components/ui/PremiumSelect';
 
-const FALLBACK_CITIES = [
-  { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
-  { id: 'fallback-hyd', code: 'HYD', cityName: 'Hyderabad' },
-  { id: 'fallback-che', code: 'CHE', cityName: 'Chennai' },
-  { id: 'fallback-mum', code: 'MUM', cityName: 'Mumbai' },
-];
+
 
 export default function CorporateRegisterPage() {
   const [formData, setFormData] = useState({
@@ -39,11 +34,11 @@ export default function CorporateRegisterPage() {
         if (res.success && res.data && res.data.length > 0) {
           setCityCodes(res.data);
         } else {
-          setCityCodes(FALLBACK_CITIES);
+          toast.error('No operating cities found. Please contact support.');
         }
       } catch (err) {
-        console.error('Failed to load cities, using fallback:', err);
-        setCityCodes(FALLBACK_CITIES);
+        console.error('Failed to load cities:', err);
+        toast.error('Service error: Could not load operating cities');
       }
     };
     loadCities();
@@ -75,10 +70,7 @@ export default function CorporateRegisterPage() {
         ...formData,
         phone: `+91${formData.phone}`,
       };
-      // Don't send fallback city IDs to backend if they are literal IDs from the list
-      if (submitData.cityCodeId?.startsWith('fallback-')) {
-        delete submitData.cityCodeId;
-      }
+
       const response = await corporateService.register(submitData);
       if (response.success) {
         toast.success('Registration successful! Redirecting to login...');

@@ -59,6 +59,7 @@ export default function BookRidePage() {
     const [advanceAmount, setAdvanceAmount] = useState<number>(0);
     const [transactionId, setTransactionId] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
+    const [scheduledDateTime, setScheduledDateTime] = useState('');
 
     // Hardening: Idempotency & Intent State
     const [idempotencyKey, setIdempotencyKey] = useState<string>('');
@@ -323,6 +324,10 @@ export default function BookRidePage() {
             return toast.error('Please wait for the fare estimate to calculate before booking.');
         }
 
+        if (!scheduledDateTime) {
+            return toast.error('Please select a pickup date and time.');
+        }
+
         setIsLoading(true);
         try {
             const advance = Math.ceil(selectedFare.totalFare * 0.26);
@@ -336,7 +341,8 @@ export default function BookRidePage() {
                 idempotencyKey: key,
                 rideDetails: {
                     pickupAddress, dropAddress, pickupCoords, dropCoords,
-                    distanceKm, rideType, selectedFare, selectedVehicleTypeId
+                    distanceKm, rideType, selectedFare, selectedVehicleTypeId,
+                    scheduledDateTime
                 }
             }));
 
@@ -395,6 +401,7 @@ export default function BookRidePage() {
                 rideType: rideType,
                 advanceAmount: advanceAmount,
                 transactionId: transactionId.trim(),
+                scheduledDateTime: scheduledDateTime || null,
                 // FINAL HARDENING
                 idempotencyKey: idempotencyKey,
                 paymentVerificationId: currentIntentId
@@ -446,7 +453,14 @@ export default function BookRidePage() {
 
     if (step === 'payment') {
         const upiId = "7569645049@slc";
-        const upiDeepLink = `upi://pay?pa=${upiId}&pn=ARA%20Travels&am=${advanceAmount}&cu=INR`;
+        const upiDeepLink = `upi://pay?pa=${upiId}&pn=ARA%20Travels&am=${advanceAmount}&cu=INR&tn=Booking%20Advance`;
+
+        const handleUPIClick = (e: React.MouseEvent) => {
+            // Enhanced redirection logic for mobile browsers
+            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                window.location.assign(upiDeepLink);
+            }
+        };
 
         return (
             <div className="max-w-md mx-auto py-10 animate-fade-in">
@@ -487,6 +501,7 @@ export default function BookRidePage() {
 
                         <a
                             href={upiDeepLink}
+                            onClick={handleUPIClick}
                             className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-widest transition-all hover:bg-gray-200 active:scale-95"
                         >
                             <Smartphone size={20} /> Pay via UPI App
@@ -609,48 +624,119 @@ export default function BookRidePage() {
     const workPlace = savedPlaces.find(p => p.label === 'Work');
 
     return (
-        <div className="max-w-5xl mx-auto space-y-10 animate-fade-in pb-20">
-            {/* Header */}
-            <div className="relative">
-                <button onClick={() => router.back()} className="group mb-6 flex items-center gap-2 text-gray-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest">
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back
+        <div className="min-h-screen bg-[#0a0a0a] pb-20">
+            {/* Unified Sticky Mobile Navbar */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 z-[70] h-16 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 shadow-2xl">
+                <div className="flex items-center gap-3">
+                    {/* Placeholder for Sidebar Toggle - Handled in UserSidebar.tsx */}
+                    <div className="w-10 h-10" /> 
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black tracking-[0.2em] text-[#E32222] uppercase leading-none">ARA</span>
+                        <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase leading-none">TRAVELS</span>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => router.back()} 
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                >
+                    <ArrowLeft size={14} /> BACK
                 </button>
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                    <div>
-                        <h1 className="text-5xl font-black text-white tracking-tighter leading-none mb-2 underline decoration-[#E32222] decoration-4 underline-offset-8">
-                            BOOK A <span className="text-[#E32222]">VOGY</span>
+            </div>
+
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12 animate-fade-in pt-28 lg:pt-0">
+                {/* Header / Hero Section */}
+                <div className="relative">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                    <div className="space-y-2 text-center sm:text-left">
+                        <h1 className="text-[26px] sm:text-5xl font-black text-white tracking-tighter leading-tight sm:leading-none">
+                            BOOK A RIDE WITH <br /> <span className="text-[#E32222]">ARA TRAVELS</span>
                         </h1>
-                        <p className="text-gray-400 font-medium max-w-md">Seamless city travel at your fingertips. Choose your destination and let&apos;s get moving.</p>
+                        <p className="text-gray-500 text-[12px] sm:text-base font-medium max-w-sm mx-auto sm:mx-0">Premium city travel at your fingertips.</p>
                     </div>
                     {/* Status Pill */}
-                    <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-black tracking-widest uppercase">
+                    <div className="flex self-start sm:self-auto items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-black tracking-widest uppercase">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                         Live Booking Active
                     </div>
                 </div>
             </div>
 
-            <div className="grid lg:grid-cols-12 gap-10 items-start">
+            <div className="flex flex-col lg:grid lg:grid-cols-12 gap-10 items-start">
 
-                {/* Main Form Module */}
-                <div className="lg:col-span-7 space-y-8">
+                {/* Summaries & Vehicle Selection Module - HIDDEN on Mobile, SIDEBAR on Desktop */}
+                <div className="hidden lg:block lg:order-2 lg:col-span-5 w-full space-y-6">
+                    <div className="rounded-[32px] p-6 sm:p-10 space-y-5 bg-[#0D0D0D] border border-white/5 shadow-2xl sticky top-24">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg sm:text-2xl font-black text-white italic tracking-tight">VEHICLES</h2>
+                            {distanceKm && (
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[9px] text-[#E32222] font-black uppercase tracking-widest">Est. Distance</span>
+                                    <p className="text-white font-black text-lg sm:text-xl leading-none">{distanceKm} KM</p>
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Ride Type Switcher - Premium Style */}
-                    <div className="bg-[#0D0D0D] p-1.5 rounded-3xl border border-white/5 flex gap-1 shadow-2xl overflow-x-auto no-scrollbar">
-                        {['LOCAL', 'RENTAL', 'OUTSTATION', 'AIRPORT'].map((type) => (
+                        {/* Vehicle Choice Grid (Blocks) */}
+                        {vehicleTypes.length > 0 ? (
+                            <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 max-h-[400px] lg:max-h-[550px] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+                                {vehicleTypes.map((vt) => {
+                                    const estimate = fareEstimates.find(e => e.vehicleTypeId === vt.id);
+                                    const isSelected = selectedVehicleTypeId === vt.id;
+
+                                    return (
+                                        <button
+                                            key={vt.id}
+                                            onClick={() => setSelectedVehicleTypeId(vt.id)}
+                                            className={`group relative flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-5 p-3 sm:p-5 rounded-2xl sm:rounded-3xl text-center sm:text-left transition-all border-2 overflow-hidden ${isSelected
+                                                ? 'bg-[#E32222] border-[#E32222] shadow-xl'
+                                                : 'bg-white/[0.03] border-white/5 hover:border-white/10'}`}
+                                        >
+                                            <div className={`p-2 sm:p-4 rounded-xl relative z-10 ${isSelected ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-500'} transition-all`}>
+                                                <Car size={isSelected ? 24 : 20} className="sm:w-8 sm:h-8" />
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 relative z-10 w-full">
+                                                <p className={`font-black text-[11px] sm:text-lg truncate tracking-tight mb-1 ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+                                                    {vt.displayName || vt.name}
+                                                </p>
+                                                <div className={`inline-block px-2 py-1 rounded-lg text-[9px] font-bold ${isSelected ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-500'}`}>
+                                                    {estimate ? `₹${(estimate.totalFare || 0).toFixed(0)}` : `₹${vt.pricePerKm}/km`}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="p-8 sm:p-10 text-center space-y-4">
+                                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/5 flex items-center justify-center text-gray-700 mx-auto">
+                                    <Car size={24} className="sm:w-8 sm:h-8" />
+                                </div>
+                                <p className="text-gray-500 text-sm font-bold">No vehicles available</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Form Module - TOP on Mobile */}
+                <div className="order-1 lg:order-1 lg:col-span-7 space-y-8 w-full">
+
+                    {/* Ride Type Switcher - 2x2 Grid for Mobile */}
+                    <div className="bg-[#0D0D0D] p-2 rounded-2xl sm:rounded-3xl border border-white/5 grid grid-cols-2 gap-2 shadow-2xl">
+                        {['AIRPORT', 'LOCAL', 'OUTSTATION', 'RENTAL'].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => setRideType(type)}
-                                className={`flex-1 min-w-[80px] py-4 rounded-2xl text-[10px] font-black tracking-widest transition-all ${rideType === type
+                                className={`w-full py-4 rounded-xl sm:rounded-2xl text-[10px] sm:text-[11px] font-black tracking-widest transition-all ${rideType === type
                                     ? 'bg-[#E32222] text-white shadow-[0_10px_20px_rgba(227,34,34,0.3)] scale-100'
-                                    : 'text-gray-600 hover:text-gray-400'}`}
+                                    : 'text-gray-600 hover:text-gray-400 bg-white/[0.02]'}`}
                             >
                                 {type}
                             </button>
                         ))}
                     </div>
 
-                    <div className="rounded-[40px] p-8 sm:p-10 space-y-8 bg-[#0F0F0F] border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                    <div className="rounded-[32px] p-5 sm:p-10 space-y-6 bg-[#0F0F0F] border border-white/5 shadow-2xl relative overflow-hidden">
                         <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#E32222]/5 rounded-full blur-[80px] pointer-events-none" />
 
                         {/* Locations Module */}
@@ -659,16 +745,16 @@ export default function BookRidePage() {
                             <div className="absolute left-[31px] top-[140px] bottom-[50px] w-0.5 border-l-2 border-dashed border-gray-800 hidden sm:block" />
 
                             {/* City Selection */}
-                            <div className="space-y-3 relative z-20">
-                                <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest px-1">Select Operations City</label>
+                            <div className="space-y-2 relative z-20">
+                                <label className="text-[10px] text-gray-600 uppercase font-black tracking-widest px-1">Operations City</label>
                                 <div className="relative group">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-focus-within:bg-purple-500 group-focus-within:text-white transition-all">
-                                        <Globe size={18} />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 transition-all">
+                                        <Globe size={16} />
                                     </div>
                                     <select
                                         value={selectedCityId}
                                         onChange={(e) => setSelectedCityId(e.target.value)}
-                                        className="w-full bg-white/[0.02] border border-white/5 rounded-[24px] py-5 pl-16 pr-10 text-white text-sm focus:outline-none focus:border-purple-500 focus:bg-white/[0.05] transition-all font-medium appearance-none cursor-pointer"
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3.5 sm:py-5 pl-14 sm:pl-16 pr-10 text-white text-xs sm:text-sm focus:outline-none focus:border-purple-500 transition-all font-medium appearance-none cursor-pointer"
                                     >
                                         <option value="" disabled className="bg-[#0F0F0F]">Select your city</option>
                                         {cityCodes.filter(city => city.isAvailable !== false).map(city => (
@@ -710,7 +796,7 @@ export default function BookRidePage() {
                                         type="text"
                                         defaultValue={pickupAddress}
                                         onChange={(e) => setPickupAddress(e.target.value)}
-                                        className="w-full bg-white/[0.02] border border-white/5 rounded-[24px] py-5 pl-16 pr-4 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-green-500 focus:bg-white/[0.05] transition-all font-medium"
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3.5 sm:py-5 pl-14 sm:pl-16 pr-4 text-white text-xs placeholder-gray-800 focus:outline-none focus:border-green-500 transition-all font-medium"
                                         placeholder="Enter pickup location..."
                                     />
                                 </div>
@@ -742,9 +828,68 @@ export default function BookRidePage() {
                                         type="text"
                                         defaultValue={dropAddress}
                                         onChange={(e) => setDropAddress(e.target.value)}
-                                        className="w-full bg-white/[0.02] border border-white/5 rounded-[24px] py-5 pl-16 pr-4 text-white text-sm placeholder-gray-700 focus:outline-none focus:border-red-500 focus:bg-white/[0.05] transition-all font-medium"
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3.5 sm:py-5 pl-14 sm:pl-16 pr-4 text-white text-xs placeholder-gray-800 focus:outline-none focus:border-red-500 transition-all font-medium"
                                         placeholder="Where do you want to go?"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Scheduled Time Selection */}
+                            <div className="space-y-3 pt-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Pickup Date & Time (Min 2 hrs slack)</label>
+                                    <span className="text-[9px] text-[#E32222] font-black italic">Required</span>
+                                </div>
+                                <div className="relative group/time">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-focus-within/time:bg-blue-500 group-focus-within/time:text-white transition-all">
+                                        <Zap size={18} />
+                                    </div>
+                                    <input
+                                        type="datetime-local"
+                                        value={scheduledDateTime}
+                                        onChange={(e) => {
+                                            const selected = new Date(e.target.value);
+                                            const minTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
+                                            if (selected < minTime) {
+                                                toast.error('Please select a time at least 2 hours from now');
+                                                // Reset or adjust
+                                                setScheduledDateTime(minTime.toISOString().slice(0, 16));
+                                            } else {
+                                                setScheduledDateTime(e.target.value);
+                                            }
+                                        }}
+                                        min={new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16)}
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3.5 sm:py-5 pl-14 pr-4 text-white text-xs focus:outline-none focus:border-blue-500 transition-all font-bold [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Mobile Vehicle Selection Dropdown - EXPERIMENTAL */}
+                            <div className="lg:hidden space-y-3 pt-4">
+                                <label className="text-[10px] text-gray-600 uppercase font-black tracking-widest px-1">Select Vehicle Type</label>
+                                <div className="relative group">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-[#E32222]/10 flex items-center justify-center text-[#E32222] transition-all">
+                                        <Car size={18} />
+                                    </div>
+                                    <select
+                                        value={selectedVehicleTypeId || ''}
+                                        onChange={(e) => setSelectedVehicleTypeId(e.target.value)}
+                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-14 pr-10 text-white text-xs focus:outline-none focus:border-[#E32222] transition-all font-bold appearance-none cursor-pointer"
+                                    >
+                                        <option value="" disabled className="bg-[#0F0F0F]">Select vehicle...</option>
+                                        {vehicleTypes.map((vt) => {
+                                            const estimate = fareEstimates.find(e => e.vehicleTypeId === vt.id);
+                                            return (
+                                                <option key={vt.id} value={vt.id} className="bg-[#0F0F0F]">
+                                                    {vt.displayName || vt.name} {estimate ? `(₹${(estimate.totalFare || 0).toFixed(0)})` : ''}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -780,154 +925,52 @@ export default function BookRidePage() {
                         {/* Fare Summary & Action Area */}
                         {selectedFare && (
                             <div className="mt-8 space-y-6 animate-slide-up">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex justify-between items-center sm:block">
                                         <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Base Fare</p>
                                         <p className="text-white font-black text-lg">₹{selectedFare.baseFare || 0}</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex justify-between items-center sm:block">
                                         <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Distance Charge</p>
                                         <p className="text-white font-black text-lg">₹{Math.max(0, (selectedFare.totalFare || 0) - (selectedFare.baseFare || 0)).toFixed(0)}</p>
                                     </div>
                                 </div>
 
-                                {/* Main Payable Result */}
-                                <div className="relative group/pay overflow-hidden rounded-[32px] p-8 shadow-[0_20px_40px_rgba(227,34,34,0.15)] bg-gradient-to-br from-[#E32222] to-[#ff4444]">
+                                {/* Main Payable Result - High Impact Card */}
+                                <div className="relative group/pay overflow-hidden rounded-[32px] p-6 sm:p-8 shadow-[0_20px_40px_rgba(227,34,34,0.15)] bg-gradient-to-br from-[#E32222] to-[#ff4444] transition-all">
                                     <div className="absolute top-0 right-0 p-8 text-white/10 group-hover/pay:scale-110 transition-transform">
                                         <CreditCard size={120} />
                                     </div>
-                                    <div className="relative z-10 flex items-center justify-between">
-                                        <div>
-                                            <p className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] mb-1">Est. Payable</p>
-                                            <p className="text-[8px] text-white/40 font-bold uppercase tracking-widest mb-4">Includes Tolls & Taxes</p>
-                                            <div className="flex items-baseline gap-1">
-                                                <span className="text-2xl font-black text-white italic">₹</span>
-                                                <span className="text-4xl font-black text-white tracking-tighter">{(selectedFare.totalFare || 0).toFixed(0)}</span>
-                                            </div>
+                                    <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                                        <div className="text-center sm:text-left">
+                                            <p className="text-[10px] text-white/70 font-black uppercase tracking-[0.2em] mb-1">ADVANCE PAYABLE</p>
+                                            <p className="text-4xl sm:text-6xl text-white font-black italic tracking-tighter leading-none">₹{Math.ceil(selectedFare.totalFare * 0.26)}</p>
                                         </div>
-                                        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-white backdrop-blur-sm self-end">
-                                            <Zap size={32} className="fill-current" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Booking Action */}
-                        <div className="pt-4">
-                            {(!distanceKm || !selectedFare) ? (
-                                <div className="w-full py-6 rounded-[32px] bg-gray-800 text-gray-500 font-black text-center text-xs uppercase tracking-[0.2em] border border-white/5">
-                                    {!selectedCityId ? 'Select a city to continue' : 'Finding Route...'}
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={handleBookRide}
-                                    disabled={isLoading || !distanceKm || !selectedFare}
-                                    className="w-full relative group overflow-hidden py-6 rounded-[32px] bg-[#E32222] text-white font-black text-xl transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-30 disabled:grayscale disabled:scale-100"
-                                >
-                                    <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                                    <div className="relative flex items-center justify-center gap-4 uppercase tracking-[0.2em]">
-                                        {isLoading ? <Loader2 className="animate-spin" size={24} /> : <Zap size={24} className="fill-current" />}
-                                        <span>{isLoading ? 'Processing...' : (distanceKm ? 'Book Now' : 'Finding Route...')}</span>
-                                    </div>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Summaries & Vehicle Selection Module */}
-                <div className="lg:col-span-5 space-y-8">
-                    <div className="rounded-[40px] p-8 sm:p-10 space-y-8 bg-[#0D0D0D] border border-white/5 shadow-2xl sticky top-24">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-black text-white italic">VEHICLES</h2>
-                            {distanceKm && (
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-[#E32222] font-black uppercase tracking-widest">Est. Distance</span>
-                                    <p className="text-white font-black text-xl leading-none">{distanceKm} KM</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Vehicle Choice List */}
-                        {vehicleTypes.length > 0 ? (
-                            <div className="space-y-4 max-h-[550px] overflow-y-auto pr-2 custom-scrollbar">
-                                {vehicleTypes.map((vt) => {
-                                    const estimate = fareEstimates.find(e => e.vehicleTypeId === vt.id);
-                                    const isSelected = selectedVehicleTypeId === vt.id;
-
-                                    return (
                                         <button
-                                            key={vt.id}
-                                            onClick={() => setSelectedVehicleTypeId(vt.id)}
-                                            className={`w-full group relative flex items-center gap-5 p-5 rounded-3xl text-left transition-all border-2 overflow-hidden ${isSelected
-                                                ? 'bg-[#E32222] border-[#E32222] shadow-[0_15px_30px_rgba(227,34,34,0.2)]'
-                                                : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                            onClick={handleBookRide}
+                                            disabled={isLoading}
+                                            className="w-full sm:w-auto px-8 py-5 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-widest shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                         >
-                                            {/* Vehicle Glow Background */}
-                                            {isSelected && (
-                                                <div className="absolute -right-4 top-1/2 -translate-y-1/2 text-white/10">
-                                                    <Car size={160} className="rotate-12" />
-                                                </div>
-                                            )}
-
-                                            <div className={`p-4 rounded-2xl relative z-10 ${isSelected ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300'} transition-all`}>
-                                                <Car size={32} />
-                                            </div>
-
-                                            <div className="flex-1 min-w-0 relative z-10">
-                                                <p className={`font-black text-lg truncate tracking-tight ${isSelected ? 'text-white' : 'text-gray-200'}`}>
-                                                    {vt.displayName || vt.name}
-                                                </p>
-                                                <p className={`text-[10px] font-black uppercase tracking-widest mt-0.5 ${isSelected ? 'text-white/70' : 'text-gray-600'}`}>
-                                                    {estimate ? `₹${(estimate.totalFare || 0).toFixed(0)} Total` : `₹${vt.pricePerKm}/km Rate`}
-                                                </p>
-                                            </div>
-
-                                            <div className="text-right relative z-10">
-                                                {isSelected ? (
-                                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#E32222]">
-                                                        <Zap size={16} className="fill-current" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-1 text-[10px] font-black text-gray-600 uppercase tracking-widest group-hover:text-gray-400 transition-colors">
-                                                        {estimate ? 'Selected' : (
-                                                            <>
-                                                                <Loader2 size={12} className="animate-spin" />
-                                                                <span>Calc...</span>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
+                                            {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} className="fill-current" />}
+                                            {isLoading ? 'Processing...' : 'Book Now'}
                                         </button>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div className="p-10 text-center space-y-4">
-                                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-gray-700 mx-auto">
-                                    <Car size={32} />
+                                    </div>
                                 </div>
-                                <p className="text-gray-500 font-bold">No vehicles available for this route</p>
+                            </div>
+                        )}
+
+                        {/* Fallback Action (if fare not loaded) */}
+                        {(!distanceKm || !selectedFare) && (
+                            <div className="pt-4">
+                                <div className="w-full py-6 rounded-[32px] bg-white/[0.03] text-gray-600 font-black text-center text-[10px] uppercase tracking-[0.2em] border border-white/5">
+                                    {!selectedCityId ? 'Select a city to continue' : 'Calculating Route & Fare...'}
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
-
             </div>
-
-            <style jsx global>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-                .no-scrollbar::-webkit-scrollbar { display: none; }
-                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-                .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-            `}</style>
         </div>
-    );
+    </div>
+);
 }

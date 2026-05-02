@@ -115,11 +115,24 @@ const addAuthInterceptor = (api: AxiosInstance, tokenKey: string, userKey: strin
           localStorage.removeItem(tokenKey);
           localStorage.removeItem(userKey);
           
-          const redirectPath = '/';
-          // Only redirect if we are not already on the home page or login page
           const currentPath = window.location.pathname;
-          if (currentPath !== redirectPath && !currentPath.includes('login')) {
-            window.location.href = redirectPath;
+          
+          // Determine if we should redirect based on the token that failed and the current path
+          let shouldRedirect = false;
+          if (tokenKey === TOKEN_KEYS.admin && (currentPath.includes('/dashboard') || currentPath.includes('/admin'))) shouldRedirect = true;
+          if (tokenKey === TOKEN_KEYS.user && currentPath.includes('/user')) shouldRedirect = true;
+          if (tokenKey === TOKEN_KEYS.partner && currentPath.includes('/partner')) shouldRedirect = true;
+          if (tokenKey === TOKEN_KEYS.vendor && currentPath.includes('/vendor')) shouldRedirect = true;
+          if (tokenKey === TOKEN_KEYS.agent && currentPath.includes('/agent')) shouldRedirect = true;
+          if (tokenKey === TOKEN_KEYS.corporate && currentPath.includes('/corporate')) shouldRedirect = true;
+
+          // If we are on the home page or login pages, never force a redirect
+          if (currentPath === '/' || currentPath.includes('/login') || currentPath.includes('/register')) {
+            shouldRedirect = false;
+          }
+          
+          if (shouldRedirect) {
+            window.location.href = '/';
           }
         }
       }
