@@ -57,10 +57,11 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
                         }
                     }
                 } catch (err: any) {
-                    console.error('Background profile sync failed:', err);
                     // If the error is 401 Unauthorized, the session is likely expired
                     if (err.response?.status === 401) {
                         handleLogout();
+                    } else {
+                        console.error('Background profile sync failed:', err);
                     }
                 }
             };

@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import toast from 'react-hot-toast';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -32,6 +33,24 @@ const createApiInstance = (baseURL: string): AxiosInstance => {
     if (status === 503) {
       console.warn(`[API WARMUP] 503 - Server is waking up.`);
     }
+
+    // Global Error Notification
+    if (typeof window !== 'undefined' && error.response) {
+      // Don't show toast for 401s that trigger redirect (handled in addAuthInterceptor)
+      // and don't show for 404s on GET requests which might be intentional
+      const isAuthError = error.response.status === 401;
+      const isGet404 = error.config.method === 'get' && error.response.status === 404;
+      
+      if (!isAuthError && !isGet404) {
+        const message = error.response.data?.message || error.message || 'An unexpected error occurred';
+        toast.error(message, {
+          id: `api-error-${error.config.url}`, // Prevent duplicate toasts for the same request
+        });
+      }
+    } else if (typeof window !== 'undefined' && error.message === 'Network Error') {
+      toast.error('Network Error: Please check if the server is running');
+    }
+
     return Promise.reject(error);
   });
 

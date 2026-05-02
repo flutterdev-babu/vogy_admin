@@ -43,7 +43,11 @@ export default function AgentRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.cityCodeId) return toast.error('Please select a City Location');
+    if (formData.phone.length !== 10) return toast.error('Phone number must be 10 digits');
+    if (formData.password.length < 6) return toast.error('Password must be at least 6 characters');
     
+    // Prevent double submission
+    if (isLoading) return;
     setIsLoading(true);
     try {
       const submitData = { ...formData, phone: `+91${formData.phone}` };
@@ -53,7 +57,8 @@ export default function AgentRegisterPage() {
         setTimeout(() => router.push('/agent/login'), 2000);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      const message = error.response?.data?.message || error.message || 'Registration failed';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

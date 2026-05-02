@@ -8,15 +8,21 @@ import { PageLoader } from '@/components/ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const statusColors: Record<EntityStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  ACTIVE: 'bg-green-100 text-green-700 border-green-200',
   APPROVED: 'bg-green-100 text-green-700 border-green-200',
+  PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   SUSPENDED: 'bg-red-100 text-red-700 border-red-200',
+  INACTIVE: 'bg-gray-100 text-gray-700 border-gray-200',
+  BANNED: 'bg-black text-white border-black',
 };
 
 const statusIcons: Record<EntityStatus, React.ComponentType<{ size?: number; className?: string }>> = {
-  PENDING: Clock,
+  ACTIVE: CheckCircle,
   APPROVED: CheckCircle,
+  PENDING: Clock,
   SUSPENDED: XCircle,
+  INACTIVE: Clock,
+  BANNED: XCircle,
 };
 
 export default function CorporatesPage() {
@@ -133,9 +139,11 @@ export default function CorporatesPage() {
                 className="pl-9 pr-8 py-3 bg-gray-50 border-none rounded-2xl text-xs font-bold text-gray-600 appearance-none focus:ring-2 focus:ring-gray-200 outline-none cursor-pointer hover:bg-gray-100 transition-colors"
               >
                 <option value="">Status: All</option>
+                <option value="ACTIVE">Active</option>
                 <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
                 <option value="SUSPENDED">Suspended</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="BANNED">Banned</option>
               </select>
             </div>
 
@@ -252,7 +260,7 @@ export default function CorporatesPage() {
                           </button>
                           <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 hidden group-hover/actions:block z-20">
                             <p className="px-4 py-1 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Set Account Status</p>
-                            {(['APPROVED', 'PENDING', 'SUSPENDED'] as EntityStatus[]).map((status) => (
+                            {(['ACTIVE', 'PENDING', 'SUSPENDED', 'INACTIVE', 'BANNED'] as EntityStatus[]).map((status) => (
                               <button key={status} onClick={() => handleStatusChange(corporate, status)} className="w-full px-4 py-2 text-left text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-between transition-colors">
                                 {status}
                                 {corporate.status === status && <CheckCircle size={10} className="text-green-500" />}

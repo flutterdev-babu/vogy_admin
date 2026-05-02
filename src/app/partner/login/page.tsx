@@ -32,7 +32,8 @@ export default function PartnerLoginPage() {
         router.push('/partner/dashboard');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid phone or password');
+      const message = error.response?.data?.message || error.message || 'Invalid phone or password';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

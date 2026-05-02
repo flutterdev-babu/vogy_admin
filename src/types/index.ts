@@ -2,7 +2,7 @@
 // Common Types
 // =====================================
 
-export type EntityStatus = 'PENDING' | 'APPROVED' | 'SUSPENDED';
+export type EntityStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BANNED' | 'PENDING' | 'APPROVED';
 export type EntityVerificationStatus = 'VERIFIED' | 'REJECTED' | 'UNVERIFIED' | 'PENDING' | 'UNDER_REVIEW';
 export type EntityActiveStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BANNED';
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
@@ -1106,12 +1106,16 @@ export interface PartnerEarningsData {
 // --- Admin Dashboard ---
 export interface AdminDashboardData {
   entities: {
-    users: number; vendors: number; partners: number; vehicles: number;
-    agents: number; corporates: number; onlinePartners: number;
+    users: { total: number; today: number };
+    vendors: { total: number; today: number };
+    partners: { total: number; today: number };
+    vehicles: { total: number; today: number };
+    agents: { total: number; today: number };
+    corporates: { total: number; today: number };
+    onlinePartners: number;
   };
   rides: { total: number; completed: number; active: number; today: number };
   revenue: { total: number; partnerEarnings: number; commission: number; todayRevenue: number; todayCommission: number };
-  todayNewUsers: number;
 }
 
 export interface AdminRevenueAnalytics {

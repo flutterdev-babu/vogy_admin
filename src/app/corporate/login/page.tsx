@@ -32,7 +32,8 @@ export default function CorporateLoginPage() {
         router.push('/corporate/dashboard');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid email or password');
+      const message = error.response?.data?.message || error.message || 'Invalid email or password';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
