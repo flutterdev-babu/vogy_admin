@@ -7,7 +7,9 @@ import { Eye, EyeOff, UserPlus, Loader2, Users, ArrowLeft, ChevronDown, ChevronU
 import toast from 'react-hot-toast';
 import { partnerService } from '@/services/partnerService';
 import { agentService } from '@/services/agentService';
+import { publicRideService } from '@/services/publicRideService';
 import { PremiumSelect, PremiumSelectOption } from '@/components/ui/PremiumSelect';
+import { uploadService } from '@/services/uploadService';
 
 const FALLBACK_CITIES = [
   { id: 'fallback-blr', code: 'BLR', cityName: 'Bangalore' },
@@ -23,13 +25,27 @@ const GENDER_OPTIONS: PremiumSelectOption[] = [
 ];
 
 // Logic for document input within the dark theme
-const PublicDocInput = ({ label, value, onChange, required }: { label: string, value: string, onChange: (v: string) => void, required?: boolean }) => {
-  const [mode, setMode] = useState<'URL' | 'UPLOAD'>('URL');
+const PublicDocInput = ({ label, value, onChange, required, folder = 'documents' }: { label: string, value: string, onChange: (v: string) => void, required?: boolean, folder?: string }) => {
+  const [mode, setMode] = useState<'URL' | 'UPLOAD'>('UPLOAD');
+  const [isUploading, setIsUploading] = useState(false);
   const inputClass = "w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/20 transition-all hover:bg-white/[0.05] text-sm";
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) onChange(URL.createObjectURL(file));
+    if (file) {
+      try {
+        setIsUploading(true);
+        const oldUrl = value && value.startsWith('http') ? value : undefined;
+        const finalUrl = await uploadService.uploadFile(file, folder, oldUrl);
+        onChange(finalUrl);
+        toast.success(`${label} uploaded successfully`);
+      } catch (err) {
+        console.error(err);
+        toast.error(`Failed to upload ${label}`);
+      } finally {
+        setIsUploading(false);
+      }
+    }
   };
 
   return (
@@ -50,10 +66,16 @@ const PublicDocInput = ({ label, value, onChange, required }: { label: string, v
         </div>
       ) : (
         <div className="relative border border-dashed border-white/10 rounded-xl py-3 px-4 hover:border-[#E32222]/40 transition-all group cursor-pointer bg-white/[0.01] hover:bg-white/[0.03]">
-          <input type="file" accept="image/*" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+          <input type="file" accept="image/*" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={isUploading} />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">{value.startsWith('blob:') ? 'File Selected' : 'Choose local file'}</span>
-            <Upload size={14} className="text-neutral-600 group-hover:text-[#E32222] transition-colors" />
+            <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">
+              {isUploading ? 'Uploading...' : (value && !value.startsWith('blob:') ? 'Replace File' : 'Choose local file')}
+            </span>
+            {isUploading ? (
+               <Loader2 size={14} className="text-[#E32222] animate-spin" />
+            ) : (
+               <Upload size={14} className="text-neutral-600 group-hover:text-[#E32222] transition-colors" />
+            )}
           </div>
         </div>
       )}
@@ -98,7 +120,7 @@ export default function PartnerRegisterPage() {
     const loadLookups = async () => {
       try {
         const [vtRes, cityRes] = await Promise.all([
-          agentService.getVehicleTypesLookup(),
+          publicRideService.getVehicleTypes(),
           agentService.getCityCodes(),
         ]);
         if (vtRes.success) setVehicleTypes(vtRes.data || []);

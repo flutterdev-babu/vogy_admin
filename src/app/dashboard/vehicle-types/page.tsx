@@ -37,8 +37,7 @@ import {
   CreatePeakHourChargeRequest,
   PeakHourSlot,
   DayOfWeek,
-  ServiceType,
-  CreatePeakHourChargeRequest
+  ServiceType
 } from '@/types';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
 import { ActiveBadge } from '@/components/ui/Badge';
