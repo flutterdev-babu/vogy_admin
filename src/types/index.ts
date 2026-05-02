@@ -501,6 +501,8 @@ export interface CreateVehicleTypeRequest {
 }
 
 export interface UpdateVehicleTypeRequest {
+  name?: string;
+  category?: 'BIKE' | 'AUTO' | 'CAR';
   displayName?: string;
   pricePerKm?: number;
   baseFare?: number;
