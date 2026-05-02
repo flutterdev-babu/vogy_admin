@@ -51,6 +51,22 @@ const navSections: NavSection[] = [
       { href: '/agent/dashboard/referrals', label: 'Referral Rewards', icon: DollarSign },
     ],
   },
+  {
+    title: 'Management',
+    items: [
+      { href: '/agent/dashboard/vendors', label: 'My Vendors', icon: Building2 },
+      { href: '/agent/dashboard/corporates', label: 'My Corporates', icon: Briefcase },
+      { href: '/agent/dashboard/partners', label: 'My Partners', icon: Users },
+      { href: '/agent/dashboard/vehicles', label: 'Managed Vehicles', icon: Car },
+    ],
+  },
+  {
+    title: 'Operations',
+    items: [
+      { href: '/agent/dashboard/rides', label: 'Ride Management', icon: Clock },
+      { href: '/agent/dashboard/manual-booking', label: 'Manual Booking', icon: Calendar },
+    ],
+  },
 ];
 
 export default function AgentSidebar() {

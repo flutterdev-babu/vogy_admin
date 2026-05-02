@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, UserPlus, Loader2, Users, ArrowLeft, ChevronDown, ChevronUp, Car, ShieldCheck, CreditCard, Link as LinkIcon, Upload, X, Check } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Loader2, Users, ArrowLeft, ChevronDown, ChevronUp, Car, ShieldCheck, CreditCard, Link as LinkIcon, Upload, X, Check, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { partnerService } from '@/services/partnerService';
 import { agentService } from '@/services/agentService';
@@ -50,11 +50,25 @@ const PublicDocInput = ({ label, value, onChange, required, folder = 'documents'
           {label} {required && <span className="text-[#E32222]">*</span>}
         </label>
       </div>
-      <div className="relative border border-dashed border-white/10 rounded-xl py-3 px-4 hover:border-[#E32222]/40 transition-all group cursor-pointer bg-white/[0.01] hover:bg-white/[0.03]">
-        <input type="file" accept="image/*" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+      <div className={`relative border border-dashed rounded-xl py-3 px-4 transition-all group cursor-pointer bg-white/[0.01] ${
+        error ? 'border-red-500/50 hover:border-red-400/60' :
+        value ? 'border-green-500/40 hover:border-green-400/50' :
+        'border-white/10 hover:border-[#E32222]/40'
+      } ${uploading ? 'pointer-events-none opacity-60' : 'hover:bg-white/[0.03]'}`}>
+        <input type="file" accept="image/*,application/pdf" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={uploading} />
         <div className="flex items-center justify-between">
-          <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">{value ? 'File Selected' : 'Choose local file'}</span>
-          <Upload size={14} className="text-neutral-600 group-hover:text-[#E32222] transition-colors" />
+          {uploading ? (
+            <span className="text-xs text-neutral-400 flex items-center gap-2 font-medium">
+              <Loader2 size={14} className="animate-spin text-[#E32222]" /> Uploading...
+            </span>
+          ) : value ? (
+            <span className="text-xs text-green-400 truncate max-w-[180px] font-medium flex items-center gap-1.5">
+              <Check size={12} /> {fileName || 'Uploaded'}
+            </span>
+          ) : (
+            <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">Choose local file</span>
+          )}
+          <Upload size={14} className={`transition-colors ${value ? 'text-green-500' : 'text-neutral-600 group-hover:text-[#E32222]'}`} />
         </div>
       </div>
       {mode === 'URL' ? (
@@ -148,8 +162,15 @@ export default function PartnerRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.cityCodeId) return toast.error('Please select your city');
+
+    // Validate DL is required
+    if (!formData.licenseNumber) return toast.error('Driving License number is required');
+    if (!formData.licenseImage) return toast.error('Please upload your Driving License image');
     
+    // Prevent double submission
+    if (isLoading) return;
     setIsLoading(true);
+
     try {
       const submitData: any = {
         firstName: formData.firstName,
@@ -301,7 +322,7 @@ export default function PartnerRegisterPage() {
                     <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">PAN Detail</span>
                   </div>
                   <input type="text" value={formData.panNumber || ''} onChange={e => setFormData({...formData, panNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="PAN NO" maxLength={10} />
-                  <PublicDocInput label="Upload PAN" value={formData.panImage} onChange={v => setFormData({...formData, panImage: v})} />
+                  <PublicDocInput label="Upload PAN" value={formData.panImage} onChange={v => setFormData({...formData, panImage: v})} folder="pan_cards" />
                 </div>
 
                 <div className="space-y-4 p-6 bg-white/[0.02] rounded-3xl border border-white/5 hover:bg-white/[0.03] transition-colors group">
@@ -310,7 +331,7 @@ export default function PartnerRegisterPage() {
                     <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Aadhaar Card</span>
                   </div>
                   <input type="text" value={formData.aadhaarNumber || ''} onChange={e => setFormData({...formData, aadhaarNumber: e.target.value.replace(/\D/g, '')})} className={inputClass} placeholder="12 DIGITS" maxLength={12} />
-                  <PublicDocInput label="Upload Aadhaar" value={formData.aadhaarImage} onChange={v => setFormData({...formData, aadhaarImage: v})} />
+                  <PublicDocInput label="Upload Aadhaar" value={formData.aadhaarImage} onChange={v => setFormData({...formData, aadhaarImage: v})} folder="aadhaar_cards" />
                 </div>
 
                 <div className="space-y-4 p-6 bg-white/[0.02] rounded-3xl border border-white/5 hover:bg-white/[0.03] transition-colors group">
@@ -319,7 +340,7 @@ export default function PartnerRegisterPage() {
                     <span className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">DL (Required) *</span>
                   </div>
                   <input type="text" required value={formData.licenseNumber || ''} onChange={e => setFormData({...formData, licenseNumber: e.target.value.toUpperCase()})} className={inputClass} placeholder="DL NUMBER" />
-                  <PublicDocInput label="Upload DL" value={formData.licenseImage} onChange={v => setFormData({...formData, licenseImage: v})} required />
+                  <PublicDocInput label="Upload DL" value={formData.licenseImage} onChange={v => setFormData({...formData, licenseImage: v})} required folder="driving_licenses" />
                 </div>
               </div>
             </div>
@@ -404,4 +425,3 @@ export default function PartnerRegisterPage() {
     </div>
   );
 }
-

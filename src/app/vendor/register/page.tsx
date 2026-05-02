@@ -60,6 +60,8 @@ export default function VendorRegisterPage() {
       toast.error('Please fill all required fields');
       return;
     }
+    // Prevent double submission
+    if (isLoading) return;
     setIsLoading(true);
     try {
       const submitData: any = {
@@ -72,7 +74,8 @@ export default function VendorRegisterPage() {
         setTimeout(() => router.push('/vendor/login'), 2000);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      const message = error.response?.data?.message || error.message || 'Registration failed';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

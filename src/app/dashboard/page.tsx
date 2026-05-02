@@ -217,12 +217,54 @@ export default function DashboardPage() {
   }
 
   const entityCards = [
-    { label: 'Total Users', value: stats?.entities.users || 0, icon: Users, color: 'from-blue-500 to-blue-600', href: '/dashboard/users' },
-    { label: 'Partners', value: stats?.entities.partners || 0, icon: UserCheck, color: 'from-emerald-500 to-emerald-600', href: '/dashboard/partners', subValue: `${stats?.entities.onlinePartners || 0} Online` },
-    { label: 'Vehicles', value: stats?.entities.vehicles || 0, icon: Car, color: 'from-purple-500 to-purple-600', href: '/dashboard/vehicles' },
-    { label: 'Vendors', value: stats?.entities.vendors || 0, icon: ShieldCheck, color: 'from-orange-500 to-orange-600', href: '/dashboard/vendors' },
-    { label: 'Corporates', value: stats?.entities.corporates || 0, icon: Briefcase, color: 'from-gray-700 to-gray-800', href: '/dashboard/corporates' },
-    { label: 'Agents', value: stats?.entities.agents || 0, icon: UserPlus, color: 'from-pink-500 to-pink-600', href: '/dashboard/agents' },
+    { 
+      label: 'Total Users', 
+      value: stats?.entities.users.total || 0, 
+      icon: Users, 
+      color: 'from-blue-500 to-blue-600', 
+      href: '/dashboard/users',
+      subValue: stats?.entities.users.today ? `+${stats.entities.users.today} Today` : undefined
+    },
+    { 
+      label: 'Partners', 
+      value: stats?.entities.partners.total || 0, 
+      icon: UserCheck, 
+      color: 'from-emerald-500 to-emerald-600', 
+      href: '/dashboard/partners', 
+      subValue: stats?.entities.partners.today ? `+${stats.entities.partners.today} New Today` : `${stats?.entities.onlinePartners || 0} Online` 
+    },
+    { 
+      label: 'Vehicles', 
+      value: stats?.entities.vehicles.total || 0, 
+      icon: Car, 
+      color: 'from-purple-500 to-purple-600', 
+      href: '/dashboard/vehicles',
+      subValue: stats?.entities.vehicles.today ? `+${stats.entities.vehicles.today} Added Today` : undefined
+    },
+    { 
+      label: 'Vendors', 
+      value: stats?.entities.vendors.total || 0, 
+      icon: ShieldCheck, 
+      color: 'from-orange-500 to-orange-600', 
+      href: '/dashboard/vendors',
+      subValue: stats?.entities.vendors.today ? `+${stats.entities.vendors.today} New Today` : undefined
+    },
+    { 
+      label: 'Corporates', 
+      value: stats?.entities.corporates.total || 0, 
+      icon: Briefcase, 
+      color: 'from-gray-700 to-gray-800', 
+      href: '/dashboard/corporates',
+      subValue: stats?.entities.corporates.today ? `+${stats.entities.corporates.today} Registered Today` : undefined
+    },
+    { 
+      label: 'Agents', 
+      value: stats?.entities.agents.total || 0, 
+      icon: UserPlus, 
+      color: 'from-pink-500 to-pink-600', 
+      href: '/dashboard/agents',
+      subValue: stats?.entities.agents.today ? `+${stats.entities.agents.today} New Today` : undefined
+    },
   ];
 
   return (

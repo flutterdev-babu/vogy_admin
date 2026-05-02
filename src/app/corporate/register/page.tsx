@@ -64,6 +64,8 @@ export default function CorporateRegisterPage() {
       return;
     }
 
+    // Prevent double submission
+    if (isLoading) return;
     setIsLoading(true);
     try {
       const submitData: any = {
@@ -77,7 +79,8 @@ export default function CorporateRegisterPage() {
         setTimeout(() => router.push('/corporate/login'), 2000);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      const message = error.response?.data?.message || error.message || 'Registration failed';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
