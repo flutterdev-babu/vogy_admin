@@ -121,31 +121,31 @@ export default function CorporateRegisterPage() {
             <div className="space-y-6">
               <div className="space-y-1">
                 <label className={labelClass}>Legal Entity Name *</label>
-                <input type="text" required value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className={inputClass} placeholder="Google Inc / Tata Motors" />
+                <input type="text" required value={formData.companyName} onChange={e => setFormData({...formData, companyName: e.target.value})} className={inputClass} placeholder="Google Inc / Tata Motors" autoComplete="organization" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <label className={labelClass}>Nodal Officer *</label>
-                  <input type="text" required value={formData.contactPerson} onChange={e => setFormData({...formData, contactPerson: e.target.value})} className={inputClass} placeholder="Point of Contact" />
+                  <input type="text" required value={formData.contactPerson} onChange={e => setFormData({...formData, contactPerson: e.target.value})} className={inputClass} placeholder="Point of Contact" autoComplete="name" />
                 </div>
                 <div className="space-y-1">
-                  <label className={labelClass}>Contact Phone *</label>
-                  <div className="flex">
-                    <span className="px-4 py-3 bg-white/5 border border-white/10 border-r-0 rounded-l-xl text-[10px] font-black text-neutral-500 flex items-center tracking-widest">+91</span>
-                    <input type="tel" required value={formData.phone} onChange={(e) => {
+                  <label htmlFor="corp-phone" className={labelClass}>Contact Phone *</label>
+                  <label htmlFor="corp-phone" className="flex cursor-text group">
+                    <span className="px-4 py-3 bg-white/5 border border-white/10 border-r-0 rounded-l-xl text-[10px] font-black text-neutral-500 flex items-center tracking-widest group-focus-within:border-[#E32222]/50 transition-colors">+91</span>
+                    <input id="corp-phone" type="tel" required value={formData.phone} onChange={(e) => {
                       let v = e.target.value.replace(/\D/g, '');
                       if (v.length > 10 && v.startsWith('91')) v = v.slice(2);
                       setFormData({...formData, phone: v.slice(0, 10)});
-                    }} className={inputClass + " rounded-l-none"} placeholder="10 Digit Number" maxLength={10} />
-                  </div>
+                    }} className={inputClass + " rounded-l-none"} placeholder="10 Digit Number" maxLength={10} autoComplete="tel" />
+                  </label>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <label className={labelClass}>Work Email *</label>
-                  <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className={inputClass} placeholder="corp@business.com" />
+                  <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className={inputClass} placeholder="corp@business.com" autoComplete="email" />
                 </div>
                 
                 <PremiumSelect 
@@ -166,7 +166,7 @@ export default function CorporateRegisterPage() {
                 <div className="space-y-1">
                   <label className={labelClass}>Access Password *</label>
                   <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className={inputClass + " pr-12"} placeholder="Security Key" />
+                    <input type={showPassword ? 'text' : 'password'} required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className={inputClass + " pr-12"} placeholder="Security Key" autoComplete="new-password" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-white transition-colors">
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>

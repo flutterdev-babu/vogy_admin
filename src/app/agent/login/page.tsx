@@ -69,12 +69,13 @@ export default function AgentLoginPage() {
         <div className="p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-neutral-300 ml-1">Phone Number</label>
-              <div className="flex">
+              <label htmlFor="phone-input" className="text-sm font-medium text-neutral-300 ml-1">Phone Number</label>
+              <label htmlFor="phone-input" className="flex cursor-text">
                 <span className="inline-flex items-center px-4 bg-white/10 border border-r-0 border-white/10 rounded-l-xl text-neutral-400 text-sm">
                   +91
                 </span>
                 <input
+                  id="phone-input"
                   type="tel"
                   value={phone}
                   onChange={(e) => {
@@ -86,8 +87,9 @@ export default function AgentLoginPage() {
                   placeholder="9876543210"
                   maxLength={10}
                   disabled={isLoading}
+                  autoComplete="tel"
                 />
-              </div>
+              </label>
             </div>
 
             <div className="space-y-2">
@@ -100,6 +102,7 @@ export default function AgentLoginPage() {
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-1 focus:ring-[#E32222]/50 transition-all"
                   placeholder="••••••••"
                   disabled={isLoading}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"

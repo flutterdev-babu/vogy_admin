@@ -17,52 +17,37 @@ export interface DeleteFileResponse {
 
 export const uploadService = {
   /**
-   * Uploads a file using the pre-signed URL approach.
+   * Uploads a file using the robust FormData approach (Fixed CORS/Fetch issues).
    *
    * @param file The literal File object to upload
    * @param folder The folder path to store the file in (e.g. 'profile_pictures')
    * @param oldFileUrl Optional old file URL to delete.
    * @returns The final public URL to save in the database
    */
-  async uploadFile(file: File, folder: string, oldFileUrl?: string): Promise<string> {
+  async uploadFile(file: File, folder: string = 'documents', oldFileUrl?: string): Promise<string> {
     try {
-      // 1. Get the pre-signed URL
-      const { data: presignedData } = await publicApi.post<UploadPresignedUrlResponse>('/upload/presigned-url', {
-        fileName: file.name,
-        fileType: file.type || 'application/octet-stream',
-        folder,
-        fileSize: file.size,
-      });
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
 
-      if (!presignedData.success || !presignedData.data) {
-        throw new Error('Failed to get presigned URL from backend');
-      }
-
-      const { presignedUrl, finalUrl } = presignedData.data;
-
-      // 2. Upload file directly to the presigned URL
-      const uploadResponse = await fetch(presignedUrl, {
-        method: 'PUT',
+      const response = await publicApi.post('/upload', formData, {
         headers: {
-          'Content-Type': file.type || 'application/octet-stream',
+          'Content-Type': 'multipart/form-data',
         },
-        body: file,
       });
 
-      if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload file to storage: ${uploadResponse.statusText}`);
+      if (!response.data?.success || !response.data?.data?.url) {
+        throw new Error(response.data?.message || 'Failed to upload file');
       }
 
-      // 3. Delete the old file if provided
+      // If an old file URL was provided, delete it in the background
       if (oldFileUrl) {
-        // Run delete asynchronously in the background so it doesn't block the upload process
         this.deleteFile(oldFileUrl).catch((err) => {
           console.error('[UploadService] Failed to delete old file:', err);
         });
       }
 
-      // 4. Return the new final URL to save into the DB
-      return finalUrl;
+      return response.data.data.url;
     } catch (error) {
       console.error('[UploadService] Upload failed:', error);
       throw error;
