@@ -15,12 +15,11 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Toaster } from 'react-hot-toast';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#0D0D0D] font-sans text-white overflow-x-hidden selection:bg-[#E32222] selection:text-white">
-      <Toaster position="top-center" />
+
       <Navbar />
 
       {/* Hero Section */}

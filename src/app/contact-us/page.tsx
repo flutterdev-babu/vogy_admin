@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { publicRideService } from '@/services/publicRideService';
-import { toast, Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
@@ -241,7 +241,7 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] font-sans text-white overflow-x-hidden selection:bg-[#E32222] selection:text-white">
-      <Toaster position="top-center" />
+
       <Navbar />
 
       {/* Hero Section */}
