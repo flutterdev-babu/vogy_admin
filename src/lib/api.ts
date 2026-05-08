@@ -36,15 +36,16 @@ const createApiInstance = (baseURL: string): AxiosInstance => {
 
     // Global Error Notification
     if (typeof window !== 'undefined' && error.response) {
-      // Don't show toast for 401s that trigger redirect (handled in addAuthInterceptor)
-      // and don't show for 404s on GET requests which might be intentional
+      // Don't show toast for general 401s that trigger redirect, 
+      // BUT DO show for login/register credential errors.
+      const isLoginOrRegister = error.config.url?.includes('login') || error.config.url?.includes('register');
       const isAuthError = error.response.status === 401;
       const isGet404 = error.config.method === 'get' && error.response.status === 404;
       
-      if (!isAuthError && !isGet404) {
+      if ((!isAuthError || isLoginOrRegister) && !isGet404) {
         const message = error.response.data?.message || error.message || 'An unexpected error occurred';
         toast.error(message, {
-          id: `api-error-${error.config.url}`, // Prevent duplicate toasts for the same request
+          id: `api-error-${error.config.url}`,
         });
       }
     } else if (typeof window !== 'undefined' && error.message === 'Network Error') {
