@@ -200,6 +200,11 @@ export const agentService = {
     return response.data;
   },
 
+  async getAgentRides(): Promise<ApiResponse<any[]>> {
+    const response = await agentApi.get('/rides');
+    return response.data;
+  },
+
   async updateProfile(data: Partial<Agent>): Promise<ApiResponse<Agent>> {
     const response = await agentApi.put('/profile', data);
     return response.data;
