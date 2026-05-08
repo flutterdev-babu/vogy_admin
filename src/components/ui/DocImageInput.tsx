@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Link, Upload, X, Check, Image as ImageIcon } from 'lucide-react';
+import { Link, Upload, X, Check, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { uploadService } from '@/services/uploadService';
+import toast from 'react-hot-toast';
 
 interface DocImageInputProps {
   label: string;
@@ -10,6 +12,7 @@ interface DocImageInputProps {
   placeholder?: string;
   required?: boolean;
   className?: string;
+  folder?: string;
 }
 
 export const DocImageInput: React.FC<DocImageInputProps> = ({
@@ -18,17 +21,28 @@ export const DocImageInput: React.FC<DocImageInputProps> = ({
   onChange,
   placeholder = "Enter Image URL",
   required = false,
-  className = ""
+  className = "",
+  folder = "documents" // Allow specifying folder, default to documents
 }) => {
-  const [mode, setMode] = useState<'URL' | 'UPLOAD'>(value && !value.startsWith('blob:') ? 'URL' : 'URL');
+  const [mode, setMode] = useState<'URL' | 'UPLOAD'>(value && (!value.startsWith('blob:') && !value.startsWith('http')) ? 'URL' : 'UPLOAD');
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // In a real app, this would upload to S3/Cloudinary.
-      // For now, we use a local preview URL or placeholder
-      const previewUrl = URL.createObjectURL(file);
-      onChange(previewUrl);
+      try {
+        setIsUploading(true);
+        const oldUrl = value && value.startsWith('http') ? value : undefined;
+        const uploadFolder = (folder as string) || 'documents';
+        const finalUrl = await uploadService.uploadFile(file, uploadFolder, oldUrl);
+        onChange(finalUrl);
+        toast.success("Image uploaded successfully");
+      } catch (err: any) {
+        toast.error("Failed to upload image.");
+        console.error(err);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -90,12 +104,16 @@ export const DocImageInput: React.FC<DocImageInputProps> = ({
               className="absolute inset-0 opacity-0 cursor-pointer z-10"
             />
             <div className="flex items-center gap-2 text-gray-400 font-medium">
-              <Upload size={14} className="group-hover:text-red-500 transition-colors" />
+              {isUploading ? (
+                <Loader2 size={14} className="animate-spin text-red-500" />
+              ) : (
+                <Upload size={14} className="group-hover:text-red-500 transition-colors" />
+              )}
               <span className="text-xs truncate max-w-[150px]">
-                {value.startsWith('blob:') ? 'Image Selected' : 'Select Image File'}
+                {isUploading ? 'Uploading...' : (value && !value.startsWith('blob:') ? 'Replace Image' : 'Select Image File')}
               </span>
             </div>
-            {value.startsWith('blob:') && (
+            {value && !isUploading && (
               <div className="ml-auto flex items-center gap-2">
                 <Check size={14} className="text-green-500" />
                 <button 

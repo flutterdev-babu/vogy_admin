@@ -161,9 +161,9 @@ export default function AttachmentsPage() {
                     <User size={18} />
                   </div>
                   <div>
-                    <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{item.partner.name}</div>
+                    <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{item.partner?.name || 'Unknown Partner'}</div>
                     <div className="text-[10px] font-bold text-emerald-600 uppercase mt-1.5 tracking-tighter font-mono">
-                      {item.partner.customId || 'N/A'}
+                      {item.partner?.customId || 'N/A'}
                     </div>
                   </div>
                 </div>
@@ -177,9 +177,9 @@ export default function AttachmentsPage() {
                     <Car size={18} />
                   </div>
                   <div>
-                    <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase font-mono">{item.vehicle.customId}</div>
+                    <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase font-mono">{item.vehicle?.customId || 'N/A'}</div>
                     <div className="text-[10px] font-bold text-gray-400 uppercase mt-1.5 tracking-tighter">
-                      {item.vehicle.registrationNumber} • {item.vehicle.vehicleModel}
+                      {item.vehicle?.registrationNumber || 'No Plate'} • {item.vehicle?.vehicleModel || 'No Model'}
                     </div>
                   </div>
                 </div>
@@ -193,8 +193,8 @@ export default function AttachmentsPage() {
                     <Building2 size={14} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-gray-700 uppercase tracking-tighter">{item.vendor.companyName || item.vendor.name}</span>
-                    <span className="text-[9px] text-amber-500 font-black font-mono uppercase leading-none">{item.vendor.customId}</span>
+                    <span className="text-[10px] font-bold text-gray-700 uppercase tracking-tighter">{item.vendor?.companyName || item.vendor?.name || 'N/A'}</span>
+                    <span className="text-[9px] text-amber-500 font-black font-mono uppercase leading-none">{item.vendor?.customId || 'N/A'}</span>
                   </div>
                 </div>
               )

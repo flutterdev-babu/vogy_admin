@@ -7,8 +7,9 @@ import { Eye, EyeOff, UserPlus, Loader2, Users, ArrowLeft, ChevronDown, ChevronU
 import toast from 'react-hot-toast';
 import { partnerService } from '@/services/partnerService';
 import { agentService } from '@/services/agentService';
-import { uploadService } from '@/services/uploadService';
+import { publicRideService } from '@/services/publicRideService';
 import { PremiumSelect, PremiumSelectOption } from '@/components/ui/PremiumSelect';
+import { uploadService } from '@/services/uploadService';
 
 
 
@@ -18,42 +19,27 @@ const GENDER_OPTIONS: PremiumSelectOption[] = [
   { id: 'OTHER', label: 'Other/Prefer not to say' }
 ];
 
-// Document upload component that uses R2 presigned URL flow
-const PublicDocInput = ({ label, value, onChange, required, folder }: { label: string, value: string, onChange: (v: string) => void, required?: boolean, folder?: string }) => {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
-  const [fileName, setFileName] = useState('');
+// Logic for document input within the dark theme
+const PublicDocInput = ({ label, value, onChange, required, folder = 'documents' }: { label: string, value: string, onChange: (v: string) => void, required?: boolean, folder?: string }) => {
+  const [mode, setMode] = useState<'URL' | 'UPLOAD'>('UPLOAD');
+  const [isUploading, setIsUploading] = useState(false);
+  const inputClass = "w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-neutral-600 focus:outline-none focus:border-[#E32222] focus:ring-2 focus:ring-[#E32222]/20 transition-all hover:bg-white/[0.05] text-sm";
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File too large. Max 10MB.');
-      return;
-    }
-
-    // Validate file type
-    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      setError('Only images and PDFs are allowed.');
-      return;
-    }
-
-    setError('');
-    setUploading(true);
-    setFileName(file.name);
-
-    try {
-      const finalUrl = await uploadService.uploadFile(file, folder || 'partner_documents');
-      onChange(finalUrl);
-      toast.success(`${label} uploaded successfully`);
-    } catch (err: any) {
-      console.error(`[UploadService] Upload failed:`, err);
-      setError('Upload failed. Please try again.');
-      toast.error(`Failed to upload ${label}`);
-    } finally {
-      setUploading(false);
+    if (file) {
+      try {
+        setIsUploading(true);
+        const oldUrl = value && value.startsWith('http') ? value : undefined;
+        const finalUrl = await uploadService.uploadFile(file, folder, oldUrl);
+        onChange(finalUrl);
+        toast.success(`${label} uploaded successfully`);
+      } catch (err) {
+        console.error(err);
+        toast.error(`Failed to upload ${label}`);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -85,10 +71,25 @@ const PublicDocInput = ({ label, value, onChange, required, folder }: { label: s
           <Upload size={14} className={`transition-colors ${value ? 'text-green-500' : 'text-neutral-600 group-hover:text-[#E32222]'}`} />
         </div>
       </div>
-      {error && (
-        <p className="text-[10px] text-red-400 flex items-center gap-1 ml-1">
-          <AlertCircle size={10} /> {error}
-        </p>
+      {mode === 'URL' ? (
+        <div className="relative group">
+          <input type="text" value={value.startsWith('blob:') ? '' : value} onChange={e => onChange(e.target.value)} placeholder="Paste image link..." className={inputClass} />
+          <LinkIcon size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-[#E32222] transition-colors" />
+        </div>
+      ) : (
+        <div className="relative border border-dashed border-white/10 rounded-xl py-3 px-4 hover:border-[#E32222]/40 transition-all group cursor-pointer bg-white/[0.01] hover:bg-white/[0.03]">
+          <input type="file" accept="image/*" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" disabled={isUploading} />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-neutral-400 truncate max-w-[150px] font-medium">
+              {isUploading ? 'Uploading...' : (value && !value.startsWith('blob:') ? 'Replace File' : 'Choose local file')}
+            </span>
+            {isUploading ? (
+               <Loader2 size={14} className="text-[#E32222] animate-spin" />
+            ) : (
+               <Upload size={14} className="text-neutral-600 group-hover:text-[#E32222] transition-colors" />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
