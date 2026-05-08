@@ -205,6 +205,11 @@ export const agentService = {
     return response.data;
   },
 
+  async getAnalytics(): Promise<ApiResponse<any>> {
+    const response = await agentApi.get('/analytics');
+    return response.data;
+  },
+
   // =====================
   // Admin Agent APIs
   // =====================

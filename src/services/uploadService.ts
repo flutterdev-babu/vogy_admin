@@ -12,34 +12,20 @@ export const uploadService = {
    * @returns The final public URL of the uploaded file
    */
   async uploadFile(file: File, folder: string = 'documents'): Promise<string> {
-    // Step 1: Get presigned URL from backend
-    const presignedRes = await publicApi.post('/upload/presigned-url', {
-      fileName: file.name,
-      fileType: file.type,
-      folder,
-      fileSize: file.size,
-    });
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
 
-    if (!presignedRes.data?.success || !presignedRes.data?.data) {
-      throw new Error(presignedRes.data?.error || 'Failed to get upload URL');
-    }
-
-    const { presignedUrl, finalUrl } = presignedRes.data.data;
-
-    // Step 2: Upload file directly to R2 using the presigned URL
-    const uploadRes = await fetch(presignedUrl, {
-      method: 'PUT',
+    const response = await publicApi.post('/upload', formData, {
       headers: {
-        'Content-Type': file.type,
+        'Content-Type': 'multipart/form-data',
       },
-      body: file,
     });
 
-    if (!uploadRes.ok) {
-      throw new Error(`Upload failed with status ${uploadRes.status}`);
+    if (!response.data?.success || !response.data?.data?.url) {
+      throw new Error(response.data?.message || 'Failed to upload file');
     }
 
-    // Step 3: Return the final public URL
-    return finalUrl;
+    return response.data.data.url;
   },
 };
